@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "mmqmg"
+version = "0.1.0"
+description = "The Majorize-Minimize-Quadratic-Memory-Gradient Algorithm"
+authors = ["François Orieux <orieux@l2s.centralesupelec.fr>"]
+license = "WTFPL"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+numpy = "^1.19.4"
+
+[tool.poetry.dev-dependencies]
+ipython = "^7.19.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
