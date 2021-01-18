@@ -192,8 +192,8 @@ def VoperatorT(x, Nx, Ny):
     hv = np.array([[0, -1, 0], [0, 1, 0], [0, 0, 0]])
     hh = np.array([[0, 0, 0], [-1, 1, 0], [0, 0, 0]])
 
-    Vtv = conv2(np.reshape(x[Nx * Ny :], (Nx, Ny)), np.fliplr(np.flipud(hv)), "same")
-    Vth = conv2(np.reshape(x[: Nx * Ny], (Nx, Ny)), np.fliplr(np.flipud(hh)), "same")
+    Vth = conv2(np.reshape(x[Nx * Ny :], (Nx, Ny)), np.fliplr(np.flipud(hh)), "same")
+    Vtv = conv2(np.reshape(x[: Nx * Ny], (Nx, Ny)), np.fliplr(np.flipud(hv)), "same")
 
     return Vtv.reshape(-1, 1) + Vth.reshape(-1, 1)
 

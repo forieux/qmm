@@ -11,6 +11,9 @@ numpy = "^1.19.4"
 
 [tool.poetry.dev-dependencies]
 ipython = "^7.19.0"
+jedi = "0.17.2"
+oct2py = "^5.2.0"
+matplotlib = "^3.3.3"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
