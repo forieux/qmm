@@ -24,6 +24,7 @@ sdist/
 var/
 wheels/
 *.egg-info/
+*.mypy_cache/
 .installed.cfg
 *.egg
 
