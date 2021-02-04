@@ -20,6 +20,11 @@
                             Module Index
                         </a>
 
+                    <h2>Contents</h2>
+                    <ul>
+  <li><a href="#comments-on-criterion">Comments on <code>Criterion</code></a></li>
+</ul>
+
 
 
                     <h2>API Documentation</h2>
@@ -222,11 +227,50 @@
                 <h1 class="modulename">
 mmq                </h1>
                             <div class="docstring"><p>This module implements Majorize-Minimize Quadratic optimization algorithms</p>
+
+<p>The main point of interest in the module is the <code><a href="#mmmg">mmmg</a></code> function. <code><a href="#Criterion">Criterion</a></code> is
+use to easily build criterion.</p>
+
+<h2 id="comments-on-criterion">Comments on <code><a href="#Criterion">Criterion</a></code></h2>
+
+<p>The module provides a <code><a href="#Criterion">Criterion</a></code> object for convenience. This object has be
+made to help the implementation. However, thanks to dynamic nature of python,
+the <code><a href="#mmmg">mmmg</a></code> function needs in practive any object with three specific methods.</p>
+
+<ul>
+<li><code>operator</code> : a callable with a point <code>x</code> as unique parameter, that must return
+the application of <code>V</code> (that is <code>V·x</code>).</li>
+<li><code>gradient</code> : a callable with a point <code>x</code> as unique parameter, that must return
+the gradient of the criterion (that is <code>V^t φ'(V·x - ω)</code>).</li>
+<li><code>normmatmajor</code> : a callable with two parameters. The first one is the result
+of the operator applied on the subspace vectors. The second is the point <code>x</code>,
+where the normal matrix of the quadratic major function must be returned.</li>
+</ul>
 </div>
 
                             <details>
                 <summary class="button">View Source</summary>
-                <div class="codehilite"><pre><span></span><span class="sd">&quot;&quot;&quot;This module implements Majorize-Minimize Quadratic optimization algorithms&quot;&quot;&quot;</span>
+                <div class="codehilite"><pre><span></span><span class="sd">&quot;&quot;&quot;This module implements Majorize-Minimize Quadratic optimization algorithms</span>
+
+<span class="sd">The main point of interest in the module is the `mmmg` function. `Criterion` is</span>
+<span class="sd">use to easily build criterion.</span>
+
+<span class="sd">Comments on `Criterion`</span>
+<span class="sd">-----------------------</span>
+
+<span class="sd">The module provides a `Criterion` object for convenience. This object has be</span>
+<span class="sd">made to help the implementation. However, thanks to dynamic nature of python,</span>
+<span class="sd">the `mmmg` function needs in practive any object with three specific methods.</span>
+
+<span class="sd">- `operator` : a callable with a point `x` as unique parameter, that must return</span>
+<span class="sd">  the application of `V` (that is `V·x`).</span>
+<span class="sd">- `gradient` : a callable with a point `x` as unique parameter, that must return</span>
+<span class="sd">  the gradient of the criterion (that is `V^t φ&#39;(V·x - ω)`).</span>
+<span class="sd">- `norm_mat_major` : a callable with two parameters. The first one is the result</span>
+<span class="sd">  of the operator applied on the subspace vectors. The second is the point `x`,</span>
+<span class="sd">  where the normal matrix of the quadratic major function must be returned.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">functools</span>
 <span class="kn">import</span> <span class="nn">abc</span>

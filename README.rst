@@ -6,16 +6,25 @@ MMQ provides Majorize-Minimize Quadratic optimization algorithms.
 Features
 --------
 
-- Make things faster
+- The `mmmg`, Majorize-Minimize Memory Gradient algorithm.
+- No restriction on the number of regularizer, input shape, ...
+- Base class for criterion.
+- Several classical criterion like Huber, Geman & McClure, ...
+- Comes with exemples of linear operator.
 
 Installation
 ------------
 
-Install MMQ by running:
+No installation procedure have been implemented at that time. To install, just
+copy the `mmq` directory or the `mmq.py` file where your code can access it.
 
-    install project
+MMQ only depends on `numpy`.
 
-MMQ only depends on numpy.
+Documentation
+-------------
+
+Documentation is in `./docs` directory and is generated from source file. You
+can see the `demo.py` file for an exemple.
 
 Contribute
 ----------
@@ -26,20 +35,12 @@ Contribute
 Support
 -------
 
-If you are having issues, please let us know.
-We have a mailing list located at: project@google-groups.com
+If you are having issues, please let us know
+
+orieux AT l2s.centralesupelec.fr
 
 License
 -------
 
 The project is licensed under the BSD license.
 
-- `operator` : a callable with the current point :math:`x` as unique
-  parameter, that must return the application of :math:`V`.
-- `gradient` : a callable with the current point :math:`x` as unique
-  parameter, that must return the gradient of the criterion.
-- `norm_mat_major` : a callable with two parameters, the first one is the
-  operator applied on the subspace vectors, and a current point :math:`x`, and a
-  the normal matrix of the quadratic major function
-
-  :math:`x`, that must return the gradient of the criterion
