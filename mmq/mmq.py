@@ -1,4 +1,4 @@
-"""This module implements Majorize-Minimize Quadratic algorithms"""
+"""This module implements Majorize-Minimize Quadratic optimization algorithms"""
 
 import functools
 import abc
@@ -8,415 +8,8 @@ import numpy as np
 import numpy.linalg as la
 
 
-class BaseCriterion(abc.ABC):
-    """An abstract base class for criteria like μ sum_c φ(v_c^t·x - ω)"""
-
-    def __init__(
-        self,
-        operator: Callable,
-        adjoint: Callable,
-        hyper: float = 1,
-        mean: np.ndarray = 0,
-    ):
-        self.operator = operator
-        self.adjoint = adjoint
-        self.hyper = hyper
-        self.mean = mean
-
-    @abc.abstractmethod
-    def value(self, point):
-        """The value at current point"""
-        return NotImplemented
-
-    @abc.abstractmethod
-    def gradient(self, point):
-        """The gadient at current point"""
-        return NotImplemented
-
-    @abc.abstractmethod
-    def norm_mat_major(self, vecs: np.ndarray, point: np.ndarray):
-        """Return the normal matrix of the major function
-
-        Given vecs D = V·S, return D^T·diag(b)·D
-
-        where S are the vectors defining the subspace
-        """
-        return NotImplemented
-
-    def __call__(self, point):
-        """The value at current point"""
-        return self.value(point)
-
-
-class Criterion(BaseCriterion):
-    """A criterion μ sum_c φ(v_c^t·x - ω)"""
-
-    def __init__(
-        self,
-        operator: Callable,
-        adjoint: Callable,
-        potential: Callable,
-        potential_grad: Callable,
-        hyper: float = 1,
-        mean: np.ndarray = 0,
-    ):
-        """A criterion μ sum_c φ(v_c^t·x - ω)
-
-        Parameters
-        ----------
-        operator: callable
-          V^t·x
-        adjoing: callable
-          V·e
-        potential: callable
-          φ
-        potential: callable
-          φ'
-        hyper: float
-          μ
-        mean: ndarray (optionnal)
-          ω
-        """
-        super().__init__(operator, adjoint, hyper, mean)
-        self.potential = potential
-        self.potential_grad = potential_grad
-
-    def value(self, point):
-        # λ·φ(Dx - ω)
-        return self.hyper * np.sum(self.potential(self.operator(point) - self.mean))
-
-    def gradient(self, point):
-        return self.hyper * self.adjoint(
-            self.potential_grad(self.operator(point) - self.mean)
-        )
-
-    def norm_mat_major(self, vecs: np.ndarray, point: np.ndarray):
-        """Return the normal matrix of the major function
-
-        Given vecs D = V·S, return D^T·diag(b)·D
-
-        where S are the vectors defining the subspace
-        """
-        return vecs.T @ (self.gr_coeffs(point).reshape((-1, 1)) * vecs)
-
-    def gr_coeffs(self, point):
-        """Return φ'(V·x - ω) / (V·x - ω)"""
-        obj = self.operator(point) - self.mean
-        return self.potential.gr_coeffs(obj)
-
-    def __call__(self, point):
-        return self.value(point)
-
-
-class QuadCriterion(BaseCriterion):
-    """A quadratic criterion μ||H·x - ω||^2"""
-
-    def __init__(
-        self,
-        operator: Callable,
-        adjoint: Callable,
-        normal: Callable,
-        hyper: float = 1,
-        mean: np.ndarray = 0,
-    ):
-        """A quadratic criterion μ||H·x - ω||^2
-
-        Parameters
-        ----------
-        operator: Callable
-          H·x
-        adjoing: Callable
-          H^t·e
-        normal: Callable
-          H^tH·x
-        hyper: float (optionnal)
-          μ
-        mean: ndarray (optionnal)
-          ω
-        """
-        super().__init__(operator, adjoint, hyper, mean)
-        self.normal = normal
-        self.mean_t = self.adjoint(mean)
-
-    def value(self, point):
-        # ||H·x - ω||_2^2
-        return self.hyper * np.sum((self.operator(point) - self.mean) ** 2) / 2
-
-    def norm_mat_major(self, vecs: np.ndarray, point: np.ndarray):
-        """Return the normal matrix of the major function
-
-        Given V = H·D, return V^T·diag(b)·V
-        """
-        return vecs.T @ vecs
-
-    def gradient(self, point):
-        return self.hyper * (self.normal(point) - self.mean_t)
-
-    def __call__(self, point):
-        return self.value(point)
-
-
-class Potential(abc.ABC):
-    """An abstract base class for the potentials."""
-
-    def __init__(self, inf):
-        """
-        Parameters
-        ----------
-        inf : float
-          The value of lim_{u→0} φ'(u) / 2 u
-        """
-        self.inf = inf
-
-    @abc.abstractmethod
-    def value(self, point: np.ndarray):
-        """The value at current point"""
-        return NotImplemented
-
-    @abc.abstractmethod
-    def gradient(self, point: np.ndarray):
-        """The gadient at current point"""
-        return NotImplemented
-
-    def gr_coeffs(self, point: np.ndarray):
-        """The GR coefficients at current point"""
-        aux = self.inf * np.ones_like(point)
-        idx = point != 0
-        aux[idx] = self.gradient(point[idx]) / point[idx]
-        return aux
-
-    def __call__(self, point: np.ndarray):
-        """The value at current point"""
-        return self.value(point)
-
-
-class VminProj(Potential):
-    """The projection criterion
-
-    D(u) = ½ ||P_[m, +∞[(u) - m||^2
-    """
-
-    def __init__(self, vmin):
-        super().__init__(inf=1)
-        self.vmin = vmin
-        self.convex = True
-        self.coercive = True
-
-    def value(self, point):
-        return np.sum((point[point < self.vmin] - self.vmin) ** 2 / 2)
-
-    def gradient(self, point):
-        return np.where(point > self.vmin, 0, point - self.vmin)
-
-
-class VmaxProj(Potential):
-    """The projection criterion
-
-    D(u) = ½ ||P_]-∞, M](u) - M||^2
-    """
-
-    def __init__(self, vmax):
-        super().__init__(inf=1)
-        self.vmax = vmax
-        self.convex = True
-        self.coercive = True
-
-    def value(self, point):
-        return np.sum((point[point > self.vmax] - self.vmax) ** 2 / 2)
-
-    def gradient(self, point):
-        return np.where(point < self.vmax, 0, point - self.vmax)
-
-
-class Square(Potential):
-    """The square convex coercive function
-
-    phi(u) = ½ u^2
-
-    """
-
-    def __init__(self):
-        super().__init__(inf=1)
-        self.convex = True
-        self.coercive = True
-
-    def value(self, point):
-        return point ** 2 / 2
-
-    def gradient(self, point):
-        return point
-
-    def __repr__(self):
-        return """
-
-φ(u) = ½ u²
-
-Convex and coercive
-"""
-
-
-class Hyperbolic(Potential):
-    """The convex coercive hyperbolic function
-
-    phi(u) = sqrt(1 + u^2/delta^2)-1
-
-    """
-
-    def __init__(self, delta):
-        super().__init__(inf=1 / (delta ** 2))
-        self.inf = 1 / (2 * delta)  # To check
-        self.delta = delta
-        self.convex = True
-        self.coercive = True
-
-    def value(self, point):
-        return np.sqrt(1 + (point ** 2) / (self.delta ** 2)) - 1
-
-    def gradient(self, point):
-        return (point / (self.delta ** 2)) * np.sqrt(1 + (point ** 2) / self.delta ** 2)
-
-    def __repr__(self):
-        return """
-           _______
-          ╱ u²
-φ(u) =   ╱  ── + 1 - 1
-       ╲╱   δ²
-
-Convex and coercive
-"""
-
-
-class Huber(Potential):
-    """The convex coercive Huber function
-
-    phi(u) = u^2
-
-    if |u| < δ, and
-
-    phi(u) = δ|u| - δ^2/2
-
-    otherwise.
-    """
-
-    def __init__(self, delta):
-        super().__init__(inf=1)
-        self.delta = delta
-        self.convex = True
-        self.coercive = True
-
-    def value(self, point):
-        return np.where(np.abs(point) <= self.delta, point ** 2, np.abs(point))
-
-    def gradient(self, point):
-        return np.where(
-            np.abs(point) <= self.delta, 2 * point, 2 * self.delta * np.sign(point)
-        )
-
-    def __repr__(self):
-        return """
-       ⎛
-       ⎜  u², if |u| < δ
-φ(u) = ⎜
-       ⎜ |u|, otherwise
-       ⎝
-
-Convex and coercive.
-"""
-
-
-class GemanMcClure(Potential):
-    """The Geman & McClure non-convex non-coervice function
-
-    phi(u) = u^2 / (2 δ^2 + u^2)
-
-    """
-
-    def __init__(self, delta):
-        super().__init__(1 / (delta ** 2))
-        self.delta = delta
-        self.convex = False
-        self.coercive = False
-
-    def value(self, point):
-        return point ** 2 / (2 * self.delta ** 2 + point ** 2)
-
-    def gradient(self, point):
-        return 4 * point * self.delta ** 2 / (2 * self.delta ** 2 + point ** 2) ** 2
-
-    def __repr__(self):
-        return """
-
-          u²
-φ(u) = ─────────
-       u² + 2⋅δ²
-
-Non-convex and non-coercive
-"""
-
-
-class SquareTruncApprox(Potential):
-    """The non-convex non-coercive, truncated square approximation
-
-    phi(u) = 1 - exp(- u^2/(2 δ^2) );
-
-    """
-
-    def __init__(self, delta):
-        super().__init__(inf=1 / (delta ** 2))
-        self.delta = delta
-        self.convex = False
-        self.coercive = False
-
-    def value(self, point):
-        return 1 - np.exp(-(point ** 2) / (2 * self.delta ** 2))
-
-    def gradient(self, point):
-        return point / (self.delta ** 2) * np.exp(-(point ** 2) / (2 * self.delta ** 2))
-
-    def __repr__(self):
-        return """
-
-               u²
-            - ────
-              2⋅δ²
-φ(u) = 1 - e
-
-Non-convex and non-coercive
-"""
-
-
-class HerbertLeahy(Potential):
-    """The Herbert & Leahy non-convex coercive function
-
-    phi(u) = log(1 + u^2 / δ^2)
-
-    """
-
-    def __init__(self, delta):
-        super().__init__(inf=np.inf)
-        self.delta = delta
-        self.convex = False
-        self.coercive = True
-
-    def value(self, point):
-        return np.log(1 + point ** 2 / self.delta ** 2)
-
-    def gradient(self, point):
-        return 2 * point / (self.delta ** 2 + point ** 2)
-
-    def __repr__(self):
-        return """
-
-          ⎛    u²⎞
-φ(u) = log⎜1 + ──⎟
-          ⎝    δ²⎠
-
-Non-convex and coercive
-"""
-
-
 def mmmg(
-    crit_list: List[Criterion],
+    crit_list: List["Criterion"],
     init: np.ndarray,
     tol: float = 1e-4,
     max_iter: int = 500,
@@ -430,18 +23,16 @@ def mmmg(
     parameters. On the contrary, the criterion must meet conditions. In
     particular, the criterion must be like
 
-    .. math::
-       J(x) = \sum_k \phi(V x - \omega)
+       `J(x) = ∑ₖ φₖ(Vₖ·x - ωₖ)`
 
-    where :math:`x` is the unkown of size :math:`N`, :math:`V` a matrix of size
-    :math:`M \times N` and :math:`\omega` of size :math:`M`. In addition, among
-    other conditions, :math:`\phi` must be differentiable (see documentation,
-    [1], and [2] for details).
+    where `x` is the unkown of size `N`, `V` a matrix of size `M × N` and `ω` of
+    size `M`. In addition, among other conditions, `φ` must be differentiable
+    (see documentation, [1], and [2] for details).
 
     Parameters
     ----------
-    crit_list : list of Criterion
-        A list of `Criterion` object that represent :math:`\phi(V x - \omega)`.
+    crit\_list : list of Criterion
+        A list of `Criterion` object that represent `φ(V·x - ω)`.
         The use of this list is necessary to allow efficient implementation and
         reuse of calculations. See notes section for details.
 
@@ -449,7 +40,7 @@ def mmmg(
         The initial point
 
     tol : float, optional
-        The stopping tolerance. The algorithm is stopped with the gradient norm
+        The stopping tolerance. The algorithm is stopped when the gradient norm
         is inferior to `init.size * tol`.
 
     max_iter : int, optional
@@ -535,6 +126,438 @@ def mmmg(
         step_list.append(step)
 
     return np.reshape(point, shape), norm_grad
+
+
+class Criterion:
+    """A criterion μ ∑ φ(V·x - ω)"""
+
+    def __init__(
+        self,
+        operator: Callable,
+        adjoint: Callable,
+        potential: Callable,
+        potential_grad: Callable,
+        hyper: float = 1,
+        mean: np.ndarray = 0,
+    ):
+        """A criterion μ ∑ φ(V·x - ω)
+
+        Parameters
+        ----------
+        operator: callable
+          V·x
+        adjoing: callable
+          Vᵗ·e
+        potential: callable
+          φ
+        potential\_grad: callable
+          φ'
+        hyper: float
+          μ
+        mean: ndarray (optionnal)
+          ω
+        """
+        self.operator = operator
+        self.adjoint = adjoint
+        self.hyper = hyper
+        self.mean = mean
+        self.potential = potential
+        self.potential_grad = potential_grad
+
+    def value(self, point: np.ndarray):
+        """The value of the criterion at given point
+
+        Return μ·φ(V·x - ω)
+        """
+        return self.hyper * np.sum(self.potential(self.operator(point) - self.mean))
+
+    def gradient(self, point: np.ndarray):
+        """The gradient of the criterion at given point
+
+        Return μ·Vᵗ·φ'(V·x - ω)
+        """
+        return self.hyper * self.adjoint(
+            self.potential_grad(self.operator(point) - self.mean)
+        )
+
+    def norm_mat_major(self, vecs: np.ndarray, point: np.ndarray):
+        """Return the normal matrix of the major function
+
+        Given vecs `W = V·S`, return `Wᵗ·diag(b)·W`
+
+        where S are the vectors defining the subspace and `b` are GR
+        coefficients at given point.
+
+        Parameters
+        ----------
+        vecs : np.ndarray
+            The `W` vectors
+
+        point : np.ndarray
+            The given point where to compute GR coefficients `b`
+
+        """
+        return vecs.T @ (self.gr_coeffs(point).reshape((-1, 1)) * vecs)
+
+    def gr_coeffs(self, point: np.ndarray):
+        """Return the GR coefficients at given point
+
+        φ'(V·x - ω) / (V·x - ω)
+
+        """
+        obj = self.operator(point) - self.mean
+        return self.potential.gr_coeffs(obj)
+
+    def __call__(self, point: np.ndarray):
+        return self.value(point)
+
+
+class QuadCriterion(Criterion):
+    """A quadratic criterion μ||V·x - ω||^2"""
+
+    def __init__(
+        self,
+        operator: Callable,
+        adjoint: Callable,
+        normal: Callable,
+        hyper: float = 1,
+        mean: np.ndarray = 0,
+    ):
+        """A quadratic criterion μ||V·x - ω||^2
+
+        Parameters
+        ----------
+        operator: Callable
+          V·x
+        adjoing: Callable
+          Vᵗ·e
+        normal: Callable
+          VᵗV·x
+        hyper: float (optionnal)
+          μ
+        mean: ndarray (optionnal)
+          ω
+        """
+        square = Square()
+        super().__init__(operator, adjoint, square, square.gradient, hyper, mean)
+        self.normal = normal
+        self.mean_t = self.adjoint(mean)
+
+    def value(self, point):
+        """The value of the criterion at given point
+
+        Return `μ·||V·x - ω||^2`
+        """
+        return self.hyper * np.sum((self.operator(point) - self.mean) ** 2) / 2
+
+    def gradient(self, point: np.ndarray):
+        """The gradient of the criterion at given point
+
+        Return `μ·Vᵗ(V·x - ω)`
+
+        Notes
+        -----
+        Use `normal` `Q` callable internally for potential better efficiency,
+        with computation of `μ·(Q.x - b)` where `Q = Vᵗ·V` and `b = Vᵗ·ω` is
+        precomputed
+
+        """
+        return self.hyper * (self.normal(point) - self.mean_t)
+
+    def norm_mat_major(self, vecs: np.ndarray, point: np.ndarray):
+        """Return the normal matrix of the major function
+
+        Given W = V·D, return Wᵗ·W.
+
+        Parameters
+        ----------
+        vecs : np.ndarray
+            The `W` vectors
+
+        point : np.ndarray
+            The given point where to compute GR coefficients
+        """
+        return vecs.T @ vecs
+
+    def gr_coeffs(self, point: np.ndarray):
+        """Return the GR coefficients at given point
+
+        Always return the scalar 1.
+
+        Notes
+        -----
+        Not use internally and present for consistency.
+
+        """
+        return 1
+
+    def __call__(self, point):
+        return self.value(point)
+
+
+class Potential(abc.ABC):
+    """An abstract base class for the potentials φ.
+
+    Attributs
+    ---------
+    inf : float
+        The value of lim_{u→0} φ'(u) / u
+    """
+
+    def __init__(self, inf):
+        """An abstract base class for the potentials φ
+
+        Parameters
+        ----------
+        inf : float
+          The value of lim_{u→0} φ'(u) / u
+        """
+        self.inf = inf
+
+    @abc.abstractmethod
+    def value(self, point: np.ndarray):
+        """The value at given point"""
+        return NotImplemented
+
+    @abc.abstractmethod
+    def gradient(self, point: np.ndarray):
+        """The gradient at given point"""
+        return NotImplemented
+
+    def gr_coeffs(self, point: np.ndarray):
+        """The GR coefficients at given point"""
+        aux = self.inf * np.ones_like(point)
+        idx = point != 0
+        aux[idx] = self.gradient(point[idx]) / point[idx]
+        return aux
+
+    def __call__(self, point: np.ndarray):
+        """The value at given point"""
+        return self.value(point)
+
+
+class VminProj(Potential):
+    """The projection criterion
+
+    D(u) = ½ ||P_[m, +∞[(u) - m||^2
+    """
+
+    def __init__(self, vmin):
+        """The projection criterion
+
+        D(u) = ½ ||P_[m, +∞[(u) - m||^2
+        """
+        super().__init__(inf=1)
+        self.vmin = vmin
+        self.convex = True
+        self.coercive = True
+
+    def value(self, point):
+        return np.sum((point[point < self.vmin] - self.vmin) ** 2 / 2)
+
+    def gradient(self, point):
+        return np.where(point > self.vmin, 0, point - self.vmin)
+
+
+class VmaxProj(Potential):
+    """The projection criterion
+
+    D(u) = ½ ||P_]-∞, M](u) - M||^2
+    """
+
+    def __init__(self, vmax):
+        super().__init__(inf=1)
+        self.vmax = vmax
+        self.convex = True
+        self.coercive = True
+
+    def value(self, point):
+        return np.sum((point[point > self.vmax] - self.vmax) ** 2 / 2)
+
+    def gradient(self, point):
+        return np.where(point < self.vmax, 0, point - self.vmax)
+
+
+class Square(Potential):
+    """The square convex coercive function
+
+    φ(u) = ½ u²
+
+    """
+
+    def __init__(self):
+        super().__init__(inf=1)
+        self.convex = True
+        self.coercive = True
+
+    def value(self, point):
+        return point ** 2 / 2
+
+    def gradient(self, point):
+        return point
+
+    def __repr__(self):
+        return """
+
+φ(u) = ½ u²
+
+Convex and coercive
+"""
+
+
+class Hyperbolic(Potential):
+    """The convex coercive hyperbolic function
+
+    φ(u) = √(1 + u²/delta²) - 1
+
+    """
+
+    def __init__(self, delta):
+        super().__init__(inf=1 / (delta ** 2))
+        self.inf = 1 / (2 * delta)  # To check
+        self.delta = delta
+        self.convex = True
+        self.coercive = True
+
+    def value(self, point):
+        return np.sqrt(1 + (point ** 2) / (self.delta ** 2)) - 1
+
+    def gradient(self, point):
+        return (point / (self.delta ** 2)) * np.sqrt(1 + (point ** 2) / self.delta ** 2)
+
+    def __repr__(self):
+        return """
+           _______
+          ╱ u²
+φ(u) =   ╱  ── + 1 - 1
+       ╲╱   δ²
+
+Convex and coercive
+"""
+
+
+class Huber(Potential):
+    """The convex coercive Huber function
+
+    φ(u) = u², if |u| < δ, δ|u| - δ²/2, otherwise.
+
+    """
+
+    def __init__(self, delta):
+        super().__init__(inf=1)
+        self.delta = delta
+        self.convex = True
+        self.coercive = True
+
+    def value(self, point):
+        return np.where(np.abs(point) <= self.delta, point ** 2, np.abs(point))
+
+    def gradient(self, point):
+        return np.where(
+            np.abs(point) <= self.delta, 2 * point, 2 * self.delta * np.sign(point)
+        )
+
+    def __repr__(self):
+        return """
+       ⎛
+       ⎜  u², if |u| < δ
+φ(u) = ⎜
+       ⎜ |u|, otherwise
+       ⎝
+
+Convex and coercive.
+"""
+
+
+class GemanMcClure(Potential):
+    """The Geman & McClure non-convex non-coervice function
+
+    φ(u) = u² / (2 δ² + u²)
+
+    """
+
+    def __init__(self, delta):
+        super().__init__(1 / (delta ** 2))
+        self.delta = delta
+        self.convex = False
+        self.coercive = False
+
+    def value(self, point):
+        return point ** 2 / (2 * self.delta ** 2 + point ** 2)
+
+    def gradient(self, point):
+        return 4 * point * self.delta ** 2 / (2 * self.delta ** 2 + point ** 2) ** 2
+
+    def __repr__(self):
+        return """
+
+          u²
+φ(u) = ─────────
+       u² + 2⋅δ²
+
+Non-convex and non-coercive
+"""
+
+
+class SquareTruncApprox(Potential):
+    """The non-convex non-coercive, truncated square approximation
+
+    φ(u) = 1 - exp(- u²/(2 δ²)
+
+    """
+
+    def __init__(self, delta):
+        super().__init__(inf=1 / (delta ** 2))
+        self.delta = delta
+        self.convex = False
+        self.coercive = False
+
+    def value(self, point):
+        return 1 - np.exp(-(point ** 2) / (2 * self.delta ** 2))
+
+    def gradient(self, point):
+        return point / (self.delta ** 2) * np.exp(-(point ** 2) / (2 * self.delta ** 2))
+
+    def __repr__(self):
+        return """
+
+               u²
+            - ────
+              2⋅δ²
+φ(u) = 1 - e
+
+Non-convex and non-coercive
+"""
+
+
+class HerbertLeahy(Potential):
+    """The Herbert & Leahy non-convex coercive function
+
+    φ(u) = log(1 + u² / δ²)
+
+    """
+
+    def __init__(self, delta):
+        super().__init__(inf=np.inf)
+        self.delta = delta
+        self.convex = False
+        self.coercive = True
+
+    def value(self, point):
+        return np.log(1 + point ** 2 / self.delta ** 2)
+
+    def gradient(self, point):
+        return 2 * point / (self.delta ** 2 + point ** 2)
+
+    def __repr__(self):
+        return """
+
+          ⎛    u²⎞
+φ(u) = log⎜1 + ──⎟
+          ⎝    δ²⎠
+
+Non-convex and coercive
+"""
 
 
 # Not used finally

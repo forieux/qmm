@@ -56,27 +56,23 @@ class Operator(abc.ABC):
 
     @abc.abstractmethod
     def adjoint(self, point):
-        """Return H^t·e"""
+        """Return Hᵗ·e"""
         return NotImplemented
 
     def fwback(self, point):
-        """Return H^tH·x"""
+        """Return HᵗH·x"""
         return self.backward(self.forward(point))
 
     def backward(self, point):
-        """Return H^t·e"""
+        """Return Hᵗ·e"""
         return self.adjoint(point)
 
     def transpose(self, point):
-        """Return H^t·e"""
+        """Return Hᵗ·e"""
         return self.adjoint(point)
 
     def T(self, point):
-        """Return H^t·e"""
-        return self.adjoint(point)
-
-    def t(self, point):
-        """Return H^t·e"""
+        """Return Hᵗ·e"""
         return self.adjoint(point)
 
     def __call__(self, point):
@@ -96,6 +92,11 @@ class Conv2(Operator):
     """
 
     def __init__(self, ir, shape):
+        """The 2D convolution on image
+
+        Does not suppose periodic or circular condition.
+        """
+
         self.imp_resp = ir
         self.shape = shape
         self.ir_shape = ir.shape
@@ -121,10 +122,29 @@ class Conv2(Operator):
 class Diff(Operator):
     """The difference operator
 
-    Use `numpy.diff` function. Implement the correct adjoint of np.diff"""
+    The first order differences along an axis
+
+    Attributes
+    ----------
+    axis : int
+        The axis along which the differences is performed
+
+    Notes
+    -----
+    Use `numpy.diff` internaly and implement the correct adjoint, with
+    `numpy.diff` also.
+
+    """
 
     def __init__(self, axis):
-        """axis: the axis along which to perform the diff"""
+        """The difference operator
+
+        The first order differences along an axis
+
+        Parameters
+        ----------
+        axis: int
+            the axis along which to perform the diff"""
         self.axis = axis
 
     def response(self, ndim):
@@ -134,7 +154,7 @@ class Diff(Operator):
         convolution with this response.
 
         The adjoint operator corresponds the the 'full' convolution with flipped
-        response
+        response.
 
         """
         ir = np.zeros(ndim * [2])
@@ -148,20 +168,9 @@ class Diff(Operator):
         return ir2fr(self.response(ndim), shape)
 
     def forward(self, point):
-        """
-        -1   1   0   0
-         0  -1   1   0
-         0   0  -1   1
-        """
         return np.diff(point, axis=self.axis)
 
     def adjoint(self, point):
-        """
-        -1   0   0
-         1  -1   0
-         0   1  -1
-         0   0   1
-        """
         return -np.diff(point, prepend=0, append=0, axis=self.axis)
 
 
@@ -178,30 +187,25 @@ def ir2fr(imp_resp, shape: Tuple, center=None, real=True):
 
     Parameters
     ----------
-    imp_resp : ndarray
-
+    imp\_resp : np.ndarray
       The impulsionnal responses.
 
     shape : tuple of int
-
-
       A tuple of integer corresponding to the target shape of the frequency
       responses, without hermitian property. `len(shape) >= ndarray.ndim`. The
       DFT is performed on the `len(shape)` last axis of ndarray.
 
     center : tuple of int, optional
-
       The origin index of the impulsionnal response. The middle by default.
 
-    real : boolean (optionnal, default True)
-
+    real : boolean, optionnal
       If True, imp_resp is supposed real, the hermissian property is used with
       rfftn DFT and the output has `shape[-1] / 2 + 1` elements on the last
       axis.
 
     Returns
     -------
-    y : ndarray
+    y : np.ndarray
 
       The frequency responses of shape `shape` on the last `len(shape)`
       dimensions.
@@ -212,15 +216,9 @@ def ir2fr(imp_resp, shape: Tuple, center=None, real=True):
     - The output is returned as C-contiguous array.
 
     - For convolution, the result have to be used with unitary discrete Fourier
-      transform for the signal (udftn or equivalent).
+      transform for the signal (norm="ortho" of fft).
 
     - DFT are always peformed on last axis for efficiency (C-order array).
-
-    - Results is always C-contiguous.
-
-    See Also
-    --------
-    udftn, uidftn, urdftn, uirdftn
 
     """
     if len(shape) > imp_resp.ndim:
