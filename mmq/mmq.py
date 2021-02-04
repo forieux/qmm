@@ -8,111 +8,7 @@ import numpy as np
 import numpy.linalg as la
 
 
-def mmmg(
-    crit_list: List,
-    init: np.ndarray,
-    tol: float = 1e-4,
-    max_iter: int = 500,
-):
-    """The 3mg optimisation algorithm
-
-    Parameters
-    ----------
-    crit_list : list of Criterion
-        A list of
-        A callable that take the current point as a unique argument and return
-        the gradient at that point.
-
-    major_curve : callable
-        A callable that take the current point as a unique argument and return
-        the major_curve of the quadratic majoring function at that point.
-
-    init : ndarray
-        The initial point
-
-    tol : float, optional
-        The stopping tolerance
-
-    max_it : int, optional
-        The maximum number of iteration
-
-    Returns
-    -------
-    minimiser : ndarray
-        The minimiser of the criterion with same shape than `init`.
-
-    norm_grad : list of float
-        The successive gradient norm
-
-    Notes
-    -----
-    The output of callable, and the `init` value, are automatically vectorized
-    internally. However, the output is reshaped as the `init` array.
-
-    References
-    ----------
-    .. [1] C. Labat and J. Idier, “Convergence of Conjugate Gradient Methods
-           with a Closed-Form Stepsize Formula,” J Optim Theory Appl, p.
-           18, 2008.
-    .. [2] E. Chouzenoux, J. Idier, and S. Moussaoui, “A Majorize–Minimize
-           Strategy for Subspace Optimization Applied to Image Restoration,”
-           IEEE Trans. on Image Process., vol. 20, no. 6, pp. 1517–1528, Jun.
-           2011, doi: 10.1109/TIP.2010.2103083.
-    """
-    shape = init.shape
-
-    point = init.reshape((-1, 1))
-    norm_grad = []
-
-    # Vectorized call
-    def vect(func, point):
-        return np.reshape(func(np.reshape(point, shape)), (-1, 1))
-
-    # Vectorized gradient
-    def gradient(point):
-        return sum(vect(crit.gradient, point) for crit in crit_list)
-
-    # The first previous moves are initialized with 0 array. Consquently, the
-    # first iterations implementation can be improved, at the cost of if
-    # statement.
-    move = np.zeros_like(point)
-    op_directions = [np.tile(vect(crit.operator, move), 2) for crit in crit_list]
-    step = np.ones((2, 1))
-    step_list = [step]
-
-    for _ in range(max_iter):
-        # Vectorized gradient
-        grad = gradient(point)
-        norm_grad.append(la.norm(grad))
-
-        # Stopping test
-        if norm_grad[-1] < point.size * tol:
-            break
-
-        # Memory gradient directions
-        directions = np.c_[-grad, move]
-
-        # Step by Majorize-Minimize
-        op_directions = [
-            np.c_[vect(crit.operator, grad), i_op_dir @ step]
-            for crit, i_op_dir in zip(crit_list, op_directions)
-        ]
-        norm_mat_major = sum(
-            crit.norm_mat_major(i_op_dir, point.reshape(shape))
-            for crit, i_op_dir in zip(crit_list, op_directions)
-        )
-        step = -la.pinv(norm_mat_major) @ (directions.T @ grad)
-        move = directions @ step
-
-        # update
-        point += move
-
-        step_list.append(step)
-
-    return np.reshape(point, shape), norm_grad
-
-
-class Criterion(abc.ABC):
+class BaseCriterion(abc.ABC):
     """An abstract base class for criteria like μ sum_c φ(v_c^t·x - ω)"""
 
     def __init__(
@@ -152,7 +48,7 @@ class Criterion(abc.ABC):
         return self.value(point)
 
 
-class CvxCriterion(Criterion):
+class Criterion(BaseCriterion):
     """A criterion μ sum_c φ(v_c^t·x - ω)"""
 
     def __init__(
@@ -212,7 +108,7 @@ class CvxCriterion(Criterion):
         return self.value(point)
 
 
-class QuadCriterion(Criterion):
+class QuadCriterion(BaseCriterion):
     """A quadratic criterion μ||H·x - ω||^2"""
 
     def __init__(
@@ -517,6 +413,128 @@ class HerbertLeahy(Potential):
 
 Non-convex and coercive
 """
+
+
+def mmmg(
+    crit_list: List[Criterion],
+    init: np.ndarray,
+    tol: float = 1e-4,
+    max_iter: int = 500,
+):
+    """The Majorize-Minimize Memory Gradient (3mg) algorithm
+
+    The 3mg (see [2] and [1]) is a subspace memory-gradient optimization
+    algorithm with an explicit step formula based on Majorize-Minimize Quadratic
+    approach. This ensures quick convergence of the algorithm to a minimizer of
+    the criterion without line search for the step and without tuning
+    parameters. On the contrary, the criterion must meet conditions. In
+    particular, the criterion must be like
+
+    .. math::
+       J(x) = \sum_k \phi(V x - \omega)
+
+    where :math:`x` is the unkown of size :math:`N`, :math:`V` a matrix of size
+    :math:`M \times N` and :math:`\omega` of size :math:`M`. In addition, among
+    other conditions, :math:`\phi` must be differentiable (see documentation,
+    [1], and [2] for details).
+
+    Parameters
+    ----------
+    crit_list : list of Criterion
+        A list of `Criterion` object that represent :math:`\phi(V x - \omega)`.
+        The use of this list is necessary to allow efficient implementation and
+        reuse of calculations. See notes section for details.
+
+    init : ndarray
+        The initial point
+
+    tol : float, optional
+        The stopping tolerance. The algorithm is stopped with the gradient norm
+        is inferior to `init.size * tol`.
+
+    max_iter : int, optional
+        The maximum number of iteration
+
+    Returns
+    -------
+    minimiser : ndarray
+        The minimiser of the criterion with same shape than `init`.
+
+    norm_grad : list of float
+        The norm of the gradient during iterations.
+
+    Notes
+    -----
+    The output of callable (e. g. operator in Criterion), and the `init` value,
+    are automatically vectorized internally. However, the output is reshaped as
+    the `init` array.
+
+    The algorithm use `Criterion` data structure. Thanks to dynamic nature of
+    python, this is not required and user can provide it's own structure, see
+    documentation. `Criterion` however comes with boilerplate.
+
+    References
+    ----------
+    .. [1] C. Labat and J. Idier, “Convergence of Conjugate Gradient Methods
+       with a Closed-Form Stepsize Formula,” J Optim Theory Appl, p. 18, 2008.
+
+    .. [2] E. Chouzenoux, J. Idier, and S. Moussaoui, “A Majorize–Minimize
+       Strategy for Subspace Optimization Applied to Image Restoration,” IEEE
+       Trans. on Image Process., vol. 20, no. 6, pp. 1517–1528, Jun. 2011, doi:
+       10.1109/TIP.2010.2103083.
+
+    """
+    shape = init.shape
+
+    point = init.reshape((-1, 1))
+    norm_grad = []
+
+    # Vectorized call
+    def vect(func, point):
+        return np.reshape(func(np.reshape(point, shape)), (-1, 1))
+
+    # Vectorized gradient
+    def gradient(point):
+        return sum(vect(crit.gradient, point) for crit in crit_list)
+
+    # The first previous moves are initialized with 0 array. Consquently, the
+    # first iterations implementation can be improved, at the cost of if
+    # statement.
+    move = np.zeros_like(point)
+    op_directions = [np.tile(vect(crit.operator, move), 2) for crit in crit_list]
+    step = np.ones((2, 1))
+    step_list = [step]
+
+    for _ in range(max_iter):
+        # Vectorized gradient
+        grad = gradient(point)
+        norm_grad.append(la.norm(grad))
+
+        # Stopping test
+        if norm_grad[-1] < point.size * tol:
+            break
+
+        # Memory gradient directions
+        directions = np.c_[-grad, move]
+
+        # Step by Majorize-Minimize
+        op_directions = [
+            np.c_[vect(crit.operator, grad), i_op_dir @ step]
+            for crit, i_op_dir in zip(crit_list, op_directions)
+        ]
+        norm_mat_major = sum(
+            crit.norm_mat_major(i_op_dir, point.reshape(shape))
+            for crit, i_op_dir in zip(crit_list, op_directions)
+        )
+        step = -la.pinv(norm_mat_major) @ (directions.T @ grad)
+        move = directions @ step
+
+        # update
+        point += move
+
+        step_list.append(step)
+
+    return np.reshape(point, shape), norm_grad
 
 
 # Not used finally

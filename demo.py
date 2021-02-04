@@ -7,7 +7,7 @@ import numpy as np  # type: ignore
 import scipy.misc  # type: ignore
 import matplotlib.pyplot as plt
 
-from mmqmg import mmqmg, operators  # type: ignore
+from mmqmg import mmq, operators  # type: ignore
 
 imag = scipy.misc.ascent()
 shape = imag.shape
@@ -24,34 +24,30 @@ init = obs.adjoint(data)
 # Regularization
 diffr = operators.Diff(axis=0)
 diffc = operators.Diff(axis=1)
-pot = mmqmg.Huber(delta=10)
+pot = mmq.Huber(delta=10)
 
 # Criterions definition
-data_adeq = mmqmg.QuadCriterion(obs.forward, obs.adjoint, obs.fwback, mean=data)
-priorr_adeq = mmqmg.Criterion(
-    diffr.forward, diffr.adjoint, pot, pot.gradient, hyper=0.01
-)
-priorc_adeq = mmqmg.Criterion(
-    diffc.forward, diffc.adjoint, pot, pot.gradient, hyper=0.01
-)
+data_adeq = mmq.QuadCriterion(obs.forward, obs.adjoint, obs.fwback, mean=data)
+priorr_adeq = mmq.Criterion(diffr.forward, diffr.adjoint, pot, pot.gradient, hyper=0.01)
+priorc_adeq = mmq.Criterion(diffc.forward, diffc.adjoint, pot, pot.gradient, hyper=0.01)
 
 # The Majorize-Minimize Quadratic Memory Gradient algorithm
-res, norm_grad = mmqmg.mmmg([data_adeq, priorr_adeq, priorc_adeq], init, max_iter=200)
+res, norm_grad = mmq.mmmg([data_adeq, priorr_adeq, priorc_adeq], init, max_iter=200)
 
 # Plot
 plt.figure(1)
 plt.clf()
 plt.subplot(2, 2, 1)
 plt.imshow(imag)
-plt.axis([300, 500, 500, 300])
+# plt.axis([300, 500, 500, 300])
 plt.colorbar()
 plt.subplot(2, 2, 2)
 plt.imshow(data)
-plt.axis([300, 500, 500, 300])
+# plt.axis([300, 500, 500, 300])
 plt.colorbar()
 plt.subplot(2, 2, 3)
 plt.imshow(res)
-plt.axis([300, 500, 500, 300])
+# plt.axis([300, 500, 500, 300])
 plt.colorbar()
 plt.subplot(2, 2, 4)
 plt.plot(norm_grad)
