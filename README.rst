@@ -1,7 +1,7 @@
-MMQ
+MM-Q
 ===
 
-MMQ provides Majorize-Minimize Quadratic optimization algorithms. Algorithms
+MM-Q is a python implementation of Majorize-Minimize Quadratic optimization algorithms. Algorithms
 provided here come from that research.
 
 .. [1] C. Labat and J. Idier, “Convergence of Conjugate Gradient Methods with a
@@ -14,6 +14,23 @@ provided here come from that research.
 
 If you use this code, please cite it and the references above.
 
+Majorize-Minimize Quadratic
+---------------------------
+
+The MM-Q optimization algorithm allow to find the minimum of criteria like
+
+.. math::
+   J(x) = \sum_k \phi_k(V_k x - \omega_k)
+
+where ``x`` is the unkown vector of size ``N``, ``V_k`` a linear operator of size ``M × N``, ``omega_k`` a fixed vector of size ``M``, and ``phi_k`` a function that must be differentiable, even, coercive, ``phi(sqrt(·))`` concave, and ``0 < phi'(u) / u < +∞``. If all ``phi_k`` are convex, the criterion is convex and the MM-Q algorithms converge to the global and uniq minimizer. If ``phi_k``, MM-Q algorithm convege to a local minimzer.
+
+A classical example is the resolution of an inverse problem with the minimization of
+
+.. math::
+   J(x) = ||y - H x||^2 + \mu phi(V x)
+
+where ``H`` is the low-pass forward model, ``V`` a regularization operator that approximate gradient and ``phi`` an edge preserving function like Huber.
+
 Features
 --------
 
@@ -23,6 +40,26 @@ Features
 - Several classical criteria like Huber, Geman & McClure, ...
 - Comes with examples of linear operator.
 
+Example
+-------
+
+The ``demo.py`` presents an example on image deconvolution. The first steps is to implements the operators ``V`` and the adjoint ``Vᵗ`` as callable (function or methods). 
+
+After import of ``mmq``, you must instanciate ``Potential`` object that implement ``phi` and ``Criterion`` object that implements ``phi(V x - ω)``
+
+.. code-block:: python
+   import mmq
+   phi = mmq.Huber(delta=10)
+
+   data_adeq = mmq.QuadCriterion(H, Ht, HtH, mean=data)
+   prior = mmq.Criterion(V, Vt, phi, phi.gradient, hyper=0.01)
+   
+Then you can run the algorithm
+
+.. code-block:: python
+   res, norm_grad = mmq.mmmg([data_adeq, prior], init, max_iter=200)
+
+where :code-block:`[data_adeq, prior]` means that the criterion are summed.
 
 Installation
 ------------
