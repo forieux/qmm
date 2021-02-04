@@ -2,7 +2,7 @@ MM-Q
 ====
 
 MM-Q is a python implementation of Majorize-Minimize Quadratic optimization
-algorithms. Algorithms provided here comes from that research.
+algorithms. Algorithms provided here come from that research:
 
 .. [1] C. Labat and J. Idier, “Convergence of Conjugate Gradient Methods with a
    Closed-Form Stepsize Formula,” J Optim Theory Appl, p. 18, 2008.
