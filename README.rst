@@ -42,5 +42,4 @@ orieux AT l2s.centralesupelec.fr
 License
 -------
 
-The project is licensed under the BSD license.
-
+The project is licensed under the GPL3 license.

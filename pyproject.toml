@@ -3,7 +3,7 @@ name = "mmq"
 version = "0.1.0"
 description = "The Majorize-Minimize-Quadratic toolbox"
 authors = ["François Orieux <orieux@l2s.centralesupelec.fr>"]
-license = "GPL"
+license = "GPL3"
 
 [tool.poetry.dependencies]
 python = "^3.8"
