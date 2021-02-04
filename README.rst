@@ -1,5 +1,5 @@
 MM-Q
-===
+====
 
 MM-Q is a python implementation of Majorize-Minimize Quadratic optimization algorithms. Algorithms
 provided here come from that research.
@@ -45,9 +45,10 @@ Example
 
 The ``demo.py`` presents an example on image deconvolution. The first steps is to implements the operators ``V`` and the adjoint ``Vᵗ`` as callable (function or methods). 
 
-After import of ``mmq``, you must instanciate ``Potential`` object that implement ``phi` and ``Criterion`` object that implements ``phi(V x - ω)``
+After import of ``mmq``, you must instanciate ``Potential`` object that implement ``phi`` and ``Criterion`` object that implements ``phi(V x - ω)``
 
-.. code-block:: python
+.. code:: python
+
    import mmq
    phi = mmq.Huber(delta=10)
 
@@ -56,10 +57,11 @@ After import of ``mmq``, you must instanciate ``Potential`` object that implemen
    
 Then you can run the algorithm
 
-.. code-block:: python
+.. code:: python
+
    res, norm_grad = mmq.mmmg([data_adeq, prior], init, max_iter=200)
 
-where :code-block:`[data_adeq, prior]` means that the criterion are summed.
+where :code:`[data_adeq, prior]` means that the criterion are summed.
 
 Installation
 ------------
