@@ -2,7 +2,7 @@ MMQ
 ===
 
 MMQ provides Majorize-Minimize Quadratic optimization algorithms. Algorithms
-provided here come from those research.
+provided here come from that research.
 
 .. [1] C. Labat and J. Idier, “Convergence of Conjugate Gradient Methods with a
     Closed-Form Stepsize Formula,” J Optim Theory Appl, p. 18, 2008.
@@ -20,14 +20,14 @@ Features
 - The ``mmmg``, Majorize-Minimize Memory Gradient algorithm.
 - No restriction on the number of regularizer, input shape, ...
 - Base class for criterion.
-- Several classical criterion like Huber, Geman & McClure, ...
-- Comes with exemples of linear operator.
+- Several classical criteria like Huber, Geman & McClure, ...
+- Comes with examples of linear operator.
 
 
 Installation
 ------------
 
-No installation procedure have been implemented at that time. To install, just
+No installation procedure has been implemented at that time. To install, just
 copy the ``mmq`` directory or the ``mmq.py`` file where your code can access it.
 
 MMQ only depends on ``numpy``.
@@ -35,8 +35,8 @@ MMQ only depends on ``numpy``.
 Documentation
 -------------
 
-Documentation is in ``./docs`` directory and is generated from source file. You
-can see the ``demo.py`` file for an exemple.
+Documentation is in ``./docs`` directory and is generated from the source files. You
+can see the ``demo.py`` file for an example.
 
 Contribute
 ----------
