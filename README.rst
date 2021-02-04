@@ -5,12 +5,12 @@ MMQ provides Majorize-Minimize Quadratic optimization algorithms. Algorithms
 provided here come from that research.
 
 .. [1] C. Labat and J. Idier, “Convergence of Conjugate Gradient Methods with a
-    Closed-Form Stepsize Formula,” J Optim Theory Appl, p. 18, 2008.
+   Closed-Form Stepsize Formula,” J Optim Theory Appl, p. 18, 2008.
 
-.. [2] E. Chouzenoux, J. Idier, and S. Moussaoui, “A Majorize–Minimize Strategy
-    for Subspace Optimization Applied to Image Restoration,” IEEE Trans. on
-    Image Process., vol. 20, no. 6, pp. 1517–1528, Jun. 2011, doi:
-    10.1109/TIP.2010.2103083.
+   [2] E. Chouzenoux, J. Idier, and S. Moussaoui, “A Majorize–Minimize Strategy
+   for Subspace Optimization Applied to Image Restoration,” IEEE Trans. on
+   Image Process., vol. 20, no. 6, pp. 1517–1528, Jun. 2011, doi:
+   10.1109/TIP.2010.2103083.
 
 If you use this code, please cite it and the references above.
 
