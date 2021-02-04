@@ -1,8 +1,8 @@
 MM-Q
 ====
 
-MM-Q is a python implementation of Majorize-Minimize Quadratic optimization algorithms. Algorithms
-provided here come from that research.
+MM-Q is a python implementation of Majorize-Minimize Quadratic optimization
+algorithms. Algorithms provided here comes from that research.
 
 .. [1] C. Labat and J. Idier, “Convergence of Conjugate Gradient Methods with a
    Closed-Form Stepsize Formula,” J Optim Theory Appl, p. 18, 2008.
@@ -17,19 +17,26 @@ If you use this code, please cite it and the references above.
 Majorize-Minimize Quadratic
 ---------------------------
 
-The MM-Q optimization algorithm allow to find the minimum of criteria like
+The MM-Q optimization algorithms allow finding the minimum of criteria like
 
 .. math::
    J(x) = \sum_k \phi_k(V_k x - \omega_k)
 
-where ``x`` is the unkown vector of size ``N``, ``V_k`` a linear operator of size ``M × N``, ``omega_k`` a fixed vector of size ``M``, and ``phi_k`` a function that must be differentiable, even, coercive, ``phi(sqrt(·))`` concave, and ``0 < phi'(u) / u < +∞``. If all ``phi_k`` are convex, the criterion is convex and the MM-Q algorithms converge to the global and uniq minimizer. If ``phi_k``, MM-Q algorithm convege to a local minimzer.
+where ``x`` is the unknown vector of size ``N``, ``V_k`` a linear operator of
+size ``M × N``, ``omega_k`` a fixed vector of size ``M``, and ``phi_k`` a
+function that must be differentiable, even, coercive, ``phi(sqrt(·))`` concave,
+and ``0 < phi'(u) / u < +∞``. If all ``phi_k`` are convex, the criterion is
+convex and the MM-Q algorithms converge to the global and unique minimizer. If
+``phi_k``, MM-Q algorithms converge to a local minimizer.
 
-A classical example is the resolution of an inverse problem with the minimization of
+A classical example is the resolution of an inverse problem with the
+minimization of
 
 .. math::
    J(x) = ||y - H x||^2 + \mu phi(V x)
 
-where ``H`` is the low-pass forward model, ``V`` a regularization operator that approximate gradient and ``phi`` an edge preserving function like Huber.
+where ``H`` is the low-pass forward model, ``V`` a regularization operator that
+approximate gradient and ``phi`` an edge preserving function like Huber.
 
 Features
 --------
@@ -43,9 +50,13 @@ Features
 Example
 -------
 
-The ``demo.py`` presents an example on image deconvolution. The first steps is to implements the operators ``V`` and the adjoint ``Vᵗ`` as callable (function or methods). 
+The ``demo.py`` presents an example on image deconvolution. The first step is to
+implement the operators ``V`` and the adjoint ``Vᵗ`` as callable (function or
+methods). These callable must accept a unique parameter and return a unique
+vector.
 
-After import of ``mmq``, you must instanciate ``Potential`` object that implement ``phi`` and ``Criterion`` object that implements ``phi(V x - ω)``
+After import of ``mmq``, you must instantiate ``Potential`` objects that
+implement ``phi`` and ``Criterion`` object that implements ``phi(V x - ω)``
 
 .. code:: python
 
@@ -74,8 +85,8 @@ MMQ only depends on ``numpy``.
 Documentation
 -------------
 
-Documentation is in ``./docs`` directory and is generated from the source files. You
-can see the ``demo.py`` file for an example.
+Documentation is in ``./docs`` directory and is generated from the source files.
+You can see the ``demo.py`` file for an example.
 
 Contribute
 ----------
