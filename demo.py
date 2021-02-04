@@ -5,9 +5,9 @@
 
 import numpy as np  # type: ignore
 import scipy.misc  # type: ignore
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # type: ignore
 
-from mmqmg import mmq, operators  # type: ignore
+from mmq import mmq, operators  # type: ignore
 
 imag = scipy.misc.ascent()
 shape = imag.shape

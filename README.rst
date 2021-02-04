@@ -15,6 +15,8 @@ Install MMQ by running:
 
     install project
 
+MMQ only depends on numpy.
+
 Contribute
 ----------
 
