@@ -7,7 +7,7 @@ import numpy as np  # type: ignore
 import scipy.misc  # type: ignore
 import matplotlib.pyplot as plt
 
-from mmqmg import mmqmg, crit, operators  # type: ignore
+from mmqmg import mmqmg, operators  # type: ignore
 
 imag = scipy.misc.ascent()
 shape = imag.shape
@@ -24,14 +24,14 @@ init = obs.adjoint(data)
 # Regularization
 diffr = operators.Diff(axis=0)
 diffc = operators.Diff(axis=1)
-pot = crit.Huber(delta=10)
+pot = mmqmg.Huber(delta=10)
 
 # Criterions definition
-data_adeq = crit.QuadCriterion(obs.forward, obs.adjoint, obs.fwback, mean=data)
-priorr_adeq = crit.Criterion(
+data_adeq = mmqmg.QuadCriterion(obs.forward, obs.adjoint, obs.fwback, mean=data)
+priorr_adeq = mmqmg.Criterion(
     diffr.forward, diffr.adjoint, pot, pot.gradient, hyper=0.01
 )
-priorc_adeq = crit.Criterion(
+priorc_adeq = mmqmg.Criterion(
     diffc.forward, diffc.adjoint, pot, pot.gradient, hyper=0.01
 )
 
