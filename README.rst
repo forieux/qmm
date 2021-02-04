@@ -12,7 +12,17 @@ algorithms. Algorithms provided here come from that research:
    Image Process., vol. 20, no. 6, pp. 1517–1528, Jun. 2011, doi:
    10.1109/TIP.2010.2103083.
 
-If you use this code, please cite it and the references above.
+If you use this code, please cite the references above. A citation of this
+library will also be appreciated.
+
+::
+
+   @software{forieuxmmq,
+      title = {MM-Q},
+      author = {Orieux, Fran\c{c}ois},
+      url = {https://github.com/forieux/mmq},
+   }
+
 
 Majorize-Minimize Quadratic
 ---------------------------
