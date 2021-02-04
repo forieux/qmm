@@ -29,8 +29,8 @@ can see the `demo.py` file for an exemple.
 Contribute
 ----------
 
-- Issue Tracker: github.com/$project/$project/issues
-- Source Code: github.com/$project/$project
+- Issue Tracker: github.com/forieux/mmq/issues
+- Source Code: github.com/forieux/mmq
 
 Support
 -------
