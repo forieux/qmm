@@ -1,7 +1,7 @@
 MM-Q
 ====
 
-MM-Q is a python implementation of Majorize-Minimize Quadratic optimization
+MM-Q is a Python implementation of Majorize-Minimize Quadratic optimization
 algorithms. Algorithms provided here come from that research:
 
 .. [1] C. Labat and J. Idier, “Convergence of Conjugate Gradient Methods with a
@@ -36,15 +36,16 @@ size ``M×N``, ``ωₖ`` a fixed vector of size ``M``, ``ψₖ(u) = ∑ᵢφₖ(
 ``φₖ`` a function that must be differentiable, even, coercive, ``φ(√(·))``
 concave, and ``0 < φ'(u) / u < +∞``. If all ``φₖ`` are convex, the criterion is
 convex and the MM-Q algorithms converge to the global and unique minimizer. If
-``φₖ``, MM-Q algorithms converge to a local minimizer.
+``φₖ`` is not convex, MM-Q algorithms converge to a local minimizer.
 
 A classical example is the resolution of an inverse problem with the
 minimization of
 
 ``J(x) = ||y - H·x||² + μ ψ(V·x)``
 
-where ``H`` is the low-pass forward model, ``V`` a regularization operator that
-approximate gradient and ``ψ`` an edge preserving function like Huber.
+where ``H`` is a low-pass forward model, ``V`` a regularization operator that
+approximate gradient (kind of high-pass filter) and ``ψ`` an edge preserving
+function like Huber.
 
 Features
 --------
@@ -60,11 +61,12 @@ Example
 
 The ``demo.py`` presents an example on image deconvolution. The first step is to
 implement the operators ``V`` and the adjoint ``Vᵗ`` as callable (function or
-methods). These callable must accept a unique parameter and return a unique
-vector.
+methods). These callable must accept a unique parameter ``x`` and return a
+unique vector. There is no constraints on the shape, everything is vectorized
+internally.
 
 After import of ``mmq``, you must instantiate ``Potential`` objects that
-implement ``phi`` and ``Criterion`` object that implements ``phi(V x - ω)``
+implement ``psi`` and ``Criterion`` object that implements ``ψ(V·x - ω)``
 
 .. code:: python
 
@@ -85,10 +87,10 @@ where :code:`[data_adeq, prior]` means that the criterion are summed.
 Installation
 ------------
 
-No installation procedure has been implemented at that time. To install, just
-copy the ``mmq`` directory or the ``mmq.py`` file where your code can access it.
+No installation procedure has been implemented at that time. Just copy the
+``mmq`` directory or the ``mmq.py`` file where your code can access it.
 
-MMQ only depends on ``numpy``.
+MMQ only depends on ``numpy`` and Python 3.6.
 
 Documentation
 -------------
