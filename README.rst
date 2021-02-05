@@ -29,24 +29,22 @@ Majorize-Minimize Quadratic
 
 The MM-Q optimization algorithms allow finding the minimum of criteria like
 
-.. math::
-   J(x) = \sum_k \phi_k(V_k x - \omega_k)
+``J(x) = ∑ᵢ ψₖ(Vₖ·x - ωₖ)``
 
-where ``x`` is the unknown vector of size ``N``, ``V_k`` a linear operator of
-size ``M × N``, ``omega_k`` a fixed vector of size ``M``, and ``phi_k`` a
-function that must be differentiable, even, coercive, ``phi(sqrt(·))`` concave,
-and ``0 < phi'(u) / u < +∞``. If all ``phi_k`` are convex, the criterion is
+where ``x`` is the unknown vector of size ``N``, ``Vₖ`` a linear operator of
+size ``M×N``, ``ωₖ`` a fixed vector of size ``M``, ``ψₖ(u) = ∑ᵢφₖ(uᵢ)``, and
+``φₖ`` a function that must be differentiable, even, coercive, ``φ(√(·))``
+concave, and ``0 < φ'(u) / u < +∞``. If all ``φₖ`` are convex, the criterion is
 convex and the MM-Q algorithms converge to the global and unique minimizer. If
-``phi_k``, MM-Q algorithms converge to a local minimizer.
+``φₖ``, MM-Q algorithms converge to a local minimizer.
 
 A classical example is the resolution of an inverse problem with the
 minimization of
 
-.. math::
-   J(x) = ||y - H x||^2 + \mu phi(V x)
+``J(x) = ||y - H·x||² + μ ψ(V·x)``
 
 where ``H`` is the low-pass forward model, ``V`` a regularization operator that
-approximate gradient and ``phi`` an edge preserving function like Huber.
+approximate gradient and ``ψ`` an edge preserving function like Huber.
 
 Features
 --------
