@@ -66,7 +66,7 @@ unique vector. There is no constraints on the shape, everything is vectorized
 internally.
 
 After import of ``mmq``, you must instantiate ``Potential`` objects that
-implement ``psi`` and ``Criterion`` object that implements ``ψ(V·x - ω)``
+implement ``φ`` and ``Criterion`` object that implements ``ψ(V·x - ω)``
 
 .. code:: python
 
