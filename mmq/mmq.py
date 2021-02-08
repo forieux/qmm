@@ -51,7 +51,7 @@ def mmmg(
 
     Parameters
     ----------
-    crit\_list : list of Criterion
+    crit_list : list of Criterion
         A list of `Criterion` object that represent `φ(V·x - ω)`.
         The use of this list is necessary to allow efficient implementation and
         reuse of calculations. See notes section for details.
@@ -170,7 +170,7 @@ class Criterion:
           Vᵗ·e
         potential: callable
           φ
-        potential\_grad: callable
+        potential_grad: callable
           φ'
         hyper: float
           μ
