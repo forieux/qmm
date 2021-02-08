@@ -38,8 +38,8 @@ concave, and ``0 < φ'(u) / u < +∞``. If all ``φₖ`` are convex, the criteri
 convex and the MM-Q algorithms converge to the global and unique minimizer. If
 ``φₖ`` is not convex, MM-Q algorithms converge to a local minimizer.
 
-A classical example, like in the figure below, is the resolution of an inverse
-problem with the minimization of
+A classical example, like in the figure below that show an image deconvolution 
+problem, is the resolution of an inverse problem with the minimization of
 
 ``J(x) = ||y - H·x||² + μ ψ(V·x)``
 
