@@ -32,7 +32,12 @@ priorr_adeq = mmq.Criterion(diffr.forward, diffr.adjoint, pot, pot.gradient, hyp
 priorc_adeq = mmq.Criterion(diffc.forward, diffc.adjoint, pot, pot.gradient, hyper=0.01)
 
 # The Majorize-Minimize Quadratic Memory Gradient algorithm
-res, norm_grad = mmq.mmmg([data_adeq, priorr_adeq, priorc_adeq], init, max_iter=200)
+res, (mg_norm_grad, mg_time) = mmq.mmmg(
+    [data_adeq, priorr_adeq, priorc_adeq], init, max_iter=200
+)
+cg_res, (cg_norm_grad, cg_time) = mmq.mmcg(
+    [data_adeq, priorr_adeq, priorc_adeq], init, max_iter=200
+)
 
 # Plot
 plt.figure(1)
@@ -50,4 +55,8 @@ plt.imshow(res)
 # plt.axis([300, 500, 500, 300])
 plt.colorbar()
 plt.subplot(2, 2, 4)
-plt.plot(norm_grad)
+# plt.plot(cg_norm_grad, ".-", label="CG")
+# plt.plot(mg_norm_grad, ".-", label="MG")
+plt.plot(cg_time, ".-", label="CG")
+plt.plot(mg_time, ".-", label="MG")
+plt.legend()

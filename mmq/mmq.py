@@ -22,6 +22,7 @@ the `mmmg` function needs in practive any object with three specific methods.
 
 import functools
 import abc
+import time
 from typing import Callable, Tuple, List
 
 import numpy as np
@@ -97,7 +98,7 @@ def mmmg(
     """
     shape = init.shape
 
-    point = init.reshape((-1, 1))
+    point = init.reshape((-1, 1)).copy()
     norm_grad = []
 
     # Vectorized call
@@ -114,14 +115,15 @@ def mmmg(
     move = np.zeros_like(point)
     op_directions = [np.tile(vect(crit.operator, move), 2) for crit in crit_list]
     step = np.ones((2, 1))
-    step_list = [step]
 
+    cpu_time = [time.time()]
     for _ in range(max_iter):
         # Vectorized gradient
         grad = gradient(point)
         norm_grad.append(la.norm(grad))
 
         # Stopping test
+        cpu_time.append(time.time())
         if norm_grad[-1] < point.size * tol:
             break
 
@@ -143,9 +145,80 @@ def mmmg(
         # update
         point += move
 
-        step_list.append(step)
+    return np.reshape(point, shape), (
+        norm_grad,
+        [toc - cpu_time[0] for toc in cpu_time[1:]],
+    )
 
-    return np.reshape(point, shape), norm_grad
+
+def mmcg(
+    crit_list: List["Criterion"],
+    init: np.ndarray,
+    precond: Callable = None,
+    tol: float = 1e-4,
+    max_iter: int = 500,
+):
+    shape = init.shape
+    k = 0
+
+    if precond is None:
+        precond = lambda x: x
+
+    # Vectorized call
+    def vect(func, point):
+        return np.reshape(func(np.reshape(point, shape)), (-1, 1))
+
+    # Vectorized gradient
+    def gradient(point):
+        return sum(vect(crit.gradient, point) for crit in crit_list)
+
+    point = init.reshape((-1, 1)).copy()
+
+    cpu_time: List[float] = [time.time()]
+
+    residual = -gradient(point)
+    sec = precond(residual)
+    direction = sec
+    delta = residual.T @ direction
+    norm_res: List[float] = [la.norm(residual)]
+
+    for _ in range(max_iter):
+        # update
+        op_direction = [vect(crit.operator, direction) for crit in crit_list]
+
+        norm_mat_major = sum(
+            crit.norm_mat_major(i_op_dir, point.reshape(shape))
+            for crit, i_op_dir in zip(crit_list, op_direction)
+        )
+        step = direction.T @ residual / float(norm_mat_major)
+        point += step * direction
+
+        # Vectorized gradient
+        residual = -gradient(point)
+
+        # Stopping test
+        cpu_time.append(time.time())
+        if (norm_res := [*norm_res, la.norm(residual)])[-1] < point.size * tol:
+            break
+
+        # Direction
+        delta_old = delta
+        delta_mid = residual.T @ sec
+        sec = precond(residual)
+        delta = residual.T @ sec
+        beta = (delta - delta_mid) / delta_old
+
+        # reset
+        if (k := k + 1) == init.size or beta <= 0:
+            direction = sec
+            k = 0
+        else:
+            direction = sec + beta * direction
+
+    return np.reshape(point, shape), (
+        norm_res,
+        [toc - cpu_time[0] for toc in cpu_time[1:]],
+    )
 
 
 class Criterion:
