@@ -38,14 +38,16 @@ concave, and ``0 < φ'(u) / u < +∞``. If all ``φₖ`` are convex, the criteri
 convex and the MM-Q algorithms converge to the global and unique minimizer. If
 ``φₖ`` is not convex, MM-Q algorithms converge to a local minimizer.
 
-A classical example is the resolution of an inverse problem with the
-minimization of
+A classical example, like in the figure below, is the resolution of an inverse
+problem with the minimization of
 
 ``J(x) = ||y - H·x||² + μ ψ(V·x)``
 
 where ``H`` is a low-pass forward model, ``V`` a regularization operator that
 approximate gradient (kind of high-pass filter) and ``ψ`` an edge preserving
 function like Huber.
+
+.. image:: ./docs/image.png
 
 Features
 --------
