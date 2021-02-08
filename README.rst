@@ -34,9 +34,13 @@ The MM-Q optimization algorithms allow finding the minimum of criteria like
 where ``x`` is the unknown vector of size ``N``, ``Vₖ`` a linear operator of
 size ``M×N``, ``ωₖ`` a fixed vector of size ``M``, ``ψₖ(u) = ∑ᵢφₖ(uᵢ)``, and
 ``φₖ`` a function that must be differentiable, even, coercive, ``φ(√(·))``
-concave, and ``0 < φ'(u) / u < +∞``. If all ``φₖ`` are convex, the criterion is
-convex and the MM-Q algorithms converge to the global and unique minimizer. If
-``φₖ`` is not convex, MM-Q algorithms converge to a local minimizer.
+concave, and ``0 < φ'(u) / u < +∞``.
+
+The optimization is done thanks to quadratic sugorate function. In particular,
+no linesearch is necessary and close form formula are, with guaranted
+convergence, are used. If all ``φₖ`` are convex, the criterion is convex and the
+MM-Q algorithms converge to the global and unique minimizer. If ``φₖ`` is not
+convex, MM-Q algorithms converge to a local minimizer.
 
 A classical example, like in the figure below that show an image deconvolution 
 problem, is the resolution of an inverse problem with the minimization of
@@ -53,10 +57,11 @@ Features
 --------
 
 - The ``mmmg``, Majorize-Minimize Memory Gradient algorithm.
-- Quadratic surogate function.
 - **No linesearch**: the step is obtained from a close form formula
-- **No conjugacy choice**: a conjugacy strategy is not necessary thanks to the subspace nature of the algorithms
-- Generic and flexible: there is no restriction on the number of regularizer, their type, ..., as well as for data adequacy.
+- **No conjugacy choice**: a conjugacy strategy is not necessary thanks to the
+  subspace nature of the algorithms
+- Generic and flexible: there is no restriction on the number of regularizer,
+  their type, ..., as well as for data adequacy.
 - Provided base class for criterion allowing easier and fast implementation.
 - Several classical potential like Huber, Geman & McClure, ... already implemented
 - Comes with examples of implemented linear operator.
@@ -66,9 +71,9 @@ Example
 
 The ``demo.py`` presents an example on image deconvolution. The first step is to
 implement the operators ``V`` and the adjoint ``Vᵗ`` as callable (function or
-methods). The user is obviously in charge of these operator and the callable must accept a unique parameter ``x`` and return a
-unique vector. There is no constraints on the shape, everything is vectorized
-internally.
+methods). The user is in charge of these operator and the callable must accept a
+unique parameter ``x`` and return a unique vector. There is no constraints on
+the shape, everything is vectorized internally.
 
 After import of ``mmq``, you must instantiate ``Potential`` objects that
 implement ``φ`` and ``Criterion`` object that implements ``ψ(V·x - ω)``
