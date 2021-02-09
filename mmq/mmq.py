@@ -20,13 +20,14 @@ the `mmmg` function needs in practive any object with three specific methods.
 
 """
 
+# pylint: disable=bad-continuation
+
 import functools
 import abc
-import time
 from typing import Callable, Tuple, List
 
-import numpy as np
-import numpy.linalg as la
+import numpy as np  # type: ignore
+import numpy.linalg as la  # type: ignore
 
 
 def mmmg(
@@ -58,14 +59,15 @@ def mmmg(
         reuse of calculations. See notes section for details.
 
     init : ndarray
-        The initial point
+        The initial point. The init is update inplace. The user must make a copy
+        before calling mmmg if this is not the desired behaviour.
 
     tol : float, optional
         The stopping tolerance. The algorithm is stopped when the gradient norm
         is inferior to `init.size * tol`.
 
     max_iter : int, optional
-        The maximum number of iteration
+        The maximum number of iteration.
 
     Returns
     -------
@@ -96,34 +98,24 @@ def mmmg(
        10.1109/TIP.2010.2103083.
 
     """
-    shape = init.shape
-
-    point = init.reshape((-1, 1)).copy()
+    point = init.reshape((-1, 1))
     norm_grad = []
-
-    # Vectorized call
-    def vect(func, point):
-        return np.reshape(func(np.reshape(point, shape)), (-1, 1))
-
-    # Vectorized gradient
-    def gradient(point):
-        return sum(vect(crit.gradient, point) for crit in crit_list)
 
     # The first previous moves are initialized with 0 array. Consquently, the
     # first iterations implementation can be improved, at the cost of if
     # statement.
     move = np.zeros_like(point)
-    op_directions = [np.tile(vect(crit.operator, move), 2) for crit in crit_list]
+    op_directions = [
+        np.tile(vect(crit.operator, move, init.shape), 2) for crit in crit_list
+    ]
     step = np.ones((2, 1))
 
-    cpu_time = [time.time()]
     for _ in range(max_iter):
         # Vectorized gradient
-        grad = gradient(point)
+        grad = gradient(crit_list, point, init.shape)
         norm_grad.append(la.norm(grad))
 
         # Stopping test
-        cpu_time.append(time.time())
         if norm_grad[-1] < point.size * tol:
             break
 
@@ -132,23 +124,21 @@ def mmmg(
 
         # Step by Majorize-Minimize
         op_directions = [
-            np.c_[vect(crit.operator, grad), i_op_dir @ step]
+            np.c_[vect(crit.operator, grad, init.shape), i_op_dir @ step]
             for crit, i_op_dir in zip(crit_list, op_directions)
         ]
-        norm_mat_major = sum(
-            crit.norm_mat_major(i_op_dir, point.reshape(shape))
-            for crit, i_op_dir in zip(crit_list, op_directions)
-        )
-        step = -la.pinv(norm_mat_major) @ (directions.T @ grad)
+        step = -la.pinv(
+            sum(
+                crit.norm_mat_major(i_op_dir, point.reshape(init.shape))
+                for crit, i_op_dir in zip(crit_list, op_directions)
+            )
+        ) @ (directions.T @ grad)
         move = directions @ step
 
         # update
         point += move
 
-    return np.reshape(point, shape), (
-        norm_grad,
-        [toc - cpu_time[0] for toc in cpu_time[1:]],
-    )
+    return np.reshape(point, init.shape), norm_grad
 
 
 def mmcg(
@@ -158,78 +148,130 @@ def mmcg(
     tol: float = 1e-4,
     max_iter: int = 500,
 ):
-    shape = init.shape
-    k = 0
+    """The Majorize-Minimize Conjugate Gradient (MM-CG) algorithm
 
+    The MM-CG [1] is a nonlinear conjugate gradient (NL-CG) (NL-CG) (NL-CG)
+    (NL-CG) (NL-CG) (NL-CG) (NL-CG) (NL-CG) (NL-CG) optimization algorithm with
+    an explicit step formula based on Majorize-Minimize Quadratic approach. This
+    ensures quick convergence of the algorithm to a minimizer of the criterion
+    without line search for the step and without tuning parameters. On the
+    contrary, the criterion must meet conditions. In particular, the criterion
+    must be like
+
+       `J(x) = ∑ₖ φₖ(Vₖ·x - ωₖ)`
+
+    where `x` is the unkown of size `N`, `V` a matrix of size `M × N` and `ω` of
+    size `M`. In addition, among other conditions, `φ` must be differentiable
+    (see documentation and [1] for details).
+
+    Parameters
+    ----------
+    crit_list : list of Criterion
+        A list of `Criterion` object that represent `φ(V·x - ω)`.
+        The use of this list is necessary to allow efficient implementation and
+        reuse of calculations. See notes section for details.
+
+    init : ndarray
+        The initial point. The init is update inplace. The user must make a copy
+        before calling mmmg if this is not the desired behaviour.
+
+    precond : callable, optional
+        A callable that must implement a preconditioner, that is `M⁻¹·x`. Must
+        be a callable with a unique input parameter `x` and unique output.
+
+    tol : float, optional
+        The stopping tolerance. The algorithm is stopped when the gradient norm
+        is inferior to `init.size * tol`.
+
+    max_iter : int, optional
+        The maximum number of iteration.
+
+    Returns
+    -------
+    minimiser : ndarray
+        The minimiser of the criterion with same shape than `init`.
+
+    norm_grad : list of float
+        The norm of the gradient during iterations.
+
+    Notes
+    -----
+    The output of callable (e. g. operator in Criterion), and the `init` value,
+    are automatically vectorized internally. However, the output is reshaped as
+    the `init` array.
+
+    The algorithm use `Criterion` data structure. Thanks to dynamic nature of
+    python, this is not required and user can provide it's own structure, see
+    documentation. `Criterion` however comes with boilerplate.
+
+    References
+    ----------
+    .. [1] C. Labat and J. Idier, “Convergence of Conjugate Gradient Methods
+       with a Closed-Form Stepsize Formula,” J Optim Theory Appl, p. 18, 2008.
+
+    """
     if precond is None:
         precond = lambda x: x
 
-    # Vectorized call
-    def vect(func, point):
-        return np.reshape(func(np.reshape(point, shape)), (-1, 1))
+    point = init.reshape((-1, 1))
 
-    # Vectorized gradient
-    def gradient(point):
-        return sum(vect(crit.gradient, point) for crit in crit_list)
-
-    point = init.reshape((-1, 1)).copy()
-
-    cpu_time: List[float] = [time.time()]
-
-    residual = -gradient(point)
+    residual = -gradient(crit_list, point, init.shape)
     sec = precond(residual)
     direction = sec
-    delta = residual.T @ direction
+    delta_old = residual.T @ direction
     norm_res: List[float] = [la.norm(residual)]
 
     for _ in range(max_iter):
         # update
-        op_direction = [vect(crit.operator, direction) for crit in crit_list]
+        op_direction = [
+            vect(crit.operator, direction, init.shape) for crit in crit_list
+        ]
 
-        norm_mat_major = sum(
-            crit.norm_mat_major(i_op_dir, point.reshape(shape))
+        step = direction.T @ residual
+        step /= sum(
+            crit.norm_mat_major(i_op_dir, point.reshape(init.shape))
             for crit, i_op_dir in zip(crit_list, op_direction)
         )
-        step = direction.T @ residual / float(norm_mat_major)
+
         point += step * direction
 
-        # Vectorized gradient
-        residual = -gradient(point)
+        # Gradient
+        residual = -gradient(crit_list, point, init.shape)
 
         # Stopping test
-        cpu_time.append(time.time())
         if (norm_res := [*norm_res, la.norm(residual)])[-1] < point.size * tol:
             break
 
-        # Direction
-        delta_old = delta
+        # Conjugate direction. No reset is done, see Shewchuck.
         delta_mid = residual.T @ sec
         sec = precond(residual)
-        delta = residual.T @ sec
-        beta = (delta - delta_mid) / delta_old
+        direction = (
+            sec + ((delta_old := residual.T @ sec) - delta_mid) / delta_old * direction
+        )
 
-        # reset
-        if (k := k + 1) == init.size or beta <= 0:
-            direction = sec
-            k = 0
-        else:
-            direction = sec + beta * direction
+    return np.reshape(point, init.shape), norm_res
 
-    return np.reshape(point, shape), (
-        norm_res,
-        [toc - cpu_time[0] for toc in cpu_time[1:]],
-    )
+
+# Vectorized call
+def vect(func, point, shape):
+    """Call func with point reshaped as shape and return vectorized output"""
+    return np.reshape(func(np.reshape(point, shape)), (-1, 1))
+
+
+# Vectorized gradient
+def gradient(crit_list, point, shape):
+    """Compute sum of gradient with vectorized parameters and return"""
+    return sum(vect(crit.gradient, point, shape) for crit in crit_list)
 
 
 class Criterion:
     """A criterion μ ∑ φ(V·x - ω)"""
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         operator: Callable,
         adjoint: Callable,
-        potential: Callable,
-        potential_grad: Callable,
+        potential: "Potential",
         hyper: float = 1,
         mean: np.ndarray = 0,
     ):
@@ -255,7 +297,6 @@ class Criterion:
         self.hyper = hyper
         self.mean = mean
         self.potential = potential
-        self.potential_grad = potential_grad
 
     def value(self, point: np.ndarray):
         """The value of the criterion at given point
@@ -270,7 +311,7 @@ class Criterion:
         Return μ·Vᵗ·φ'(V·x - ω)
         """
         return self.hyper * self.adjoint(
-            self.potential_grad(self.operator(point) - self.mean)
+            self.potential.gradient(self.operator(point) - self.mean)
         )
 
     def norm_mat_major(self, vecs: np.ndarray, point: np.ndarray):
@@ -290,7 +331,10 @@ class Criterion:
             The given point where to compute GR coefficients `b`
 
         """
-        return vecs.T @ (self.gr_coeffs(point).reshape((-1, 1)) * vecs)
+        matrix = vecs.T @ (self.gr_coeffs(point).reshape((-1, 1)) * vecs)
+        if matrix.size == 1:
+            matrix = float(matrix)
+        return matrix
 
     def gr_coeffs(self, point: np.ndarray):
         """Return the GR coefficients at given point
@@ -306,9 +350,9 @@ class Criterion:
 
 
 class QuadCriterion(Criterion):
-    """A quadratic criterion μ||V·x - ω||^2"""
+    """A quadratic criterion μ||V·x - ω||²"""
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         operator: Callable,
         adjoint: Callable,
@@ -316,7 +360,7 @@ class QuadCriterion(Criterion):
         hyper: float = 1,
         mean: np.ndarray = 0,
     ):
-        """A quadratic criterion μ||V·x - ω||^2
+        """A quadratic criterion μ||V·x - ω||²
 
         Parameters
         ----------
@@ -332,14 +376,14 @@ class QuadCriterion(Criterion):
           ω
         """
         square = Square()
-        super().__init__(operator, adjoint, square, square.gradient, hyper, mean)
+        super().__init__(operator, adjoint, square, hyper, mean)
         self.normal = normal
         self.mean_t = self.adjoint(mean)
 
     def value(self, point):
         """The value of the criterion at given point
 
-        Return `μ·||V·x - ω||^2`
+        Return `μ·||V·x - ω||²`
         """
         return self.hyper * np.sum((self.operator(point) - self.mean) ** 2) / 2
 
@@ -398,7 +442,7 @@ class Potential(abc.ABC):
     """
 
     def __init__(self, inf):
-        """An abstract base class for the potentials φ
+        """The potentials φ
 
         Parameters
         ----------
@@ -432,13 +476,13 @@ class Potential(abc.ABC):
 class VminProj(Potential):
     """The projection criterion
 
-    D(u) = ½ ||P_[m, +∞[(u) - m||^2
+    D(u) = ½ ||P_[m, +∞[(u) - m||²
     """
 
     def __init__(self, vmin):
         """The projection criterion
 
-        D(u) = ½ ||P_[m, +∞[(u) - m||^2
+        D(u) = ½ ||P_[m, +∞[(u) - m||²
         """
         super().__init__(inf=1)
         self.vmin = vmin
@@ -455,7 +499,7 @@ class VminProj(Potential):
 class VmaxProj(Potential):
     """The projection criterion
 
-    D(u) = ½ ||P_]-∞, M](u) - M||^2
+    D(u) = ½ ||P_]-∞, M](u) - M||²
     """
 
     def __init__(self, vmax):

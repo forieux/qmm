@@ -29,8 +29,8 @@ pot = mmq.Huber(delta=10)
 
 # Criterions definition
 data_adeq = mmq.QuadCriterion(obs.forward, obs.adjoint, obs.fwback, mean=data)
-priorr_adeq = mmq.Criterion(diffr.forward, diffr.adjoint, pot, pot.gradient, hyper=0.01)
-priorc_adeq = mmq.Criterion(diffc.forward, diffc.adjoint, pot, pot.gradient, hyper=0.01)
+priorr_adeq = mmq.Criterion(diffr.forward, diffr.adjoint, pot, hyper=0.01)
+priorc_adeq = mmq.Criterion(diffc.forward, diffc.adjoint, pot, hyper=0.01)
 
 t0 = time.time()
 res, norm_grad = mmq.mmmg([data_adeq, priorr_adeq, priorc_adeq], init, max_iter=200)
