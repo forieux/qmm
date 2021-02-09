@@ -67,7 +67,8 @@ Features
 - Generic and flexible: there is no restriction on the number of regularizer,
   their type, ..., as well as for data adequacy.
 - Provided base class for criterion allowing easier and fast implementation.
-- Several classical potential like Huber, Geman & McClure, ... already implemented
+- Several classical potential like Huber, Geman & McClure, ... already
+  implemented.
 - Comes with examples of implemented linear operator.
 
 Example
@@ -115,13 +116,13 @@ You can see the ``demo.py`` file for an example.
 Contribute
 ----------
 
-- Issue Tracker: github.com/forieux/mmq/issues
-- Source Code: github.com/forieux/mmq
+- Issue Tracker: `github.com/forieux/mmq/issues`_
+- Source Code: `github.com/forieux/mmq`_
 
 Support
 -------
 
-If you are having issues, please let us know
+If you are having issues, please let us know.
 
 orieux AT l2s.centralesupelec.fr
 
@@ -129,3 +130,8 @@ License
 -------
 
 The project is licensed under the GPL3 license.
+
+TODO
+----
+
+- Documentation improvement.
