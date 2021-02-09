@@ -56,10 +56,14 @@ function like Huber.
 Features
 --------
 
-- The ``mmmg``, Majorize-Minimize Memory Gradient algorithm.
+- The ``mmmg``, Majorize-Minimize Memory Gradient algorithm. See documentation
+  for details.
+- The ``mmcg``, Majorize-Minimize Conjugate Gradient algorithm. See
+  documentation for details.
 - **No linesearch**: the step is obtained from a close form formula
 - **No conjugacy choice**: a conjugacy strategy is not necessary thanks to the
-  subspace nature of the algorithms
+  subspace nature of the algorithms. In case of ``mmcg``, the algorithm use a
+  Polak-Ribière formula.
 - Generic and flexible: there is no restriction on the number of regularizer,
   their type, ..., as well as for data adequacy.
 - Provided base class for criterion allowing easier and fast implementation.
