@@ -116,8 +116,8 @@ You can see the ``demo.py`` file for an example.
 Contribute
 ----------
 
-- Issue Tracker: `https://github.com/forieux/mmq/issues`_
-- Source Code: `https://github.com/forieux/mmq`_
+- Issue Tracker: `<https://github.com/forieux/mmq/issues>`_
+- Source Code: `<https://github.com/forieux/mmq>`_
 
 Support
 -------
