@@ -60,7 +60,7 @@ Features
   for details.
 - The ``mmcg``, Majorize-Minimize Conjugate Gradient algorithm. See
   documentation for details.
-- **No linesearch**: the step is obtained from a close form formula
+- **No linesearch**: the step is obtained from a close form formula.
 - **No conjugacy choice**: a conjugacy strategy is not necessary thanks to the
   subspace nature of the algorithms. In case of ``mmcg``, the algorithm use a
   Polak-Ribière formula.
