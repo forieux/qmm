@@ -29,7 +29,7 @@ Majorize-Minimize Quadratic
 
 The MM-Q optimization algorithms allow finding the minimum of criteria like
 
-``J(x) = ∑ᵢ ψₖ(Vₖ·x - ωₖ)``
+``J(x) = ∑ᵢ μₖ ψₖ(Vₖ·x - ωₖ)``
 
 where ``x`` is the unknown vector of size ``N``, ``Vₖ`` a linear operator of
 size ``M×N``, ``ωₖ`` a fixed vector of size ``M``, ``ψₖ(u) = ∑ᵢφₖ(uᵢ)``, and
@@ -42,14 +42,15 @@ convergence, are used. If all ``φₖ`` are convex, the criterion is convex and 
 MM-Q algorithms converge to the global and unique minimizer. If ``φₖ`` is not
 convex, MM-Q algorithms converge to a local minimizer.
 
-A classical example, like in the figure below that show an image deconvolution 
+A classical example, like in the figure below that show an image deconvolution
 problem, is the resolution of an inverse problem with the minimization of
 
-``J(x) = ||y - H·x||² + μ ψ(V·x)``
+``J(x) = ∥y - H·x∥² + μ ψ(V·x)``
 
 where ``H`` is a low-pass forward model, ``V`` a regularization operator that
 approximate gradient (kind of high-pass filter) and ``ψ`` an edge preserving
-function like Huber.
+function like Huber. The above criterion is obtained with `i ∈ {1, 2}`, `ψ_1(u)
+∥u∥²`, `V₁ = H`, `ω_1 = y`, and `ω_2 = 0`.
 
 .. image:: ./docs/image.png
 
@@ -89,7 +90,7 @@ implement ``φ`` and ``Criterion`` object that implements ``ψ(V·x - ω)``
    phi = mmq.Huber(delta=10)
 
    data_adeq = mmq.QuadCriterion(H, Ht, HtH, mean=data)
-   prior = mmq.Criterion(V, Vt, phi, phi.gradient, hyper=0.01)
+   prior = mmq.Criterion(V, Vt, phi, hyper=0.01)
    
 Then you can run the algorithm
 
