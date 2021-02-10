@@ -238,8 +238,9 @@ def mmcg(
         # Gradient
         residual = -gradient(crit_list, point, init.shape)
 
-        # Stopping test
-        if (norm_res := [*norm_res, la.norm(residual)])[-1] < point.size * tol:
+        # Stop test
+        norm_res.append(la.norm(residual))
+        if norm_res[-1] < point.size * tol:
             break
 
         # Conjugate direction. No reset is done, see Shewchuck.
@@ -247,7 +248,10 @@ def mmcg(
         delta_mid = residual.T @ sec
         sec = precond(residual)
         delta = residual.T @ sec
-        direction = sec + (delta - delta_mid) / delta_old * direction
+        if (delta - delta_mid) / delta_old >= 0:
+            direction = sec +  * direction
+        else:
+            direction = sec
 
     return np.reshape(point, init.shape), norm_res
 
