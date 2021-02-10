@@ -31,16 +31,14 @@ The MM-Q optimization algorithms allow finding the minimum of criteria like
 
 ``J(x) = ∑ᵢ μₖ ψₖ(Vₖ·x - ωₖ)``
 
-where ``x`` is the unknown vector of size ``N``, ``Vₖ`` a linear operator of
-size ``M×N``, ``ωₖ`` a fixed vector of size ``M``, ``μₖ`` a scalar, ``ψₖ(u) =
-∑ᵢφₖ(uᵢ)``, and ``φₖ`` a function that must be differentiable, even, coercive,
-``φ(√(·))`` concave, and ``0 < φ'(u) / u < +∞``.
+where ``x`` is the unknown vector, ``Vₖ`` a linear operator, ``ωₖ`` a fixed
+vector, ``μₖ`` a scalar, ``ψₖ(u) = ∑ᵢφₖ(uᵢ)``, and ``φₖ`` a function that must
+be differentiable, even, coercive, ``φ(√(·))`` concave, and ``0 < φ'(u) / u <
++∞``.
 
 The optimization is done thanks to quadratic sugorate function. In particular,
-no linesearch is necessary and close form formula are, with guaranted
-convergence, are used. If all ``φₖ`` are convex, the criterion is convex and the
-MM-Q algorithms converge to the global and unique minimizer. If ``φₖ`` is not
-convex, MM-Q algorithms converge to a local minimizer.
+no linesearch is necessary and close form formula are used with guaranted
+convergence.
 
 A classical example, like in the figure below that show an image deconvolution
 problem, is the resolution of an inverse problem with the minimization of
@@ -77,8 +75,8 @@ Example
 
 The ``demo.py`` presents an example on image deconvolution. The first step is to
 implement the operators ``V`` and the adjoint ``Vᵗ`` as callable (function or
-methods). The user is in charge of these operator and the callable must accept a
-unique parameter ``x`` and return a unique vector. There is no constraints on
+methods). The user is in charge of these operators and the callable must accept
+a unique parameter ``x`` and return a unique vector. There is no constraints on
 the shape, everything is vectorized internally.
 
 After import of ``mmq``, you must instantiate ``Potential`` objects that
