@@ -218,7 +218,7 @@ def mmcg(
     residual = -gradient(crit_list, point, init.shape)
     sec = precond(residual)
     direction = sec
-    delta_old = residual.T @ direction
+    delta = residual.T @ direction
     norm_res: List[float] = [la.norm(residual)]
 
     for _ in range(max_iter):
@@ -243,11 +243,11 @@ def mmcg(
             break
 
         # Conjugate direction. No reset is done, see Shewchuck.
+        delta_old = delta
         delta_mid = residual.T @ sec
         sec = precond(residual)
-        direction = (
-            sec + ((delta_old := residual.T @ sec) - delta_mid) / delta_old * direction
-        )
+        delta = residual.T @ sec
+        direction = sec + (delta - delta_mid) / delta_old * direction
 
     return np.reshape(point, init.shape), norm_res
 
