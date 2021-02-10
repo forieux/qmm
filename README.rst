@@ -64,10 +64,8 @@ Features
   subspace nature of the algorithms. In case of ``mmcg``, the algorithm use a
   Polak-Ribière formula.
 - Generic and flexible: there is no restriction on the number of regularizer,
-  their type, ..., as well as for data adequacy.
+  their type, .., as well as for data adequacy.
 - Provided base class for criterion allowing easier and fast implementation.
-
-  implemented.
 - Comes with examples of implemented linear operator.
 
 Example
@@ -104,7 +102,7 @@ Installation
 No installation procedure has been implemented at that time. Just copy the
 ``mmq`` directory or the ``mmq.py`` file where your code can access it.
 
-MMQ only depends on ``numpy`` and Python 3.6.
+MM-Q only depends on ``numpy`` and Python 3.6.
 
 Documentation
 -------------
@@ -115,8 +113,8 @@ You can see the ``demo.py`` file for an example.
 Contribute
 ----------
 
-- Issue Tracker: `<https://github.com/forieux/mmq/issues>`_
-- Source Code: `<https://github.com/forieux/mmq>`_
+- Issue tracker: `<https://github.com/forieux/mmq/issues>`_
+- Source code: `<https://github.com/forieux/mmq>`_
 
 Support
 -------
