@@ -32,9 +32,9 @@ The MM-Q optimization algorithms allow finding the minimum of criteria like
 ``J(x) = ∑ᵢ μₖ ψₖ(Vₖ·x - ωₖ)``
 
 where ``x`` is the unknown vector of size ``N``, ``Vₖ`` a linear operator of
-size ``M×N``, ``ωₖ`` a fixed vector of size ``M``, ``ψₖ(u) = ∑ᵢφₖ(uᵢ)``, and
-``φₖ`` a function that must be differentiable, even, coercive, ``φ(√(·))``
-concave, and ``0 < φ'(u) / u < +∞``.
+size ``M×N``, ``ωₖ`` a fixed vector of size ``M``, ``μₖ`` a scalar, ``ψₖ(u) =
+∑ᵢφₖ(uᵢ)``, and ``φₖ`` a function that must be differentiable, even, coercive,
+``φ(√(·))`` concave, and ``0 < φ'(u) / u < +∞``.
 
 The optimization is done thanks to quadratic sugorate function. In particular,
 no linesearch is necessary and close form formula are, with guaranted
@@ -50,7 +50,7 @@ problem, is the resolution of an inverse problem with the minimization of
 where ``H`` is a low-pass forward model, ``V`` a regularization operator that
 approximate gradient (kind of high-pass filter) and ``ψ`` an edge preserving
 function like Huber. The above criterion is obtained with ``i ∈ {1, 2}``,
-``ψ₁(u) - ∥u∥²``, ``V₁ = H``, ``ω₁ = y``, and ``ω₂ = 0``.
+``ψ₁(·) = ∥·∥²``, ``V₁ = H``, ``ω₁ = y``, and ``ω₂ = 0``.
 
 .. image:: ./docs/image.png
 
