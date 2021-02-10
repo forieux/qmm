@@ -24,7 +24,7 @@ the `mmmg` function needs in practive any object with three specific methods.
 
 import functools
 import abc
-from typing import Callable, Tuple, List
+from typing import Callable, Tuple, List, Union
 
 import numpy as np  # type: ignore
 import numpy.linalg as la  # type: ignore
@@ -273,7 +273,7 @@ class Criterion:
         adjoint: Callable,
         potential: "Potential",
         hyper: float = 1,
-        mean: np.ndarray = 0,
+        mean: Union[np.ndarray, List[np.ndarray]] = 0,
     ):
         """A criterion μ ∑ φ(V·x - ω)
 
@@ -281,7 +281,7 @@ class Criterion:
         ----------
         operator: callable
           V·x
-        adjoing: callable
+        adjoint: callable
           Vᵗ·e
         potential: callable
           φ
@@ -289,29 +289,73 @@ class Criterion:
           φ'
         hyper: float
           μ
-        mean: ndarray (optionnal)
+        mean: array or list of array (optional)
           ω
+
+        Notes
+        -----
+        If `mean` is a list of array, `operator` must return a similar list with
+        array of same shape, and `adjoint` must accept a similar list also.
+
+        In that case, however and for algorithm purpose, everything is
+        internally stacked as a column vector and values are therefor copied.
+        This is not efficient but flexible. Users are encouraged to do the
+        vectorization themselves.
+
         """
         self.operator = operator
         self.adjoint = adjoint
-        self.hyper = hyper
+
         self.mean = mean
+        if isinstance(mean, list):
+            self._stacked = True
+            self._shape = [arr.shape for arr in mean]
+            self._idx = np.cumsum([0] + [arr.size for arr in mean])
+            self._mean = self._stack(mean)
+        else:
+            self._stacked = False
+            self._mean = mean
+
+        self.hyper = hyper
         self.potential = potential
+
+    def _list2vec(self, arr_list: list):
+        return np.vstack([arr.reshape((-1, 1)) for arr in arr_list])
+
+    def _vec2list(self, array: np.ndarray):
+        return [
+            np.reshape(array[self._idx[i] : self._idx[i + 1]], shape)
+            for i, shape in enumerate(self._shape)
+        ]
+
+    def _operator(self, point):
+        if self._stacked:
+            out = self._list2vec(self.operator(point))
+        else:
+            out = self.operator(point)
+        return out
+
+    def _adjoint(self, point):
+        if self._stacked:
+            out = self.adjoint(self._vec2list(point))
+        else:
+            out = self.adjoint(point)
+        return out
 
     def value(self, point: np.ndarray):
         """The value of the criterion at given point
 
         Return μ·φ(V·x - ω)
         """
-        return self.hyper * np.sum(self.potential(self.operator(point) - self.mean))
+        return self.hyper * np.sum(self.potential(self._operator(point) - self._mean))
 
     def gradient(self, point: np.ndarray):
         """The gradient of the criterion at given point
 
         Return μ·Vᵗ·φ'(V·x - ω)
         """
-        return self.hyper * self.adjoint(
-            self.potential.gradient(self.operator(point) - self.mean)
+        return self.hyper * self._adjoint(
+            self.potential.gradient(self._operator(point) - self._mean)
         )
 
     def norm_mat_major(self, vecs: np.ndarray, point: np.ndarray):
@@ -342,7 +386,7 @@ class Criterion:
         φ'(V·x - ω) / (V·x - ω)
 
         """
-        obj = self.operator(point) - self.mean
+        obj = self._operator(point) - self._mean
         return self.potential.gr_coeffs(obj)
 
     def __call__(self, point: np.ndarray):
@@ -378,14 +422,14 @@ class QuadCriterion(Criterion):
         square = Square()
         super().__init__(operator, adjoint, square, hyper, mean)
         self.normal = normal
-        self.mean_t = self.adjoint(mean)
+        self.mean_t = self._adjoint(mean)
 
     def value(self, point):
         """The value of the criterion at given point
 
         Return `μ·||V·x - ω||²`
         """
-        return self.hyper * np.sum((self.operator(point) - self.mean) ** 2) / 2
+        return self.hyper * np.sum((self._operator(point) - self._mean) ** 2) / 2
 
     def gradient(self, point: np.ndarray):
         """The gradient of the criterion at given point
