@@ -49,8 +49,8 @@ problem, is the resolution of an inverse problem with the minimization of
 
 where ``H`` is a low-pass forward model, ``V`` a regularization operator that
 approximate gradient (kind of high-pass filter) and ``ψ`` an edge preserving
-function like Huber. The above criterion is obtained with `i ∈ {1, 2}`, `ψ_1(u)
-∥u∥²`, `V₁ = H`, `ω_1 = y`, and `ω_2 = 0`.
+function like Huber. The above criterion is obtained with ``i ∈ {1, 2}``,
+``ψ₁(u) - ∥u∥²``, ``V₁ = H``, ``ω₁ = y``, and ``ω₂ = 0``.
 
 .. image:: ./docs/image.png
 
@@ -68,7 +68,7 @@ Features
 - Generic and flexible: there is no restriction on the number of regularizer,
   their type, ..., as well as for data adequacy.
 - Provided base class for criterion allowing easier and fast implementation.
-- Several classical potential like Huber, Geman & McClure, ... already
+
   implemented.
 - Comes with examples of implemented linear operator.
 
