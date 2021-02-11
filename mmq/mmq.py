@@ -110,7 +110,7 @@ def mmmg(
     # statement.
     move = np.zeros_like(point)
     op_directions = [
-        np.tile(vect(crit._operator, move, init.shape), 2) for crit in crit_list
+        np.tile(vect(crit.operator, move, init.shape), 2) for crit in crit_list
     ]
     step = np.ones((2, 1))
 
@@ -128,7 +128,7 @@ def mmmg(
 
         # Step by Majorize-Minimize
         op_directions = [
-            np.c_[vect(crit._operator, grad, init.shape), i_op_dir @ step]
+            np.c_[vect(crit.operator, grad, init.shape), i_op_dir @ step]
             for crit, i_op_dir in zip(crit_list, op_directions)
         ]
         step = -la.pinv(
@@ -228,7 +228,7 @@ def mmcg(
     for _ in range(max_iter):
         # update
         op_direction = [
-            vect(crit._operator, direction, init.shape) for crit in crit_list
+            vect(crit.operator, direction, init.shape) for crit in crit_list
         ]
 
         step = direction.T @ residual
@@ -309,23 +309,23 @@ class Criterion:
         vectorization themselves.
 
         """
-        self.operator = operator
-        self.adjoint = adjoint
+        self._operator = operator
+        self._adjoint = adjoint
 
-        self.mean = mean
+        self._mean = mean
         if isinstance(mean, list):
             self._stacked = True
             self._shape = [arr.shape for arr in mean]
             self._idx = np.cumsum([0] + [arr.size for arr in mean])
-            self._mean = self._list2vec(mean)
+            self.mean = self._list2vec(mean)
         else:
             self._stacked = False
-            self._mean = mean
+            self.mean = mean
 
         self.hyper = hyper
         self.potential = potential
 
-    def _list2vec(self, arr_list: List[array]) -> array:
+    def _list2vec(self, arr_list: List[array]) -> array:  #  pylint: disable=no-self-use
         return np.vstack([arr.reshape((-1, 1)) for arr in arr_list])
 
     def _vec2list(self, arr: array) -> List[array]:
@@ -334,18 +334,20 @@ class Criterion:
             for i, shape in enumerate(self._shape)
         ]
 
-    def _operator(self, point: array) -> ArrOrList:
+    def operator(self, point: array) -> array:
+        """Return V·x"""
         if self._stacked:
-            out = self._list2vec(self.operator(point))
+            out = self._list2vec(self._operator(point))
         else:
-            out = self.operator(point)
+            out = self._operator(point)
         return out
 
-    def _adjoint(self, point: ArrOrList) -> array:
+    def adjoint(self, point: array) -> array:
+        """Return Vᵗ·x"""
         if self._stacked:
-            out = self.adjoint(self._vec2list(point))
+            out = self._adjoint(self._vec2list(point))
         else:
-            out = self.adjoint(point)
+            out = self._adjoint(point)
         return out
 
     def value(self, point: array) -> float:
@@ -353,15 +355,15 @@ class Criterion:
 
         Return μ·φ(V·x - ω)
         """
-        return self.hyper * np.sum(self.potential(self._operator(point) - self._mean))
+        return self.hyper * np.sum(self.potential(self.operator(point) - self.mean))
 
     def gradient(self, point: array) -> array:
         """The gradient of the criterion at given point
 
         Return μ·Vᵗ·φ'(V·x - ω)
         """
-        return self.hyper * self._adjoint(
-            self.potential.gradient(self._operator(point) - self._mean)
+        return self.hyper * self.adjoint(
+            self.potential.gradient(self.operator(point) - self.mean)
         )
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
@@ -392,7 +394,7 @@ class Criterion:
         φ'(V·x - ω) / (V·x - ω)
 
         """
-        obj = self._operator(point) - self._mean
+        obj = self.operator(point) - self.mean
         return self.potential.gr_coeffs(obj)
 
     def __call__(self, point: array) -> float:
@@ -428,14 +430,14 @@ class QuadCriterion(Criterion):
         square = Square()
         super().__init__(operator, adjoint, square, hyper, mean)
         self.normal = normal
-        self.mean_t = self._adjoint(self._mean)
+        self.mean_t = self.adjoint(self.mean)
 
     def value(self, point: array) -> float:
         """The value of the criterion at given point
 
         Return `μ·||V·x - ω||²`
         """
-        return self.hyper * np.sum((self._operator(point) - self._mean) ** 2) / 2
+        return self.hyper * np.sum((self.operator(point) - self.mean) ** 2) / 2
 
     def gradient(self, point: array) -> array:
         """The gradient of the criterion at given point
