@@ -110,7 +110,7 @@ def mmmg(
     # statement.
     move = np.zeros_like(point)
     op_directions = [
-        np.tile(vect(crit.operator, move, init.shape), 2) for crit in crit_list
+        np.tile(vect(crit._operator, move, init.shape), 2) for crit in crit_list
     ]
     step = np.ones((2, 1))
 
@@ -128,7 +128,7 @@ def mmmg(
 
         # Step by Majorize-Minimize
         op_directions = [
-            np.c_[vect(crit.operator, grad, init.shape), i_op_dir @ step]
+            np.c_[vect(crit._operator, grad, init.shape), i_op_dir @ step]
             for crit, i_op_dir in zip(crit_list, op_directions)
         ]
         step = -la.pinv(
@@ -228,7 +228,7 @@ def mmcg(
     for _ in range(max_iter):
         # update
         op_direction = [
-            vect(crit.operator, direction, init.shape) for crit in crit_list
+            vect(crit._operator, direction, init.shape) for crit in crit_list
         ]
 
         step = direction.T @ residual
