@@ -29,13 +29,17 @@ from typing import Callable, Tuple, List, Union
 import numpy as np  # type: ignore
 import numpy.linalg as la  # type: ignore
 
+from numpy import ndarray as array
+
+ArrOrList = Union[array, List[array]]
+
 
 def mmmg(
     crit_list: List["Criterion"],
-    init: np.ndarray,
+    init: array,
     tol: float = 1e-4,
     max_iter: int = 500,
-):
+) -> Tuple[array, List[float]]:
     """The Majorize-Minimize Memory Gradient (3mg) algorithm
 
     The 3mg (see [2] and [1]) is a subspace memory-gradient optimization
@@ -58,7 +62,7 @@ def mmmg(
         The use of this list is necessary to allow efficient implementation and
         reuse of calculations. See notes section for details.
 
-    init : ndarray
+    init : array
         The initial point. The init is update inplace. The user must make a copy
         before calling mmmg if this is not the desired behaviour.
 
@@ -71,7 +75,7 @@ def mmmg(
 
     Returns
     -------
-    minimiser : ndarray
+    minimiser : array
         The minimiser of the criterion with same shape than `init`.
 
     norm_grad : list of float
@@ -143,11 +147,11 @@ def mmmg(
 
 def mmcg(
     crit_list: List["Criterion"],
-    init: np.ndarray,
-    precond: Callable = None,
+    init: array,
+    precond: Callable[[array], array] = None,
     tol: float = 1e-4,
     max_iter: int = 500,
-):
+) -> Tuple[array, List[float]]:
     """The Majorize-Minimize Conjugate Gradient (MM-CG) algorithm
 
     The MM-CG [1] is a nonlinear conjugate gradient (NL-CG) (NL-CG) (NL-CG)
@@ -257,13 +261,13 @@ def mmcg(
 
 
 # Vectorized call
-def vect(func, point, shape):
+def vect(func: Callable[[array], array], point: array, shape: Tuple) -> array:
     """Call func with point reshaped as shape and return vectorized output"""
     return np.reshape(func(np.reshape(point, shape)), (-1, 1))
 
 
 # Vectorized gradient
-def gradient(crit_list, point, shape):
+def gradient(crit_list: List["Criterion"], point: array, shape: Tuple) -> array:
     """Compute sum of gradient with vectorized parameters and return"""
     return sum(vect(crit.gradient, point, shape) for crit in crit_list)
 
@@ -273,11 +277,11 @@ class Criterion:
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
-        operator: Callable,
-        adjoint: Callable,
+        operator: Callable[[array], ArrOrList],
+        adjoint: Callable[[ArrOrList], array],
         potential: "Potential",
         hyper: float = 1,
-        mean: Union[np.ndarray, List[np.ndarray]] = 0,
+        mean: ArrOrList = 0,
     ):
         """A criterion μ ∑ φ(V·x - ω)
 
@@ -287,10 +291,8 @@ class Criterion:
           V·x
         adjoint: callable
           Vᵗ·e
-        potential: callable
-          φ
-        potential_grad: callable
-          φ'
+        potential: Potential
+          φ and φ'
         hyper: float
           μ
         mean: array or list of array (optional)
@@ -323,37 +325,37 @@ class Criterion:
         self.hyper = hyper
         self.potential = potential
 
-    def _list2vec(self, arr_list: list):
+    def _list2vec(self, arr_list: List[array]) -> array:
         return np.vstack([arr.reshape((-1, 1)) for arr in arr_list])
 
-    def _vec2list(self, array: np.ndarray):
+    def _vec2list(self, arr: array) -> List[array]:
         return [
-            np.reshape(array[self._idx[i] : self._idx[i + 1]], shape)
+            np.reshape(arr[self._idx[i] : self._idx[i + 1]], shape)
             for i, shape in enumerate(self._shape)
         ]
 
-    def _operator(self, point):
+    def _operator(self, point: array) -> ArrOrList:
         if self._stacked:
             out = self._list2vec(self.operator(point))
         else:
             out = self.operator(point)
         return out
 
-    def _adjoint(self, point):
+    def _adjoint(self, point: ArrOrList) -> array:
         if self._stacked:
             out = self.adjoint(self._vec2list(point))
         else:
             out = self.adjoint(point)
         return out
 
-    def value(self, point: np.ndarray):
+    def value(self, point: array) -> float:
         """The value of the criterion at given point
 
         Return μ·φ(V·x - ω)
         """
         return self.hyper * np.sum(self.potential(self._operator(point) - self._mean))
 
-    def gradient(self, point: np.ndarray):
+    def gradient(self, point: array) -> array:
         """The gradient of the criterion at given point
 
         Return μ·Vᵗ·φ'(V·x - ω)
@@ -362,7 +364,7 @@ class Criterion:
             self.potential.gradient(self._operator(point) - self._mean)
         )
 
-    def norm_mat_major(self, vecs: np.ndarray, point: np.ndarray):
+    def norm_mat_major(self, vecs: array, point: array) -> array:
         """Return the normal matrix of the major function
 
         Given vecs `W = V·S`, return `Wᵗ·diag(b)·W`
@@ -372,10 +374,10 @@ class Criterion:
 
         Parameters
         ----------
-        vecs : np.ndarray
+        vecs : array
             The `W` vectors
 
-        point : np.ndarray
+        point : array
             The given point where to compute GR coefficients `b`
 
         """
@@ -384,7 +386,7 @@ class Criterion:
             matrix = float(matrix)
         return matrix
 
-    def gr_coeffs(self, point: np.ndarray):
+    def gr_coeffs(self, point: array) -> array:
         """Return the GR coefficients at given point
 
         φ'(V·x - ω) / (V·x - ω)
@@ -393,7 +395,7 @@ class Criterion:
         obj = self._operator(point) - self._mean
         return self.potential.gr_coeffs(obj)
 
-    def __call__(self, point: np.ndarray):
+    def __call__(self, point: array) -> float:
         return self.value(point)
 
 
@@ -402,25 +404,25 @@ class QuadCriterion(Criterion):
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
-        operator: Callable,
-        adjoint: Callable,
-        normal: Callable,
+        operator: Callable[[array], ArrOrList],
+        adjoint: Callable[[ArrOrList], array],
+        normal: Callable[[array], array],
         hyper: float = 1,
-        mean: np.ndarray = 0,
+        mean: array = 0,
     ):
         """A quadratic criterion μ||V·x - ω||²
 
         Parameters
         ----------
-        operator: Callable
+        operator: callable
           V·x
-        adjoing: Callable
+        adjoing: callable
           Vᵗ·e
-        normal: Callable
+        normal: callable
           VᵗV·x
-        hyper: float (optionnal)
+        hyper: float, optionnal
           μ
-        mean: ndarray (optionnal)
+        mean: ndarray, optionnal
           ω
         """
         square = Square()
@@ -428,14 +430,14 @@ class QuadCriterion(Criterion):
         self.normal = normal
         self.mean_t = self._adjoint(mean)
 
-    def value(self, point):
+    def value(self, point: array) -> float:
         """The value of the criterion at given point
 
         Return `μ·||V·x - ω||²`
         """
         return self.hyper * np.sum((self._operator(point) - self._mean) ** 2) / 2
 
-    def gradient(self, point: np.ndarray):
+    def gradient(self, point: array) -> array:
         """The gradient of the criterion at given point
 
         Return `μ·Vᵗ(V·x - ω)`
@@ -449,22 +451,22 @@ class QuadCriterion(Criterion):
         """
         return self.hyper * (self.normal(point) - self.mean_t)
 
-    def norm_mat_major(self, vecs: np.ndarray, point: np.ndarray):
+    def norm_mat_major(self, vecs: array, point: array) -> array:
         """Return the normal matrix of the major function
 
         Given W = V·D, return Wᵗ·W.
 
         Parameters
         ----------
-        vecs : np.ndarray
-            The `W` vectors
+        vecs : array
+            The `W` vectors.
 
-        point : np.ndarray
-            The given point where to compute GR coefficients
+        point : array
+            The given point where to compute GR coefficients.
         """
         return vecs.T @ vecs
 
-    def gr_coeffs(self, point: np.ndarray):
+    def gr_coeffs(self, point: array) -> array:
         """Return the GR coefficients at given point
 
         Always return the scalar 1.
@@ -476,7 +478,7 @@ class QuadCriterion(Criterion):
         """
         return 1
 
-    def __call__(self, point):
+    def __call__(self, point: array) -> float:
         return self.value(point)
 
 
@@ -489,7 +491,7 @@ class Potential(abc.ABC):
         The value of lim_{u→0} φ'(u) / u
     """
 
-    def __init__(self, inf):
+    def __init__(self, inf: float):
         """The potentials φ
 
         Parameters
@@ -500,23 +502,23 @@ class Potential(abc.ABC):
         self.inf = inf
 
     @abc.abstractmethod
-    def value(self, point: np.ndarray):
+    def value(self, point: array) -> array:
         """The value at given point"""
         return NotImplemented
 
     @abc.abstractmethod
-    def gradient(self, point: np.ndarray):
+    def gradient(self, point: array) -> array:
         """The gradient at given point"""
         return NotImplemented
 
-    def gr_coeffs(self, point: np.ndarray):
+    def gr_coeffs(self, point: array) -> array:
         """The GR coefficients at given point"""
         aux = self.inf * np.ones_like(point)
         idx = point != 0
         aux[idx] = self.gradient(point[idx]) / point[idx]
         return aux
 
-    def __call__(self, point: np.ndarray):
+    def __call__(self, point: array) -> array:
         """The value at given point"""
         return self.value(point)
 
@@ -527,7 +529,7 @@ class VminProj(Potential):
     D(u) = ½ ||P_[m, +∞[(u) - m||²
     """
 
-    def __init__(self, vmin):
+    def __init__(self, vmin: float):
         """The projection criterion
 
         D(u) = ½ ||P_[m, +∞[(u) - m||²
@@ -537,10 +539,10 @@ class VminProj(Potential):
         self.convex = True
         self.coercive = True
 
-    def value(self, point):
+    def value(self, point: array) -> array:
         return np.sum((point[point < self.vmin] - self.vmin) ** 2 / 2)
 
-    def gradient(self, point):
+    def gradient(self, point: array) -> array:
         return np.where(point > self.vmin, 0, point - self.vmin)
 
 
@@ -550,16 +552,16 @@ class VmaxProj(Potential):
     D(u) = ½ ||P_]-∞, M](u) - M||²
     """
 
-    def __init__(self, vmax):
+    def __init__(self, vmax: float):
         super().__init__(inf=1)
         self.vmax = vmax
         self.convex = True
         self.coercive = True
 
-    def value(self, point):
+    def value(self, point: array) -> array:
         return np.sum((point[point > self.vmax] - self.vmax) ** 2 / 2)
 
-    def gradient(self, point):
+    def gradient(self, point: array) -> array:
         return np.where(point < self.vmax, 0, point - self.vmax)
 
 
@@ -575,10 +577,10 @@ class Square(Potential):
         self.convex = True
         self.coercive = True
 
-    def value(self, point):
+    def value(self, point: array) -> array:
         return point ** 2 / 2
 
-    def gradient(self, point):
+    def gradient(self, point: array) -> array:
         return point
 
     def __repr__(self):
@@ -597,17 +599,17 @@ class Hyperbolic(Potential):
 
     """
 
-    def __init__(self, delta):
+    def __init__(self, delta: float):
         super().__init__(inf=1 / (delta ** 2))
         self.inf = 1 / (2 * delta)  # To check
         self.delta = delta
         self.convex = True
         self.coercive = True
 
-    def value(self, point):
+    def value(self, point: array) -> array:
         return np.sqrt(1 + (point ** 2) / (self.delta ** 2)) - 1
 
-    def gradient(self, point):
+    def gradient(self, point: array) -> array:
         return (point / (self.delta ** 2)) * np.sqrt(1 + (point ** 2) / self.delta ** 2)
 
     def __repr__(self):
@@ -628,16 +630,16 @@ class Huber(Potential):
 
     """
 
-    def __init__(self, delta):
+    def __init__(self, delta: float):
         super().__init__(inf=1)
         self.delta = delta
         self.convex = True
         self.coercive = True
 
-    def value(self, point):
+    def value(self, point: array) -> array:
         return np.where(np.abs(point) <= self.delta, point ** 2, np.abs(point))
 
-    def gradient(self, point):
+    def gradient(self, point: array) -> array:
         return np.where(
             np.abs(point) <= self.delta, 2 * point, 2 * self.delta * np.sign(point)
         )
@@ -661,16 +663,16 @@ class GemanMcClure(Potential):
 
     """
 
-    def __init__(self, delta):
+    def __init__(self, delta: float):
         super().__init__(1 / (delta ** 2))
         self.delta = delta
         self.convex = False
         self.coercive = False
 
-    def value(self, point):
+    def value(self, point: array) -> array:
         return point ** 2 / (2 * self.delta ** 2 + point ** 2)
 
-    def gradient(self, point):
+    def gradient(self, point: array) -> array:
         return 4 * point * self.delta ** 2 / (2 * self.delta ** 2 + point ** 2) ** 2
 
     def __repr__(self):
@@ -691,16 +693,16 @@ class SquareTruncApprox(Potential):
 
     """
 
-    def __init__(self, delta):
+    def __init__(self, delta: array) -> array:
         super().__init__(inf=1 / (delta ** 2))
         self.delta = delta
         self.convex = False
         self.coercive = False
 
-    def value(self, point):
+    def value(self, point: array) -> array:
         return 1 - np.exp(-(point ** 2) / (2 * self.delta ** 2))
 
-    def gradient(self, point):
+    def gradient(self, point: array) -> array:
         return point / (self.delta ** 2) * np.exp(-(point ** 2) / (2 * self.delta ** 2))
 
     def __repr__(self):
@@ -722,16 +724,16 @@ class HerbertLeahy(Potential):
 
     """
 
-    def __init__(self, delta):
+    def __init__(self, delta: float):
         super().__init__(inf=np.inf)
         self.delta = delta
         self.convex = False
         self.coercive = True
 
-    def value(self, point):
+    def value(self, point: array) -> array:
         return np.log(1 + point ** 2 / self.delta ** 2)
 
-    def gradient(self, point):
+    def gradient(self, point: array) -> array:
         return 2 * point / (self.delta ** 2 + point ** 2)
 
     def __repr__(self):
@@ -746,7 +748,9 @@ Non-convex and coercive
 
 
 # Not used finally
-def vectorize(func: Callable, in_shape: Tuple):
+def vectorize(
+    func: Callable[[array], array], in_shape: Tuple
+) -> Callable[[array], array]:
     """Vectorize a function
 
     Wrap a function to accept a vectorized version of the input and to produce
@@ -755,12 +759,12 @@ def vectorize(func: Callable, in_shape: Tuple):
 
     Parameters
     ----------
-    func : Callable
+    func : callable
         The function to wrap. Must be a single ndarray parameter callable that
-        produce and a single ndarray output
+        produce a single ndarray output.
 
     in_shape : tuple
-        The shape that func ask as input
+        The shape that func ask as input.
 
     Returns
     -------
