@@ -587,7 +587,6 @@ class Square(Potential):
 
     def __repr__(self):
         return """
-
 φ(u) = ½ u²
 
 Convex and coercive
@@ -599,6 +598,7 @@ class Hyperbolic(Potential):
 
     φ(u) = √(1 + u²/delta²) - 1
 
+    This is called sometimes Pseudo-Huber.
     """
 
     def __init__(self, delta: float):
@@ -609,17 +609,17 @@ class Hyperbolic(Potential):
         self.coercive = True
 
     def value(self, point: array) -> array:
-        return np.sqrt(1 + (point ** 2) / (self.delta ** 2)) - 1
+        return self.delta ** 2 * np.sqrt(1 + (point ** 2) / (self.delta ** 2)) - 1
 
     def gradient(self, point: array) -> array:
-        return (point / (self.delta ** 2)) * np.sqrt(1 + (point ** 2) / self.delta ** 2)
+        return point / np.sqrt(1 + (point ** 2) / self.delta ** 2)
 
     def __repr__(self):
         return """
-           _______
-          ╱ u²
-φ(u) =   ╱  ── + 1 - 1
-       ╲╱   δ²
+          ⎛    _______     ⎞
+          ⎜   ╱     x²     ⎟
+φ(u) = δ²⋅⎜  ╱  1 + ──  - 1⎟
+          ⎝╲╱       δ²     ⎠
 
 Convex and coercive
 """
@@ -681,7 +681,6 @@ class GemanMcClure(Potential):
 
     def __repr__(self):
         return """
-
           u²
 φ(u) = ─────────
        u² + 2⋅δ²
@@ -711,7 +710,6 @@ class SquareTruncApprox(Potential):
 
     def __repr__(self):
         return """
-
                u²
             - ────
               2⋅δ²
@@ -742,7 +740,6 @@ class HerbertLeahy(Potential):
 
     def __repr__(self):
         return """
-
           ⎛    u²⎞
 φ(u) = log⎜1 + ──⎟
           ⎝    δ²⎠
