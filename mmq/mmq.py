@@ -249,7 +249,7 @@ def mmcg(
         sec = precond(residual)
         delta = residual.T @ sec
         if (delta - delta_mid) / delta_old >= 0:
-            direction = sec +  * direction
+            direction = sec + (delta - delta_mid) / delta_old * direction
         else:
             direction = sec
 
@@ -315,7 +315,7 @@ class Criterion:
             self._stacked = True
             self._shape = [arr.shape for arr in mean]
             self._idx = np.cumsum([0] + [arr.size for arr in mean])
-            self._mean = self._stack(mean)
+            self._mean = self._list2vec(mean)
         else:
             self._stacked = False
             self._mean = mean
