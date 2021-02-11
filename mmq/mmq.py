@@ -637,19 +637,21 @@ class Huber(Potential):
         self.coercive = True
 
     def value(self, point: array) -> array:
-        return np.where(np.abs(point) <= self.delta, point ** 2, np.abs(point))
+        return np.where(
+            np.abs(point) <= self.delta,
+            point ** 2 / 2,
+            self.delta * (np.abs(point) - self.delta / 2),
+        )
 
     def gradient(self, point: array) -> array:
-        return np.where(
-            np.abs(point) <= self.delta, 2 * point, 2 * self.delta * np.sign(point)
-        )
+        return np.where(np.abs(point) <= self.delta, point, self.delta * np.sign(point))
 
     def __repr__(self):
         return """
        ⎛
-       ⎜  u², if |u| < δ
+       ⎜  ½ u²       , if |u| < δ
 φ(u) = ⎜
-       ⎜ |u|, otherwise
+       ⎜ δ(|u| - δ/2), otherwise.
        ⎝
 
 Convex and coercive.
