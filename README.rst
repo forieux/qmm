@@ -56,9 +56,9 @@ Features
 --------
 
 - The ``mmmg``, Majorize-Minimize Memory Gradient algorithm. See documentation
-  for details.
+  and [2] for details.
 - The ``mmcg``, Majorize-Minimize Conjugate Gradient algorithm. See
-  documentation for details.
+  documentation [1] for details.
 - **No linesearch**: the step is obtained from a close form formula.
 - **No conjugacy choice**: a conjugacy strategy is not necessary thanks to the
   subspace nature of the algorithms. In case of ``mmcg``, the algorithm use a
@@ -83,9 +83,12 @@ implement ``φ`` and ``Criterion`` object that implements ``ψ(V·x - ω)``
 .. code:: python
 
    import mmq
+   # φ
    phi = mmq.Huber(delta=10)
 
+   # ∥y - H·x∥²
    data_adeq = mmq.QuadCriterion(H, Ht, HtH, mean=data)
+   # μ ψ(V·x) = μ ∑ᵢ φ(vᵢ^t·x)
    prior = mmq.Criterion(V, Vt, phi, hyper=0.01)
    
 Then you can run the algorithm
@@ -94,7 +97,7 @@ Then you can run the algorithm
 
    res, norm_grad = mmq.mmmg([data_adeq, prior], init, max_iter=200)
 
-where :code:`[data_adeq, prior]` means that the criterion are summed.
+where :code:`[data_adeq, prior]` means that the two criterion are summed.
 
 Installation
 ------------
