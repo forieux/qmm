@@ -428,7 +428,7 @@ class QuadCriterion(Criterion):
         square = Square()
         super().__init__(operator, adjoint, square, hyper, mean)
         self.normal = normal
-        self.mean_t = self._adjoint(mean)
+        self.mean_t = self._adjoint(self._mean)
 
     def value(self, point: array) -> float:
         """The value of the criterion at given point
