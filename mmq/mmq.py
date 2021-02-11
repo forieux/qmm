@@ -281,7 +281,7 @@ class Criterion:
         adjoint: Callable[[ArrOrList], array],
         potential: "Potential",
         hyper: float = 1,
-        mean: ArrOrList = 0,
+        data: ArrOrList = 0,
     ):
         """A criterion μ ∑ φ(V·x - ω)
 
@@ -295,12 +295,12 @@ class Criterion:
           φ and φ'
         hyper: float
           μ
-        mean: array or list of array (optional)
+        data: array or list of array (optional)
           ω
 
         Notes
         -----
-        If `mean` is a list of array, `operator` must return a similar list with
+        If `data` is a list of array, `operator` must return a similar list with
         array of same shape, and `adjoint` must accept a similar list also.
 
         In that case, however and for algorithm purpose, everything is
@@ -312,15 +312,15 @@ class Criterion:
         self._operator = operator
         self._adjoint = adjoint
 
-        self._mean = mean
-        if isinstance(mean, list):
+        self._data = data
+        if isinstance(data, list):
             self._stacked = True
-            self._shape = [arr.shape for arr in mean]
-            self._idx = np.cumsum([0] + [arr.size for arr in mean])
-            self.mean = self._list2vec(mean)
+            self._shape = [arr.shape for arr in data]
+            self._idx = np.cumsum([0] + [arr.size for arr in data])
+            self.data = self._list2vec(data)
         else:
             self._stacked = False
-            self.mean = mean
+            self.data = data
 
         self.hyper = hyper
         self.potential = potential
@@ -355,7 +355,7 @@ class Criterion:
 
         Return μ·φ(V·x - ω)
         """
-        return self.hyper * np.sum(self.potential(self.operator(point) - self.mean))
+        return self.hyper * np.sum(self.potential(self.operator(point) - self.data))
 
     def gradient(self, point: array) -> array:
         """The gradient of the criterion at given point
@@ -363,7 +363,7 @@ class Criterion:
         Return μ·Vᵗ·φ'(V·x - ω)
         """
         return self.hyper * self.adjoint(
-            self.potential.gradient(self.operator(point) - self.mean)
+            self.potential.gradient(self.operator(point) - self.data)
         )
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
@@ -394,7 +394,7 @@ class Criterion:
         φ'(V·x - ω) / (V·x - ω)
 
         """
-        obj = self.operator(point) - self.mean
+        obj = self.operator(point) - self.data
         return self.potential.gr_coeffs(obj)
 
     def __call__(self, point: array) -> float:
@@ -410,7 +410,7 @@ class QuadCriterion(Criterion):
         adjoint: Callable[[ArrOrList], array],
         normal: Callable[[array], array],
         hyper: float = 1,
-        mean: array = 0,
+        data: array = 0,
     ):
         """A quadratic criterion μ||V·x - ω||²
 
@@ -424,20 +424,20 @@ class QuadCriterion(Criterion):
           VᵗV·x
         hyper: float, optionnal
           μ
-        mean: ndarray, optionnal
+        data: ndarray, optionnal
           ω
         """
         square = Square()
-        super().__init__(operator, adjoint, square, hyper, mean)
+        super().__init__(operator, adjoint, square, hyper, data)
         self.normal = normal
-        self.mean_t = self.adjoint(self.mean)
+        self.data_t = self.adjoint(self.data)
 
     def value(self, point: array) -> float:
         """The value of the criterion at given point
 
         Return `μ·||V·x - ω||²`
         """
-        return self.hyper * np.sum((self.operator(point) - self.mean) ** 2) / 2
+        return self.hyper * np.sum((self.operator(point) - self.data) ** 2) / 2
 
     def gradient(self, point: array) -> array:
         """The gradient of the criterion at given point
@@ -451,7 +451,7 @@ class QuadCriterion(Criterion):
         precomputed
 
         """
-        return self.hyper * (self.normal(point) - self.mean_t)
+        return self.hyper * (self.normal(point) - self.data_t)
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
         """Return the normal matrix of the major function
