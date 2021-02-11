@@ -17,7 +17,7 @@ library will also be appreciated.
 
 ::
 
-   @software{forieuxmmq,
+   @software{mmq,
       title = {MM-Q},
       author = {Orieux, Fran\c{c}ois},
       url = {https://github.com/forieux/mmq},
@@ -32,13 +32,12 @@ The MM-Q optimization algorithms allow finding the minimum of criteria like
 ``J(x) = ∑ᵢ μₖ ψₖ(Vₖ·x - ωₖ)``
 
 where ``x`` is the unknown vector, ``Vₖ`` a linear operator, ``ωₖ`` a fixed
-vector, ``μₖ`` a scalar, ``ψₖ(u) = ∑ᵢφₖ(uᵢ)``, and ``φₖ`` a function that must
-be differentiable, even, coercive, ``φ(√(·))`` concave, and ``0 < φ'(u) / u <
-+∞``.
+data, ``μₖ`` a scalar, ``ψₖ(u) = ∑ᵢφₖ(uᵢ)``, and ``φₖ`` a function that must be
+differentiable, even, coercive, ``φ(√(·))`` concave, and ``0 < φ'(u) / u < +∞``.
 
 The optimization is done thanks to quadratic sugorate function. In particular,
-no linesearch is necessary and close form formula are used with guaranted
-convergence.
+no linesearch is necessary and close form formula for the step are used with
+guaranted convergence.
 
 A classical example, like in the figure below that show an image deconvolution
 problem, is the resolution of an inverse problem with the minimization of
@@ -73,12 +72,12 @@ Example
 
 The ``demo.py`` presents an example on image deconvolution. The first step is to
 implement the operators ``V`` and the adjoint ``Vᵗ`` as callable (function or
-methods). The user is in charge of these operators and the callable must accept
-a unique parameter ``x`` and return a unique vector. There is no constraints on
-the shape, everything is vectorized internally.
+methods). The user is in charge of these operators and these callable must
+accept a unique parameter ``x`` and a unique return value. There is no
+constraints on the shape, everything is vectorized internally.
 
 After import of ``mmq``, you must instantiate ``Potential`` objects that
-implement ``φ`` and ``Criterion`` object that implements ``ψ(V·x - ω)``
+implement ``φ`` and ``Criterion`` object that implements ``μ ψ(V·x - ω)``
 
 .. code:: python
 
@@ -88,7 +87,7 @@ implement ``φ`` and ``Criterion`` object that implements ``ψ(V·x - ω)``
 
    # ∥y - H·x∥²
    data_adeq = mmq.QuadCriterion(H, Ht, HtH, mean=data)
-   # μ ψ(V·x) = μ ∑ᵢ φ(vᵢ^t·x)
+   # μ ψ(V·x) = μ ∑ᵢ φ(vᵢᵗ·x)
    prior = mmq.Criterion(V, Vt, phi, hyper=0.01)
    
 Then you can run the algorithm
@@ -97,13 +96,14 @@ Then you can run the algorithm
 
    res, norm_grad = mmq.mmmg([data_adeq, prior], init, max_iter=200)
 
-where :code:`[data_adeq, prior]` means that the two criterion are summed.
+where :code:`[data_adeq, prior]` means that the two criterion are summed. For
+more details, see documentation.
 
 Installation
 ------------
 
 No installation procedure has been implemented at that time. Just copy the
-``mmq`` directory or the ``mmq.py`` file where your code can access it.
+``mmq`` directory or the ``mmq.py`` file where the ``sys.path`` can find it.
 
 MM-Q only depends on ``numpy`` and Python 3.6.
 
