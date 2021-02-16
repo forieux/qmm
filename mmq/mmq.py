@@ -13,7 +13,7 @@ the `mmmg` function needs in practive any object with three specific methods.
 - `operator` : a callable with a point `x` as unique parameter, that must return
   the application of `V` (that is `V·x`).
 - `gradient` : a callable with a point `x` as unique parameter, that must return
-  the gradient of the criterion (that is `V^t φ'(V·x - ω)`).
+  the gradient of the criterion (that is `Vᵗ·φ'(V·x - ω)`).
 - `norm_mat_major` : a callable with two parameters. The first one is the result
   of the operator applied on the subspace vectors. The second is the point `x`,
   where the normal matrix of the quadratic major function must be returned.
@@ -42,12 +42,12 @@ def mmmg(
 ) -> Tuple[array, List[float]]:
     """The Majorize-Minimize Memory Gradient (3mg) algorithm
 
-    The 3mg (see [2] and [1]) is a subspace memory-gradient optimization
-    algorithm with an explicit step formula based on Majorize-Minimize Quadratic
-    approach. This ensures quick convergence of the algorithm to a minimizer of
-    the criterion without line search for the step and without tuning
-    parameters. On the contrary, the criterion must meet conditions. In
-    particular, the criterion must be like
+    The 3mg (see [1]) is a subspace memory-gradient optimization algorithm with
+    an explicit step formula based on Majorize-Minimize Quadratic approach. This
+    ensures quick convergence of the algorithm to a minimizer of the criterion
+    without line search for the step and without tuning parameters. On the
+    contrary, the criterion must meet conditions. In particular, the criterion
+    must be like
 
        `J(x) = ∑ₖ φₖ(Vₖ·x - ωₖ)`
 
@@ -93,10 +93,7 @@ def mmmg(
 
     References
     ----------
-    .. [1] C. Labat and J. Idier, “Convergence of Conjugate Gradient Methods
-       with a Closed-Form Stepsize Formula,” J Optim Theory Appl, p. 18, 2008.
-
-    .. [2] E. Chouzenoux, J. Idier, and S. Moussaoui, “A Majorize–Minimize
+    .. [1] E. Chouzenoux, J. Idier, and S. Moussaoui, “A Majorize–Minimize
        Strategy for Subspace Optimization Applied to Image Restoration,” IEEE
        Trans. on Image Process., vol. 20, no. 6, pp. 1517–1528, Jun. 2011, doi:
        10.1109/TIP.2010.2103083.
@@ -402,7 +399,7 @@ class Criterion:
 
 
 class QuadCriterion(Criterion):
-    """A quadratic criterion μ||V·x - ω||²"""
+    """A quadratic criterion ½ μ ||V·x - ω||²"""
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
@@ -427,27 +424,26 @@ class QuadCriterion(Criterion):
         data: ndarray, optionnal
           ω
         """
-        square = Square()
-        super().__init__(operator, adjoint, square, hyper, data)
+        super().__init__(operator, adjoint, Square(), hyper, data)
         self.normal = normal
         self.data_t = self.adjoint(self.data)
 
     def value(self, point: array) -> float:
         """The value of the criterion at given point
 
-        Return `μ·||V·x - ω||²`
+        Return `½ μ ||V·x - ω||²`
         """
         return self.hyper * np.sum((self.operator(point) - self.data) ** 2) / 2
 
     def gradient(self, point: array) -> array:
         """The gradient of the criterion at given point
 
-        Return `μ·Vᵗ(V·x - ω)`
+        Return `μ Vᵗ·(V·x - ω)`
 
         Notes
         -----
         Use `normal` `Q` callable internally for potential better efficiency,
-        with computation of `μ·(Q.x - b)` where `Q = Vᵗ·V` and `b = Vᵗ·ω` is
+        with computation of `μ (Q·x - b)` where `Q = Vᵗ·V` and `b = Vᵗ·ω` is
         precomputed
 
         """
@@ -594,9 +590,11 @@ Convex and coercive
 
 
 class Hyperbolic(Potential):
-    """The convex coercive hyperbolic function
+    r"""The convex coercive hyperbolic function
 
-    φ(u) = √(1 + u²/delta²) - 1
+    .. math::
+
+       \phi(u) = \delta^2 \left( \sqrt{1 + \frac{u^2}{\delta^2}} -1 \right)
 
     This is called sometimes Pseudo-Huber.
     """
@@ -626,9 +624,15 @@ Convex and coercive
 
 
 class Huber(Potential):
-    """The convex coercive Huber function
+    r"""The convex coercive Huber function
 
-    φ(u) = u², if |u| < δ, δ|u| - δ²/2, otherwise.
+    .. math::
+
+       \phi(u) =
+       \begin{cases}
+          \frac{1}{2} u^2 & \text{, if } u \leq \delta, \\
+          \delta |u| - \frac{\delta^2}{2} & \text{, otherwise.}
+       \end{cases}
 
     """
 
@@ -651,9 +655,9 @@ class Huber(Potential):
     def __repr__(self):
         return """
        ⎛
-       ⎜  ½ u²       , if |u| < δ
+       ⎜ ½ u²        , if |u| < δ
 φ(u) = ⎜
-       ⎜ δ(|u| - δ/2), otherwise.
+       ⎜ δ|u| - δ²/2 , otherwise.
        ⎝
 
 Convex and coercive.
@@ -696,7 +700,7 @@ class SquareTruncApprox(Potential):
 
     """
 
-    def __init__(self, delta: array) -> array:
+    def __init__(self, delta: array):
         super().__init__(inf=1 / (delta ** 2))
         self.delta = delta
         self.convex = False
