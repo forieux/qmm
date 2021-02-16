@@ -13,30 +13,33 @@ from mmq import mmq, operators  # type: ignore
 imag = scipy.misc.ascent()
 shape = imag.shape
 
-# Forward model
+#%% Forward model
 ir = np.ones((5, 5)) / 25
 obs = operators.Conv2(ir, shape)
 
-# Simulated data
+#%% Simulated data
 data = obs(imag)
 data += np.random.standard_normal(data.shape)
 init = obs.adjoint(data)
 
-# Regularization
+#%% Regularization
 diffr = operators.Diff(axis=0)
 diffc = operators.Diff(axis=1)
 pot = mmq.Huber(delta=10)
 
-# Criterions definition
-data_adeq = mmq.QuadCriterion(obs.forward, obs.adjoint, obs.fwback, mean=data)
+#%% Criterions definition
+data_adeq = mmq.QuadCriterion(obs.forward, obs.adjoint, obs.fwback, data=data)
 priorr_adeq = mmq.Criterion(diffr.forward, diffr.adjoint, pot, hyper=0.01)
 priorc_adeq = mmq.Criterion(diffc.forward, diffc.adjoint, pot, hyper=0.01)
 
+#%% Optimization algorithm
 t0 = time.time()
+init_copy = init.copy()
 res, norm_grad = mmq.mmmg([data_adeq, priorr_adeq, priorc_adeq], init, max_iter=200)
 tot_time = time.time() - t0
 
-# Plot
+
+#%% Plot
 plt.figure(1)
 plt.clf()
 plt.subplot(2, 2, 1)
