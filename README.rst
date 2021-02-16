@@ -86,7 +86,7 @@ implement ``φ`` and ``Criterion`` object that implements ``μ ψ(V·x - ω)``
    phi = mmq.Huber(delta=10)
 
    # ∥y - H·x∥²
-   data_adeq = mmq.QuadCriterion(H, Ht, HtH, mean=data)
+   data_adeq = mmq.QuadCriterion(H, Ht, HtH, data=data)
    # μ ψ(V·x) = μ ∑ᵢ φ(vᵢᵗ·x)
    prior = mmq.Criterion(V, Vt, phi, hyper=0.01)
    
