@@ -229,7 +229,7 @@ def mmcg(
         ]
 
         step = direction.T @ residual
-        step /= sum(
+        step = step / sum(
             crit.norm_mat_major(i_op_dir, point.reshape(init.shape))
             for crit, i_op_dir in zip(crit_list, op_direction)
         )
