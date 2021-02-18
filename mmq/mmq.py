@@ -1,14 +1,19 @@
-"""This module implements Majorize-Minimize Quadratic optimization algorithms
+"""
+The MMQ module
+==============
 
-The main point of interest in the module is the `mmmg` function. `Criterion` is
-use to easily build criterion.
+
+This module implements Majorize-Minimize Quadratic optimization algorithms
+
+The main points of interest are the `mmmg` and `mm_cg` functions. `Criterion` is
+use to easily build criterion optimized by these function.
 
 Comments on `Criterion`
 -----------------------
 
 The module provides a `Criterion` object for convenience. This object has be
 made to help the implementation. However, thanks to dynamic nature of python,
-the `mmmg` function needs in practive any object with three specific methods.
+the algorithms need in practive any object with three specific methods.
 
 - `operator` : a callable with a point `x` as unique parameter, that must return
   the application of `V` (that is `V·x`).
@@ -22,13 +27,12 @@ the `mmmg` function needs in practive any object with three specific methods.
 
 # pylint: disable=bad-continuation
 
-import functools
 import abc
-from typing import Callable, Tuple, List, Union
+import functools
+from typing import Callable, List, Tuple, Union
 
 import numpy as np  # type: ignore
 import numpy.linalg as la  # type: ignore
-
 from numpy import ndarray as array
 
 ArrOrList = Union[array, List[array]]
@@ -40,20 +44,11 @@ def mmmg(
     tol: float = 1e-4,
     max_iter: int = 500,
 ) -> Tuple[array, List[float]]:
-    """The Majorize-Minimize Memory Gradient (3mg) algorithm
+    r"""The Majorize-Minimize Memory Gradient (`3mg`) algorithm
 
-    The 3mg (see [1]) is a subspace memory-gradient optimization algorithm with
-    an explicit step formula based on Majorize-Minimize Quadratic approach. This
-    ensures quick convergence of the algorithm to a minimizer of the criterion
-    without line search for the step and without tuning parameters. On the
-    contrary, the criterion must meet conditions. In particular, the criterion
-    must be like
-
-       `J(x) = ∑ₖ φₖ(Vₖ·x - ωₖ)`
-
-    where `x` is the unkown of size `N`, `V` a matrix of size `M × N` and `ω` of
-    size `M`. In addition, among other conditions, `φ` must be differentiable
-    (see documentation, [1], and [2] for details).
+    The `mmmg`, or `3mg`, algorithm is a subspace memory-gradient optimization
+    algorithm with an explicit step formula based on Majorize-Minimize Quadratic
+    approach.
 
     Parameters
     ----------
@@ -83,9 +78,22 @@ def mmmg(
 
     Notes
     -----
+
+    The explicit step formula ensures fast convergence of the algorithm to a
+    minimizer of the criterion without line search for the step and without
+    tuning parameters. On the contrary, the criterion must meet conditions. In
+    particular, the criterion must be like
+
+    .. math::
+       J(x) = \sum_k \phi_k(V_k x - \omega_k)
+
+    where `x` is the unkown of size `N`, `V` a matrix, and `ω` of size `M`. In
+    addition, among other conditions, `φ` must be differentiable (see
+    documentation and [2]_ for details).
+
     The output of callable (e. g. operator in Criterion), and the `init` value,
-    are automatically vectorized internally. However, the output is reshaped as
-    the `init` array.
+    are vectorized internally. The output `minimiser` is reshaped as the `init`
+    array.
 
     The algorithm use `Criterion` data structure. Thanks to dynamic nature of
     python, this is not required and user can provide it's own structure, see
@@ -93,7 +101,7 @@ def mmmg(
 
     References
     ----------
-    .. [1] E. Chouzenoux, J. Idier, and S. Moussaoui, “A Majorize–Minimize
+    .. [2] E. Chouzenoux, J. Idier, and S. Moussaoui, “A Majorize–Minimize
        Strategy for Subspace Optimization Applied to Image Restoration,” IEEE
        Trans. on Image Process., vol. 20, no. 6, pp. 1517–1528, Jun. 2011, doi:
        10.1109/TIP.2010.2103083.
@@ -151,9 +159,9 @@ def mmcg(
 ) -> Tuple[array, List[float]]:
     """The Majorize-Minimize Conjugate Gradient (MM-CG) algorithm
 
-    The MM-CG [1] is a nonlinear conjugate gradient (NL-CG) (NL-CG) (NL-CG)
-    (NL-CG) (NL-CG) (NL-CG) (NL-CG) (NL-CG) (NL-CG) optimization algorithm with
-    an explicit step formula based on Majorize-Minimize Quadratic approach. This
+    The MM-CG is a nonlinear conjugate gradient (NL-CG) (NL-CG) (NL-CG) (NL-CG)
+    (NL-CG) (NL-CG) (NL-CG) (NL-CG) (NL-CG) optimization algorithm with an
+    explicit step formula based on Majorize-Minimize Quadratic approach. This
     ensures quick convergence of the algorithm to a minimizer of the criterion
     without line search for the step and without tuning parameters. On the
     contrary, the criterion must meet conditions. In particular, the criterion
@@ -163,7 +171,7 @@ def mmcg(
 
     where `x` is the unkown of size `N`, `V` a matrix of size `M × N` and `ω` of
     size `M`. In addition, among other conditions, `φ` must be differentiable
-    (see documentation and [1] for details).
+    (see documentation and [1]_ for details).
 
     Parameters
     ----------
@@ -285,7 +293,7 @@ class Criterion:
         Parameters
         ----------
         operator: callable
-          V·x
+          A callable that compute the output `V·x` given `x`.
         adjoint: callable
           Vᵗ·e
         potential: Potential
@@ -486,38 +494,52 @@ class Potential(abc.ABC):
     Attributs
     ---------
     inf : float
-        The value of lim_{u→0} φ'(u) / u
+      The value of lim_{u→0} φ'(u) / u.
+
+    convex : boolean
+      A flag indicating if the potential is convex.
+
+    coercive : boolean
+      A flag indicating if the potential is coercive.
     """
 
-    def __init__(self, inf: float):
+    def __init__(self, inf: float, convex: bool = False, coercive: bool = False):
         """The potentials φ
 
         Parameters
         ----------
         inf : float
           The value of lim_{u→0} φ'(u) / u
+
+        convex : boolean
+          A flag indicating if the potential is convex.
+
+        coercive : boolean
+          A flag indicating if the potential is coercive.
         """
         self.inf = inf
+        self.convex = convex
+        self.coercive = coercive
 
     @abc.abstractmethod
     def value(self, point: array) -> array:
-        """The value at given point"""
+        """The value φ(·) at given point."""
         return NotImplemented
 
     @abc.abstractmethod
     def gradient(self, point: array) -> array:
-        """The gradient at given point"""
+        """The gradient φ'(·) at given point."""
         return NotImplemented
 
     def gr_coeffs(self, point: array) -> array:
-        """The GR coefficients at given point"""
+        """The Geman \& Reynolds φ'(·)/· coefficients at given point."""
         aux = self.inf * np.ones_like(point)
         idx = point != 0
         aux[idx] = self.gradient(point[idx]) / point[idx]
         return aux
 
     def __call__(self, point: array) -> array:
-        """The value at given point"""
+        """The value at given point."""
         return self.value(point)
 
 
@@ -532,10 +554,8 @@ class VminProj(Potential):
 
         D(u) = ½ ||P_[m, +∞[(u) - m||²
         """
-        super().__init__(inf=1)
+        super().__init__(inf=1, convex=True, coercive=True)
         self.vmin = vmin
-        self.convex = True
-        self.coercive = True
 
     def value(self, point: array) -> array:
         return np.sum((point[point < self.vmin] - self.vmin) ** 2 / 2)
@@ -550,11 +570,9 @@ class VmaxProj(Potential):
     D(u) = ½ ||P_]-∞, M](u) - M||²
     """
 
-    def __init__(self, vmax: float):
+    def __init__(self, vmax: float, convex=True, coercive=True):
         super().__init__(inf=1)
         self.vmax = vmax
-        self.convex = True
-        self.coercive = True
 
     def value(self, point: array) -> array:
         return np.sum((point[point > self.vmax] - self.vmax) ** 2 / 2)
@@ -564,16 +582,16 @@ class VmaxProj(Potential):
 
 
 class Square(Potential):
-    """The square convex coercive function
+    r"""The square function
 
-    φ(u) = ½ u²
+    .. math::
+
+       \phi(u) = \frac{1}{2} u^2
 
     """
 
     def __init__(self):
-        super().__init__(inf=1)
-        self.convex = True
-        self.coercive = True
+        super().__init__(inf=1, convex=True, coercive=True)
 
     def value(self, point: array) -> array:
         return point ** 2 / 2
@@ -600,11 +618,9 @@ class Hyperbolic(Potential):
     """
 
     def __init__(self, delta: float):
-        super().__init__(inf=1 / (delta ** 2))
+        super().__init__(inf=1 / (delta ** 2), convex=True, coercive=True)
         self.inf = 1 / (2 * delta)  # To check
         self.delta = delta
-        self.convex = True
-        self.coercive = True
 
     def value(self, point: array) -> array:
         return self.delta ** 2 * np.sqrt(1 + (point ** 2) / (self.delta ** 2)) - 1
@@ -637,10 +653,8 @@ class Huber(Potential):
     """
 
     def __init__(self, delta: float):
-        super().__init__(inf=1)
+        super().__init__(inf=1, convex=True, coercive=True)
         self.delta = delta
-        self.convex = True
-        self.coercive = True
 
     def value(self, point: array) -> array:
         return np.where(
@@ -665,17 +679,17 @@ Convex and coercive.
 
 
 class GemanMcClure(Potential):
-    """The Geman & McClure non-convex non-coervice function
+    r"""The Geman & McClure non-convex non-coervice function
 
-    φ(u) = u² / (2 δ² + u²)
+    .. math::
+
+       \phi(u) = \frac{u^2}{2\delta^2 + u^2}
 
     """
 
     def __init__(self, delta: float):
-        super().__init__(1 / (delta ** 2))
+        super().__init__(1 / (delta ** 2), convex=False, coercive=False)
         self.delta = delta
-        self.convex = False
-        self.coercive = False
 
     def value(self, point: array) -> array:
         return point ** 2 / (2 * self.delta ** 2 + point ** 2)
@@ -694,17 +708,17 @@ Non-convex and non-coercive
 
 
 class SquareTruncApprox(Potential):
-    """The non-convex non-coercive, truncated square approximation
+    r"""The non-convex non-coercive truncated square approximation
 
-    φ(u) = 1 - exp(- u²/(2 δ²)
+    .. math::
+
+       \phi(u) = 1 - \exp \left(- \frac{u^2}{2\delta^2} \right)
 
     """
 
     def __init__(self, delta: array):
-        super().__init__(inf=1 / (delta ** 2))
+        super().__init__(inf=1 / (delta ** 2), convex=False, coercive=False)
         self.delta = delta
-        self.convex = False
-        self.coercive = False
 
     def value(self, point: array) -> array:
         return 1 - np.exp(-(point ** 2) / (2 * self.delta ** 2))
@@ -724,17 +738,17 @@ Non-convex and non-coercive
 
 
 class HerbertLeahy(Potential):
-    """The Herbert & Leahy non-convex coercive function
+    r"""The Herbert & Leahy non-convex coercive function
 
-    φ(u) = log(1 + u² / δ²)
+    .. math::
+
+       \phi(u) = \log \left(1 + \frac{u^2}{\delta^2} \right)
 
     """
 
     def __init__(self, delta: float):
-        super().__init__(inf=np.inf)
+        super().__init__(inf=np.inf, convex=False, coercive=True)
         self.delta = delta
-        self.convex = False
-        self.coercive = True
 
     def value(self, point: array) -> array:
         return np.log(1 + point ** 2 / self.delta ** 2)
@@ -754,9 +768,9 @@ Non-convex and coercive
 
 # Not used finally
 def vectorize(
-    func: Callable[[array], array], in_shape: Tuple
+    func: Callable[[array], array], input_shape: Tuple
 ) -> Callable[[array], array]:
-    """Vectorize a function
+    """Vectorize a callable.
 
     Wrap a function to accept a vectorized version of the input and to produce
     vectorized version of the ouput
@@ -768,18 +782,19 @@ def vectorize(
         The function to wrap. Must be a single ndarray parameter callable that
         produce a single ndarray output.
 
-    in_shape : tuple
-        The shape that func ask as input.
+    input_shape : tuple
+        The shape that `func` ask as input.
 
     Returns
     -------
-    The wrapped callable.
+    out : callable
+      The wrapped callable.
 
     """
 
     @functools.wraps(func)
     def wrapper(arr):
-        out = func(np.reshape(arr, in_shape))
+        out = func(np.reshape(arr, input_shape))
         return out.reshape((-1, 1))
 
     return wrapper
