@@ -4,11 +4,11 @@
 
 import time
 
+import matplotlib.pyplot as plt  # type: ignore
 import numpy as np  # type: ignore
 import scipy.misc  # type: ignore
-import matplotlib.pyplot as plt  # type: ignore
 
-from mmq import mmq, operators  # type: ignore
+from qmm import operators, qmm  # type: ignore
 
 imag = scipy.misc.ascent()
 shape = imag.shape
@@ -25,17 +25,17 @@ init = obs.adjoint(data)
 #%% Regularization
 diffr = operators.Diff(axis=0)
 diffc = operators.Diff(axis=1)
-pot = mmq.Huber(delta=10)
+pot = qmm.Huber(delta=10)
 
 #%% Criterions definition
-data_adeq = mmq.QuadCriterion(obs.forward, obs.adjoint, obs.fwback, data=data)
-priorr_adeq = mmq.Criterion(diffr.forward, diffr.adjoint, pot, hyper=0.01)
-priorc_adeq = mmq.Criterion(diffc.forward, diffc.adjoint, pot, hyper=0.01)
+data_adeq = qmm.QuadCriterion(obs.forward, obs.adjoint, obs.fwback, data=data)
+priorr_adeq = qmm.Criterion(diffr.forward, diffr.adjoint, pot, hyper=0.01)
+priorc_adeq = qmm.Criterion(diffc.forward, diffc.adjoint, pot, hyper=0.01)
 
 #%% Optimization algorithm
 t0 = time.time()
 init_copy = init.copy()
-res, norm_grad = mmq.mmmg([data_adeq, priorr_adeq, priorc_adeq], init, max_iter=200)
+res, norm_grad = qmm.mmmg([data_adeq, priorr_adeq, priorc_adeq], init, max_iter=200)
 tot_time = time.time() - t0
 
 

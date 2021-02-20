@@ -1,7 +1,7 @@
-MM-Q
+Q-MM
 ====
 
-MM-Q is a Python implementation of Majorize-Minimize Quadratic optimization
+Q-MM is a Python implementation of Majorize-Minimize Quadratic optimization
 algorithms. Algorithms provided here come from that research:
 
 .. [1] C. Labat and J. Idier, “Convergence of Conjugate Gradient Methods with a
@@ -18,16 +18,15 @@ toolbox will also be appreciated.
 ::
 
    @software{mmq,
-      title = {MM-Q: The Python Majorize-Minimize Quadratic toolbox},
+      title = {Q-MM: The Python Quadratic Majorize-Minimize toolbox},
       author = {Orieux, Fran\c{c}ois},
       url = {https://github.com/forieux/mmq},
    }
 
-
 Majorize-Minimize Quadratic
 ---------------------------
 
-The MM-Q optimization algorithms allow finding the minimum of criteria like
+The Q-MM optimization algorithms allow finding the minimum of criteria like
 
 ``J(x) = ∑ᵢ μₖ ψₖ(Vₖ·x - ωₖ)``
 
@@ -76,25 +75,25 @@ methods). The user is in charge of these operators and these callable must
 accept a unique parameter ``x`` and a unique return value. There is no
 constraints on the shape, everything is vectorized internally.
 
-After import of ``mmq``, you must instantiate ``Potential`` objects that
+After import of ``qmm``, you must instantiate ``Potential`` objects that
 implement ``φ`` and ``Criterion`` object that implements ``μ ψ(V·x - ω)``
 
 .. code:: python
 
-   import mmq
+   import qmm
    # φ
-   phi = mmq.Huber(delta=10)
+   phi = qmm.Huber(delta=10)
 
    # ∥y - H·x∥²
-   data_adeq = mmq.QuadCriterion(H, Ht, HtH, data=data)
+   data_adeq = qmm.QuadCriterion(H, Ht, HtH, data=data)
    # μ ψ(V·x) = μ ∑ᵢ φ(vᵢᵗ·x)
-   prior = mmq.Criterion(V, Vt, phi, hyper=0.01)
+   prior = qmm.Criterion(V, Vt, phi, hyper=0.01)
    
 Then you can run the algorithm
 
 .. code:: python
 
-   res, norm_grad = mmq.mmmg([data_adeq, prior], init, max_iter=200)
+   res, norm_grad = qmm.mmmg([data_adeq, prior], init, max_iter=200)
 
 where :code:`[data_adeq, prior]` means that the two criterion are summed. For
 more details, see documentation.
@@ -103,9 +102,9 @@ Installation
 ------------
 
 No installation procedure has been implemented at that time. Just copy the
-``mmq`` directory or the ``mmq.py`` file where the ``sys.path`` can find it.
+``qmm`` directory or the ``qmm.py`` file where the ``sys.path`` can find it.
 
-MM-Q only depends on ``numpy`` and Python 3.6.
+Q-MM only depends on ``numpy`` and Python 3.6.
 
 Documentation
 -------------
@@ -116,8 +115,8 @@ You can see the ``demo.py`` file for an example.
 Contribute
 ----------
 
-- Source code: `<https://github.com/forieux/mmq>`_
-- Issue tracker: `<https://github.com/forieux/mmq/issues>`_
+- Source code: `<https://github.com/forieux/qmm>`_
+- Issue tracker: `<https://github.com/forieux/qmm/issues>`_
 
 Support
 -------

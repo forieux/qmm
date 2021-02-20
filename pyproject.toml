@@ -1,9 +1,9 @@
 [tool.poetry]
-name = "mmq"
+name = "qmm"
 version = "0.1.0"
-description = "The Majorize-Minimize-Quadratic toolbox"
+description = "The Quadratic Majorize-Minimize toolbox"
 authors = ["François Orieux <orieux@l2s.centralesupelec.fr>"]
-license = "GPL3"
+license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.6"
@@ -12,9 +12,7 @@ numpy = "^1.19.4"
 [tool.poetry.dev-dependencies]
 ipython = "^7.19.0"
 jedi = "0.17.2"
-oct2py = "^5.2.0"
 matplotlib = "^3.3.3"
-pdoc = "^4.0.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
