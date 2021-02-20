@@ -5,7 +5,7 @@
 
    background
    installation
-   usage
+   tutorial
    qmm
    extend
 

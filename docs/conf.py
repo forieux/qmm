@@ -15,7 +15,7 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath("../mmq"))
+sys.path.insert(0, os.path.abspath("../qmm"))
 
 
 # -- Project information -----------------------------------------------------
@@ -59,6 +59,7 @@ autodoc_default_options = {
 autodoc_typehints = "none"
 autodoc_member_order = "bysource"
 typehints_document_rtype = False
+add_module_names = False
 
 
 # Add any paths that contain templates here, relative to this directory.

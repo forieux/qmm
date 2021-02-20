@@ -41,12 +41,12 @@ guaranteed convergence.
 A classical example, like in the figure below that show an image deconvolution
 problem, is the resolution of an inverse problem with the minimization of
 
-``J(x) = ∥y - H·x∥² + μ ψ(V·x)``
+``J(x) = ||y - H·x||² + μ ψ(V·x)``
 
 where ``H`` is a low-pass forward model, ``V`` a regularization operator that
 approximate gradient (kind of high-pass filter) and ``ψ`` an edge preserving
 function like Huber. The above criterion is obtained with ``k ∈ {1, 2}``,
-``ψ₁(·) = ∥·∥²``, ``V₁ = H``, ``ω₁ = y``, and ``ω₂ = 0``.
+``ψ₁(·) = ||·||²``, ``V₁ = H``, ``ω₁ = y``, and ``ω₂ = 0``.
 
 .. image:: ./docs/image.png
 
@@ -84,7 +84,7 @@ implement ``φ`` and ``Criterion`` object that implements ``μ ψ(V·x - ω)``
    # φ
    phi = qmm.Huber(delta=10)
 
-   # ∥y - H·x∥²
+   # ||y - H·x||²
    data_adeq = qmm.QuadCriterion(H, Ht, HtH, data=data)
    # μ ψ(V·x) = μ ∑ᵢ φ(vᵢᵗ·x)
    prior = qmm.Criterion(V, Vt, phi, hyper=0.01)

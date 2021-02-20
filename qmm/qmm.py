@@ -1,26 +1,11 @@
-"""
-The MMQ module
-==============
+"""The ``qmm`` module
+==================
 
 This module implements Majorize-Minimize Quadratic optimization algorithms
 
-The main points of interest are the `mmmg` and `mm_cg` functions. `Criterion` is
-use to easily build criterion optimized by these function.
-
-Comments on `Criterion`
------------------------
-
-The module provides a `Criterion` object for convenience. This object has be
-made to help the implementation. However, thanks to dynamic nature of python,
-the algorithms need in practive any object with three specific methods.
-
-- `operator` : a callable with a point `x` as unique parameter, that must return
-  the application of `V` (that is `V·x`).
-- `gradient` : a callable with a point `x` as unique parameter, that must return
-  the gradient of the criterion (that is `Vᵗ·φ'(V·x - ω)`).
-- `norm_mat_major` : a callable with two parameters. The first one is the result
-  of the operator applied on the subspace vectors. The second is the point `x`,
-  where the normal matrix of the quadratic major function must be returned.
+The main points of interest are the ``mmmg`` and ``mmcg`` functions.
+``Criterion`` is used to easily build criterion optimized by these algorithms.
+The ``Potential`` classes are used by ``Criterion``.
 
 """
 
@@ -51,14 +36,13 @@ def mmmg(
 
     Parameters
     ----------
+
     crit_list : list of Criterion
         A list of `Criterion` object that represent `φ(V·x - ω)`.
-        The use of this list is necessary to allow efficient implementation and
-        reuse of calculations. See notes section for details.
 
     init : array
-        The initial point. The init is update inplace. The user must make a copy
-        before calling mmmg if this is not the desired behaviour.
+        The initial point. The init array is updated inplace. The user must make
+        a copy before calling `mmmg` if this is not the desired behaviour.
 
     tol : float, optional
         The stopping tolerance. The algorithm is stopped when the gradient norm
@@ -69,6 +53,7 @@ def mmmg(
 
     Returns
     -------
+
     minimiser : array
         The minimiser of the criterion with same shape than `init`.
 
@@ -77,19 +62,20 @@ def mmmg(
 
     Notes
     -----
-    The output of callable (e.g. operator in Criterion), and the `init` value,
-    are vectorized internally. The output `minimiser` is reshaped like `init`
-    array.
+
+    The output of callable (e. g. `operator` in `Criterion`), and the `init`
+    value, are automatically vectorized internally. However, the output is
+    reshaped as the `init` array.
 
     The algorithm use `Criterion` data structure. Thanks to dynamic nature of
-    Python, this is not required and user can provide it's own structure, see
-    documentation. `Criterion` however comes with boilerplate.
+    python, this is not required and user can provide it's own structure, see
+    documentation.
 
     References
     ----------
-    .. [2] E. Chouzenoux, J. Idier, and S. Moussaoui, “A Majorize-Minimize
-       Strategy for Subspace Optimization Applied to Image Restoration,” IEEE
-       Trans. on Image Process., vol. 20, no. 6, pp. 1517–1528, Jun. 2011, doi:
+    .. E. Chouzenoux, J. Idier, and S. Moussaoui, “A Majorize-Minimize Strategy
+       for Subspace Optimization Applied to Image Restoration,” IEEE Trans. on
+       Image Process., vol. 20, no. 6, pp. 1517–1528, Jun. 2011, doi:
        10.1109/TIP.2010.2103083.
 
     """
@@ -147,28 +133,16 @@ def mmcg(
 
     The MM-CG is a nonlinear conjugate gradient (NL-CG) optimization algorithm
     with an explicit step formula based on Majorize-Minimize Quadratic approach.
-    This ensures quick convergence of the algorithm to a minimizer of the
-    criterion without line search for the step and without tuning parameters. On
-    the contrary, the criterion must meet conditions. In particular, the
-    criterion must be like
-
-    .. math::
-       J(x) = \sum_k \mu_k \Psi_k(V_k x - \omega_k)
-
-    where `x` is the unkown of size `N`, `V` a matrix of size `M × N` and `ω` of
-    size `M`. In addition, among other conditions, `φ` must be differentiable
-    (see documentation and [1]_ for details).
 
     Parameters
     ----------
+
     crit_list : list of Criterion
         A list of `Criterion` object that represent `φ(V·x - ω)`.
-        The use of this list is necessary to allow efficient implementation and
-        reuse of calculations. See notes section for details.
 
     init : ndarray
-        The initial point. The init is update inplace. The user must make a copy
-        before calling mmmg if this is not the desired behaviour.
+        The initial point. The init array is updated inplace. The user must make
+        a copy before calling `mmmg` if this is not the desired behaviour.
 
     precond : callable, optional
         A callable that must implement a preconditioner, that is `M⁻¹·x`. Must
@@ -183,6 +157,7 @@ def mmcg(
 
     Returns
     -------
+
     minimiser : ndarray
         The minimiser of the criterion with same shape than `init`.
 
@@ -191,17 +166,18 @@ def mmcg(
 
     Notes
     -----
-    The output of callable (e. g. operator in Criterion), and the `init` value,
-    are automatically vectorized internally. However, the output is reshaped as
-    the `init` array.
+
+    The output of callable (e. g. `operator` in `Criterion`), and the `init`
+    value, are automatically vectorized internally. However, the output is
+    reshaped as the `init` array.
 
     The algorithm use `Criterion` data structure. Thanks to dynamic nature of
     python, this is not required and user can provide it's own structure, see
-    documentation. `Criterion` however comes with boilerplate.
+    documentation.
 
     References
     ----------
-    .. [1] C. Labat and J. Idier, “Convergence of Conjugate Gradient Methods
+    .. C. Labat and J. Idier, “Convergence of Conjugate Gradient Methods
        with a Closed-Form Stepsize Formula,” J Optim Theory Appl, p. 18, 2008.
 
     """
