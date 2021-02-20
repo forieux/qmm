@@ -13,12 +13,12 @@ algorithms. Algorithms provided here come from that research:
    10.1109/TIP.2010.2103083.
 
 If you use this code, please cite the references above. A citation of this
-library will also be appreciated.
+toolbox will also be appreciated.
 
 ::
 
    @software{mmq,
-      title = {MM-Q},
+      title = {MM-Q: The Python Majorize-Minimize Quadratic toolbox},
       author = {Orieux, Fran\c{c}ois},
       url = {https://github.com/forieux/mmq},
    }
@@ -37,7 +37,7 @@ differentiable, even, coercive, ``φ(√(·))`` concave, and ``0 < φ'(u) / u < 
 
 The optimization is done thanks to quadratic sugorate function. In particular,
 no linesearch is necessary and close form formula for the step are used with
-guaranted convergence.
+guaranteed convergence.
 
 A classical example, like in the figure below that show an image deconvolution
 problem, is the resolution of an inverse problem with the minimization of
@@ -46,7 +46,7 @@ problem, is the resolution of an inverse problem with the minimization of
 
 where ``H`` is a low-pass forward model, ``V`` a regularization operator that
 approximate gradient (kind of high-pass filter) and ``ψ`` an edge preserving
-function like Huber. The above criterion is obtained with ``i ∈ {1, 2}``,
+function like Huber. The above criterion is obtained with ``k ∈ {1, 2}``,
 ``ψ₁(·) = ∥·∥²``, ``V₁ = H``, ``ω₁ = y``, and ``ω₂ = 0``.
 
 .. image:: ./docs/image.png
@@ -60,8 +60,8 @@ Features
   documentation and [1] for details.
 - **No linesearch**: the step is obtained from a close form formula.
 - **No conjugacy choice**: a conjugacy strategy is not necessary thanks to the
-  subspace nature of the algorithms. In case of ``mmcg``, the algorithm use a
-  Polak-Ribière formula.
+  subspace nature of the algorithms. The ``mmcg`` algorithm use a Polak-Ribière
+  formula.
 - Generic and flexible: there is no restriction on the number of regularizer,
   their type, .., as well as for data adequacy.
 - Provided base class for criterion allowing easier and fast implementation.
@@ -116,8 +116,8 @@ You can see the ``demo.py`` file for an example.
 Contribute
 ----------
 
-- Issue tracker: `<https://github.com/forieux/mmq/issues>`_
 - Source code: `<https://github.com/forieux/mmq>`_
+- Issue tracker: `<https://github.com/forieux/mmq/issues>`_
 
 Support
 -------
@@ -126,10 +126,12 @@ If you are having issues, please let us know.
 
 orieux AT l2s.centralesupelec.fr
 
+More information about me `here <https://pro.orieux.fr>`.
+
 License
 -------
 
-The project is licensed under the GPL3 license.
+The project is licensed under the MIT license.
 
 TODO
 ----
