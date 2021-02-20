@@ -6,14 +6,14 @@
    background
    installation
    usage
-   mmq
+   qmm
    extend
 
 ======================
- MM-Q's documentation
+ Q-MM's documentation
 ======================
 
-MM-Q is a small Python toolbox to optimise differentiable criterion
+Q-MM is a small Python toolbox to optimise differentiable criterion
 
 .. math::
    \hat x = \underset{x \in \mathbb{R}}{\text{arg min}}\ J(x)
@@ -41,9 +41,9 @@ Features
 Contribute
 ==========
 
-The code is hosted on `Github <https://github.com/forieux/mmq/>`_ under MIT
+The code is hosted on `Github <https://github.com/forieux/qmm/>`_ under MIT
 Licence. Feel free to contribute or submit `issue
-<https://github.com/forieux/mmq/issues>`_.
+<https://github.com/forieux/qmm/issues>`_.
 
 Author and support
 ==================
@@ -62,10 +62,10 @@ cite it
 
 ::
 
-   @software{mmq,
-      title = {MM-Q: The Python Majorize-Minimize Quadratic toolbox},
+   @software{qmm,
+      title = {Q-MM: The Python Quadratic Majorize-Minimize toolbox},
       author = {Orieux, Fran\c{c}ois},
-      url = {https://github.com/forieux/mmq},
+      url = {https://github.com/forieux/qmm},
    }
 
 and associated publications, see :doc:`Background <background>`.

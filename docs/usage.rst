@@ -2,7 +2,7 @@
  Usage
 =======
 
-The toolbox is just one file, the ``mmmq.py`` module. The module contains
+The toolbox is just one file, the ``qmm.py`` module. The module contains
 essentially three part:
 
 - the optimization algorithms, implemented as functions, that minimize
@@ -63,7 +63,7 @@ The second step is to instanciate a potential :math:`\phi`, Huber for instance
 
 .. code-block:: python
 
-   from mmq import Huber
+   from qmm import Huber
    phi = Huber(delta=10)
 
 Several potential are implemented, see TODO.
@@ -75,7 +75,7 @@ Then, a criterion :math:`\mu \Psi(Vx)` named ``prior`` can be instancied
 
 .. code-block:: python
 
-   from mmq import Criterion
+   from qmm import Criterion
 
    prior = Criterion(forward, adjoint, phi, hyper=0.01)
 
@@ -84,7 +84,7 @@ class ``QuadCriterion`` can be used
 
 .. code-block:: python
 
-   from mmq import QuadCriterion
+   from qmm import QuadCriterion
    data_adeq = QuadCriterion(H, Ht, data=data)
 
 .. note::
@@ -99,9 +99,9 @@ Then you can run the algorithm
 
 .. code:: python
 
-   from mmq import mmcg
+   from qmm import mmcg
 
-   miniser, _ = mmq.mmcg([data_adeq, prior], init, max_iter=200)
+   miniser, _ = qmm.mmcg([data_adeq, prior], init, max_iter=200)
 
 where :code:`[data_adeq, prior]` means that the two criterion are summed.
 

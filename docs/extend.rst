@@ -1,3 +1,3 @@
 ====================
- How to extend MM-Q
+ How to extend Q-MM
 ====================

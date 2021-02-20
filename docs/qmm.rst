@@ -2,5 +2,5 @@
  Title
 =======
 
-.. autoclass:: mmq.Criterion
+.. autoclass:: qmm.Criterion
    :members:

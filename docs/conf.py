@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.abspath("../mmq"))
 
 import sphinx_rtd_theme
 
-project = "MM-Q"
+project = "Q-MM"
 copyright = "2021, François Orieux"
 author = "François Orieux"
 
@@ -122,7 +122,7 @@ html_static_path = ["_static"]
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "MM-Qdoc"
+htmlhelp_basename = "Q-MMdoc"
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -146,7 +146,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, "MM-Q.tex", "MM-Q Documentation", "François Orieux", "manual"),
+    (master_doc, "Q-MM.tex", "Q-MM Documentation", "François Orieux", "manual"),
 ]
 
 
@@ -154,7 +154,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "mm-q", "MM-Q Documentation", [author], 1)]
+man_pages = [(master_doc, "q-mm", "Q-MM Documentation", [author], 1)]
 
 
 # -- Options for Texinfo output ----------------------------------------------
@@ -165,10 +165,10 @@ man_pages = [(master_doc, "mm-q", "MM-Q Documentation", [author], 1)]
 texinfo_documents = [
     (
         master_doc,
-        "MM-Q",
-        "MM-Q Documentation",
+        "Q-MM",
+        "Q-MM Documentation",
         author,
-        "MM-Q",
+        "Q-MM",
         "One line description of project.",
         "Miscellaneous",
     ),

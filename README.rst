@@ -17,10 +17,10 @@ toolbox will also be appreciated.
 
 ::
 
-   @software{mmq,
+   @software{qmm,
       title = {Q-MM: The Python Quadratic Majorize-Minimize toolbox},
       author = {Orieux, Fran\c{c}ois},
-      url = {https://github.com/forieux/mmq},
+      url = {https://github.com/forieux/qmm},
    }
 
 Majorize-Minimize Quadratic
