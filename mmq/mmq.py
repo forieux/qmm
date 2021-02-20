@@ -2,7 +2,6 @@
 The MMQ module
 ==============
 
-
 This module implements Majorize-Minimize Quadratic optimization algorithms
 
 The main points of interest are the `mmmg` and `mm_cg` functions. `Criterion` is
@@ -46,7 +45,7 @@ def mmmg(
 ) -> Tuple[array, List[float]]:
     r"""The Majorize-Minimize Memory Gradient (`3mg`) algorithm
 
-    The `mmmg`, or `3mg`, algorithm is a subspace memory-gradient optimization
+    The `mmmg` (`3mg`) algorithm is a subspace memory-gradient optimization
     algorithm with an explicit step formula based on Majorize-Minimize Quadratic
     approach.
 
@@ -78,30 +77,17 @@ def mmmg(
 
     Notes
     -----
-
-    The explicit step formula ensures fast convergence of the algorithm to a
-    minimizer of the criterion without line search for the step and without
-    tuning parameters. On the contrary, the criterion must meet conditions. In
-    particular, the criterion must be like
-
-    .. math::
-       J(x) = \sum_k \phi_k(V_k x - \omega_k)
-
-    where `x` is the unkown of size `N`, `V` a matrix, and `ω` of size `M`. In
-    addition, among other conditions, `φ` must be differentiable (see
-    documentation and [2]_ for details).
-
-    The output of callable (e. g. operator in Criterion), and the `init` value,
-    are vectorized internally. The output `minimiser` is reshaped as the `init`
+    The output of callable (e.g. operator in Criterion), and the `init` value,
+    are vectorized internally. The output `minimiser` is reshaped like `init`
     array.
 
     The algorithm use `Criterion` data structure. Thanks to dynamic nature of
-    python, this is not required and user can provide it's own structure, see
+    Python, this is not required and user can provide it's own structure, see
     documentation. `Criterion` however comes with boilerplate.
 
     References
     ----------
-    .. [2] E. Chouzenoux, J. Idier, and S. Moussaoui, “A Majorize–Minimize
+    .. [2] E. Chouzenoux, J. Idier, and S. Moussaoui, “A Majorize-Minimize
        Strategy for Subspace Optimization Applied to Image Restoration,” IEEE
        Trans. on Image Process., vol. 20, no. 6, pp. 1517–1528, Jun. 2011, doi:
        10.1109/TIP.2010.2103083.
@@ -110,18 +96,18 @@ def mmmg(
     point = init.reshape((-1, 1))
     norm_grad = []
 
-    # The first previous moves are initialized with 0 array. Consquently, the
+    # The first previous moves are initialized with 0 array. Consequently, the
     # first iterations implementation can be improved, at the cost of if
     # statement.
     move = np.zeros_like(point)
     op_directions = [
-        np.tile(vect(crit.operator, move, init.shape), 2) for crit in crit_list
+        np.tile(_vect(crit.operator, move, init.shape), 2) for crit in crit_list
     ]
     step = np.ones((2, 1))
 
     for _ in range(max_iter):
         # Vectorized gradient
-        grad = gradient(crit_list, point, init.shape)
+        grad = _gradient(crit_list, point, init.shape)
         norm_grad.append(la.norm(grad))
 
         # Stopping test
@@ -133,7 +119,7 @@ def mmmg(
 
         # Step by Majorize-Minimize
         op_directions = [
-            np.c_[vect(crit.operator, grad, init.shape), i_op_dir @ step]
+            np.c_[_vect(crit.operator, grad, init.shape), i_op_dir @ step]
             for crit, i_op_dir in zip(crit_list, op_directions)
         ]
         step = -la.pinv(
@@ -159,15 +145,15 @@ def mmcg(
 ) -> Tuple[array, List[float]]:
     """The Majorize-Minimize Conjugate Gradient (MM-CG) algorithm
 
-    The MM-CG is a nonlinear conjugate gradient (NL-CG) (NL-CG) (NL-CG) (NL-CG)
-    (NL-CG) (NL-CG) (NL-CG) (NL-CG) (NL-CG) optimization algorithm with an
-    explicit step formula based on Majorize-Minimize Quadratic approach. This
-    ensures quick convergence of the algorithm to a minimizer of the criterion
-    without line search for the step and without tuning parameters. On the
-    contrary, the criterion must meet conditions. In particular, the criterion
-    must be like
+    The MM-CG is a nonlinear conjugate gradient (NL-CG) optimization algorithm
+    with an explicit step formula based on Majorize-Minimize Quadratic approach.
+    This ensures quick convergence of the algorithm to a minimizer of the
+    criterion without line search for the step and without tuning parameters. On
+    the contrary, the criterion must meet conditions. In particular, the
+    criterion must be like
 
-       `J(x) = ∑ₖ φₖ(Vₖ·x - ωₖ)`
+    .. math::
+       J(x) = \sum_k \mu_k \Psi_k(V_k x - \omega_k)
 
     where `x` is the unkown of size `N`, `V` a matrix of size `M × N` and `ω` of
     size `M`. In addition, among other conditions, `φ` must be differentiable
@@ -224,7 +210,7 @@ def mmcg(
 
     point = init.reshape((-1, 1))
 
-    residual = -gradient(crit_list, point, init.shape)
+    residual = -_gradient(crit_list, point, init.shape)
     sec = precond(residual)
     direction = sec
     delta = residual.T @ direction
@@ -233,7 +219,7 @@ def mmcg(
     for _ in range(max_iter):
         # update
         op_direction = [
-            vect(crit.operator, direction, init.shape) for crit in crit_list
+            _vect(crit.operator, direction, init.shape) for crit in crit_list
         ]
 
         step = direction.T @ residual
@@ -245,7 +231,7 @@ def mmcg(
         point += step * direction
 
         # Gradient
-        residual = -gradient(crit_list, point, init.shape)
+        residual = -_gradient(crit_list, point, init.shape)
 
         # Stop test
         norm_res.append(la.norm(residual))
@@ -266,27 +252,40 @@ def mmcg(
 
 
 # Vectorized call
-def vect(func: Callable[[array], array], point: array, shape: Tuple) -> array:
+def _vect(func: Callable[[array], array], point: array, shape: Tuple) -> array:
     """Call func with point reshaped as shape and return vectorized output"""
     return np.reshape(func(np.reshape(point, shape)), (-1, 1))
 
 
 # Vectorized gradient
-def gradient(crit_list: List["Criterion"], point: array, shape: Tuple) -> array:
+def _gradient(crit_list: List["Criterion"], point: array, shape: Tuple) -> array:
     """Compute sum of gradient with vectorized parameters and return"""
-    return sum(vect(crit.gradient, point, shape) for crit in crit_list)
+    return sum(_vect(crit.gradient, point, shape) for crit in crit_list)
+
+
+"""
+The Criterion classe
+====================
+
+The `Criterion`"""
 
 
 class Criterion:
-    """A criterion μ ∑ φ(V·x - ω)"""
+    r"""A criterion defined as
+
+    .. math::
+        J(x) = \mu \Psi \left(V x - \omega \right)
+
+    with :math:`\Psi(u) = \sum_i \phi(u_i)`
+    """
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
         operator: Callable[[array], ArrOrList],
         adjoint: Callable[[ArrOrList], array],
         potential: "Potential",
-        hyper: float = 1,
         data: ArrOrList = 0,
+        hyper: float = 1,
     ):
         """A criterion μ ∑ φ(V·x - ω)
 
@@ -298,10 +297,10 @@ class Criterion:
           Vᵗ·e
         potential: Potential
           φ and φ'
-        hyper: float
-          μ
-        data: array or list of array (optional)
+        data: array or list of array, optional
           ω
+        hyper: float, optional
+          μ
 
         Notes
         -----
@@ -376,8 +375,8 @@ class Criterion:
 
         Given vecs `W = V·S`, return `Wᵗ·diag(b)·W`
 
-        where S are the vectors defining the subspace and `b` are GR
-        coefficients at given point.
+        where S are the vectors defining the subspace and `b` are Geman \&
+        Reynolds coefficients at given point.
 
         Parameters
         ----------
@@ -385,7 +384,7 @@ class Criterion:
             The `W` vectors
 
         point : array
-            The given point where to compute GR coefficients `b`
+            The given point where to compute Geman \& Reynolds coefficients `b`
 
         """
         matrix = vecs.T @ (self.gr_coeffs(point).reshape((-1, 1)) * vecs)
@@ -394,7 +393,7 @@ class Criterion:
         return matrix
 
     def gr_coeffs(self, point: array) -> array:
-        """Return the GR coefficients at given point
+        """Return the Geman \& Reynolds coefficients at given point
 
         φ'(V·x - ω) / (V·x - ω)
 
@@ -407,52 +406,62 @@ class Criterion:
 
 
 class QuadCriterion(Criterion):
-    """A quadratic criterion ½ μ ||V·x - ω||²"""
+    r"""A quadratic criterion
+
+    .. math::
+        J(x) = \frac{1}{2} \mu \|V x - \omega\|_2^2
+
+    Attributs
+    ---------
+
+    """
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
         operator: Callable[[array], ArrOrList],
         adjoint: Callable[[ArrOrList], array],
-        normal: Callable[[array], array],
+        normal: Callable[[array], array] = None,
         hyper: float = 1,
         data: array = 0,
     ):
-        """A quadratic criterion μ||V·x - ω||²
+        """A quadratic criterion ½ μ ||V·x - ω||²
 
         Parameters
         ----------
         operator: callable
           V·x
-        adjoing: callable
+        adjoint: callable
           Vᵗ·e
-        normal: callable
-          VᵗV·x
-        hyper: float, optionnal
+        normal: callable, optional
+          Q·x as Q·x = VᵗV·x
+        hyper: float, optional
           μ
-        data: ndarray, optionnal
+        data: array, optional
           ω
-        """
-        super().__init__(operator, adjoint, Square(), hyper, data)
-        self.normal = normal
-        self.data_t = self.adjoint(self.data)
-
-    def value(self, point: array) -> float:
-        """The value of the criterion at given point
-
-        Return `½ μ ||V·x - ω||²`
-        """
-        return self.hyper * np.sum((self.operator(point) - self.data) ** 2) / 2
-
-    def gradient(self, point: array) -> array:
-        """The gradient of the criterion at given point
-
-        Return `μ Vᵗ·(V·x - ω)`
 
         Notes
         -----
-        Use `normal` `Q` callable internally for potential better efficiency,
-        with computation of `μ (Q·x - b)` where `Q = Vᵗ·V` and `b = Vᵗ·ω` is
-        precomputed
+        The `normal` (`Q`) callable is used for gradient computation as `∇ = μ
+        (Q·x - b)` where `b = Vᵗ·ω` instead of `∇ = μ Vᵗ·(V·x - ω)`. In some
+        case this is more efficient. The variable `b = Vᵗ·ω` is precomputed at
+        object creation.
+
+        """
+        super().__init__(operator, adjoint, Square(), hyper, data)
+        if normal is not None:
+            self.normal = normal
+        else:
+            self.normal = lambda x: adjoint(operator(x))
+        self.data_t = self.adjoint(self.data)
+
+    def value(self, point: array) -> float:
+        """The criterion value at given point"""
+        return self.hyper * np.sum((self.operator(point) - self.data) ** 2) / 2
+
+    def gradient(self, point: array) -> array:
+        """The gradient at given point
+
+        Return `∇ = μ (Q·x - b) = μ Vᵗ·(V·x - ω)`
 
         """
         return self.hyper * (self.normal(point) - self.data_t)
@@ -468,12 +477,13 @@ class QuadCriterion(Criterion):
             The `W` vectors.
 
         point : array
-            The given point where to compute GR coefficients.
+            The given point where to compute Geman \& Reynolds coefficients.
+
         """
         return vecs.T @ vecs
 
     def gr_coeffs(self, point: array) -> array:
-        """Return the GR coefficients at given point
+        """Return the Geman \& Reynolds coefficients at given point
 
         Always return the scalar 1.
 
@@ -543,44 +553,6 @@ class Potential(abc.ABC):
         return self.value(point)
 
 
-class VminProj(Potential):
-    """The projection criterion
-
-    D(u) = ½ ||P_[m, +∞[(u) - m||²
-    """
-
-    def __init__(self, vmin: float):
-        """The projection criterion
-
-        D(u) = ½ ||P_[m, +∞[(u) - m||²
-        """
-        super().__init__(inf=1, convex=True, coercive=True)
-        self.vmin = vmin
-
-    def value(self, point: array) -> array:
-        return np.sum((point[point < self.vmin] - self.vmin) ** 2 / 2)
-
-    def gradient(self, point: array) -> array:
-        return np.where(point > self.vmin, 0, point - self.vmin)
-
-
-class VmaxProj(Potential):
-    """The projection criterion
-
-    D(u) = ½ ||P_]-∞, M](u) - M||²
-    """
-
-    def __init__(self, vmax: float, convex=True, coercive=True):
-        super().__init__(inf=1)
-        self.vmax = vmax
-
-    def value(self, point: array) -> array:
-        return np.sum((point[point > self.vmax] - self.vmax) ** 2 / 2)
-
-    def gradient(self, point: array) -> array:
-        return np.where(point < self.vmax, 0, point - self.vmax)
-
-
 class Square(Potential):
     r"""The square function
 
@@ -602,38 +574,6 @@ class Square(Potential):
     def __repr__(self):
         return """
 φ(u) = ½ u²
-
-Convex and coercive
-"""
-
-
-class Hyperbolic(Potential):
-    r"""The convex coercive hyperbolic function
-
-    .. math::
-
-       \phi(u) = \delta^2 \left( \sqrt{1 + \frac{u^2}{\delta^2}} -1 \right)
-
-    This is called sometimes Pseudo-Huber.
-    """
-
-    def __init__(self, delta: float):
-        super().__init__(inf=1 / (delta ** 2), convex=True, coercive=True)
-        self.inf = 1 / (2 * delta)  # To check
-        self.delta = delta
-
-    def value(self, point: array) -> array:
-        return self.delta ** 2 * np.sqrt(1 + (point ** 2) / (self.delta ** 2)) - 1
-
-    def gradient(self, point: array) -> array:
-        return point / np.sqrt(1 + (point ** 2) / self.delta ** 2)
-
-    def __repr__(self):
-        return """
-          ⎛    _______     ⎞
-          ⎜   ╱     x²     ⎟
-φ(u) = δ²⋅⎜  ╱  1 + ──  - 1⎟
-          ⎝╲╱       δ²     ⎠
 
 Convex and coercive
 """
@@ -678,8 +618,69 @@ Convex and coercive.
 """
 
 
+class Hyperbolic(Potential):
+    r"""The convex coercive hyperbolic function
+
+    .. math::
+
+       \phi(u) = \delta^2 \left( \sqrt{1 + \frac{u^2}{\delta^2}} -1 \right)
+
+    This is called sometimes Pseudo-Huber.
+    """
+
+    def __init__(self, delta: float):
+        super().__init__(inf=1 / (delta ** 2), convex=True, coercive=True)
+        self.inf = 1 / (2 * delta)  # To check
+        self.delta = delta
+
+    def value(self, point: array) -> array:
+        return self.delta ** 2 * (np.sqrt(1 + (point ** 2) / (self.delta ** 2)) - 1)
+
+    def gradient(self, point: array) -> array:
+        return point / np.sqrt(1 + (point ** 2) / self.delta ** 2)
+
+    def __repr__(self):
+        return """
+          ⎛    _______     ⎞
+          ⎜   ╱     x²     ⎟
+φ(u) = δ²⋅⎜  ╱  1 + ──  - 1⎟
+          ⎝╲╱       δ²     ⎠
+
+Convex and coercive
+"""
+
+
+class HerbertLeahy(Potential):
+    r"""The non-convex coercive function Herbert & Leahy
+
+    .. math::
+
+       \phi(u) = \log \left(1 + \frac{u^2}{\delta^2} \right)
+
+    """
+
+    def __init__(self, delta: float):
+        super().__init__(inf=np.inf, convex=False, coercive=True)
+        self.delta = delta
+
+    def value(self, point: array) -> array:
+        return np.log(1 + point ** 2 / self.delta ** 2)
+
+    def gradient(self, point: array) -> array:
+        return 2 * point / (self.delta ** 2 + point ** 2)
+
+    def __repr__(self):
+        return """
+          ⎛    u²⎞
+φ(u) = log⎜1 + ──⎟
+          ⎝    δ²⎠
+
+Non-convex and coercive
+"""
+
+
 class GemanMcClure(Potential):
-    r"""The Geman & McClure non-convex non-coervice function
+    r"""The non-convex non-coervice Geman & McClure function
 
     .. math::
 
@@ -737,37 +738,46 @@ Non-convex and non-coercive
 """
 
 
-class HerbertLeahy(Potential):
-    r"""The Herbert & Leahy non-convex coercive function
+class VminProj(Potential):
+    """The projection criterion
 
-    .. math::
-
-       \phi(u) = \log \left(1 + \frac{u^2}{\delta^2} \right)
-
+    D(u) = ½ ||P_[m, +∞[(u) - m||²
     """
 
-    def __init__(self, delta: float):
-        super().__init__(inf=np.inf, convex=False, coercive=True)
-        self.delta = delta
+    def __init__(self, vmin: float):
+        """The projection criterion
+
+        D(u) = ½ ||P_[m, +∞[(u) - m||²
+        """
+        super().__init__(inf=1, convex=True, coercive=True)
+        self.vmin = vmin
 
     def value(self, point: array) -> array:
-        return np.log(1 + point ** 2 / self.delta ** 2)
+        return np.sum((point[point < self.vmin] - self.vmin) ** 2 / 2)
 
     def gradient(self, point: array) -> array:
-        return 2 * point / (self.delta ** 2 + point ** 2)
+        return np.where(point > self.vmin, 0, point - self.vmin)
 
-    def __repr__(self):
-        return """
-          ⎛    u²⎞
-φ(u) = log⎜1 + ──⎟
-          ⎝    δ²⎠
 
-Non-convex and coercive
-"""
+class VmaxProj(Potential):
+    """The projection criterion
+
+    D(u) = ½ ||P_]-∞, M](u) - M||²
+    """
+
+    def __init__(self, vmax: float, convex=True, coercive=True):
+        super().__init__(inf=1)
+        self.vmax = vmax
+
+    def value(self, point: array) -> array:
+        return np.sum((point[point > self.vmax] - self.vmax) ** 2 / 2)
+
+    def gradient(self, point: array) -> array:
+        return np.where(point < self.vmax, 0, point - self.vmax)
 
 
 # Not used finally
-def vectorize(
+def _vectorize(
     func: Callable[[array], array], input_shape: Tuple
 ) -> Callable[[array], array]:
     """Vectorize a callable.
