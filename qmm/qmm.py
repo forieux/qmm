@@ -36,9 +36,9 @@ def mmmg(
 
     Parameters
     ----------
-
-    crit_list : list of Criterion
-        A list of `Criterion` object that represent `φ(V·x - ω)`.
+    crit_list : list of `Criterion`
+        A list of :class:`Criterion` objects that each represent a `ψ(V·x - ω)`.
+        The criterion are implicitly summed.
 
     init : array
         The initial point. The init array is updated inplace. The user must make
@@ -53,7 +53,6 @@ def mmmg(
 
     Returns
     -------
-
     minimiser : array
         The minimiser of the criterion with same shape than `init`.
 
@@ -62,7 +61,6 @@ def mmmg(
 
     Notes
     -----
-
     The output of callable (e. g. `operator` in `Criterion`), and the `init`
     value, are automatically vectorized internally. However, the output is
     reshaped as the `init` array.
@@ -73,9 +71,9 @@ def mmmg(
 
     References
     ----------
-    .. E. Chouzenoux, J. Idier, and S. Moussaoui, “A Majorize-Minimize Strategy
-       for Subspace Optimization Applied to Image Restoration,” IEEE Trans. on
-       Image Process., vol. 20, no. 6, pp. 1517–1528, Jun. 2011, doi:
+    .. [1] E. Chouzenoux, J. Idier, and S. Moussaoui, “A Majorize-Minimize
+       Strategy for Subspace Optimization Applied to Image Restoration,” IEEE
+       Trans. on Image Process., vol. 20, no. 6, pp. 1517–1528, Jun. 2011, doi:
        10.1109/TIP.2010.2103083.
 
     """
@@ -136,13 +134,13 @@ def mmcg(
 
     Parameters
     ----------
-
-    crit_list : list of Criterion
-        A list of `Criterion` object that represent `φ(V·x - ω)`.
+    crit_list : list of `Criterion`
+        A list of :class:`Criterion` objects that each represent a `ψ(V·x - ω)`.
+        The criterion are implicitly summed.
 
     init : ndarray
         The initial point. The init array is updated inplace. The user must make
-        a copy before calling `mmmg` if this is not the desired behaviour.
+        a copy before calling `mmcg` if this is not the desired behaviour.
 
     precond : callable, optional
         A callable that must implement a preconditioner, that is `M⁻¹·x`. Must
@@ -157,7 +155,6 @@ def mmcg(
 
     Returns
     -------
-
     minimiser : ndarray
         The minimiser of the criterion with same shape than `init`.
 
@@ -166,7 +163,6 @@ def mmcg(
 
     Notes
     -----
-
     The output of callable (e. g. `operator` in `Criterion`), and the `init`
     value, are automatically vectorized internally. However, the output is
     reshaped as the `init` array.
@@ -177,7 +173,7 @@ def mmcg(
 
     References
     ----------
-    .. C. Labat and J. Idier, “Convergence of Conjugate Gradient Methods
+    .. [1] C. Labat and J. Idier, “Convergence of Conjugate Gradient Methods
        with a Closed-Form Stepsize Formula,” J Optim Theory Appl, p. 18, 2008.
 
     """
@@ -252,7 +248,27 @@ class Criterion:
     .. math::
         J(x) = \mu \Psi \left(V x - \omega \right)
 
-    with :math:`\Psi(u) = \sum_i \phi(u_i)`
+    with :math:`\Psi(u) = \sum_i \phi(u_i)`.
+
+    Attributes
+    ----------
+    data : array
+        The `data` array, or the vectorized list of array given at init.
+    hyper : float
+        The hyperparameter value μ.
+    potential : Potential
+        The potential φ.
+
+    Notes
+    -----
+    If `data` is a list of array, `operator` must return a similar list with
+    array of same shape, and `adjoint` must accept a similar list also.
+
+    In that case, however and for algorithm purpose, everything is
+    internally stacked as a column vector and values are therefor copied.
+    This is not efficient but flexible. Users are encouraged to do the
+    vectorization themselves.
+
     """
 
     def __init__(  # pylint: disable=too-many-arguments
@@ -263,30 +279,25 @@ class Criterion:
         data: ArrOrList = 0,
         hyper: float = 1,
     ):
-        """A criterion μ ∑ φ(V·x - ω)
+        """A criterion μ ψ(V·x - ω)
 
         Parameters
         ----------
         operator: callable
-          A callable that compute the output `V·x` given `x`.
+          A callable that compute the output V·x.
         adjoint: callable
-          Vᵗ·e
+          A callable that compute Vᵗ·e.
         potential: Potential
-          φ and φ'
+          The potential φ
         data: array or list of array, optional
-          ω
+          The data vector ω.
         hyper: float, optional
-          μ
+          The hyperparameter μ.
 
         Notes
         -----
-        If `data` is a list of array, `operator` must return a similar list with
-        array of same shape, and `adjoint` must accept a similar list also.
-
-        In that case, however and for algorithm purpose, everything is
-        internally stacked as a column vector and values are therefor copied.
-        This is not efficient but flexible. Users are encouraged to do the
-        vectorization themselves.
+        For implementation issue, `operator` and `adjoint` are wrapped by
+        methods of same name.
 
         """
         self._operator = operator
@@ -347,20 +358,24 @@ class Criterion:
         )
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
-        """Return the normal matrix of the major function
+        """The normal matrix of the quadratic major function
 
-        Given vecs `W = V·S`, return `Wᵗ·diag(b)·W`
+        Given vectors `W = V·S`, return `Wᵗ·diag(b)·W`
 
-        where S are the vectors defining the subspace and `b` are Geman \&
+        where S are the vectors defining a subspace and `b` are Geman \&
         Reynolds coefficients at given point.
 
         Parameters
         ----------
         vecs : array
-            The `W` vectors
+            The `W` vectors.
 
         point : array
-            The given point where to compute Geman \& Reynolds coefficients `b`
+            The given point where to compute Geman \& Reynolds coefficients `b`.
+
+        Returns
+        -------
+        The normal matrix.
 
         """
         matrix = vecs.T @ (self.gr_coeffs(point).reshape((-1, 1)) * vecs)
@@ -369,9 +384,9 @@ class Criterion:
         return matrix
 
     def gr_coeffs(self, point: array) -> array:
-        """Return the Geman \& Reynolds coefficients at given point
+        """The Geman \& Reynolds coefficients at given point
 
-        φ'(V·x - ω) / (V·x - ω)
+        Given `x` return `φ'(V·x - ω) / (V·x - ω)`
 
         """
         obj = self.operator(point) - self.data
