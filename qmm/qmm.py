@@ -579,10 +579,7 @@ class Square(Potential):
         return point
 
     def __repr__(self):
-        return """
-φ(u) = ½ u²
-
-Convex and coercive
+        return """φ(u) = ½ u²
 """
 
 
@@ -614,14 +611,15 @@ class Huber(Potential):
         return np.where(np.abs(point) <= self.delta, point, self.delta * np.sign(point))
 
     def __repr__(self):
-        return """
+        return f"""{type(self)}
+
        ⎛
        ⎜ ½ u²        , if |u| < δ
 φ(u) = ⎜
        ⎜ δ|u| - δ²/2 , otherwise.
        ⎝
 
-Convex and coercive.
+with δ = {self.delta}
 """
 
 
@@ -636,8 +634,7 @@ class Hyperbolic(Potential):
     """
 
     def __init__(self, delta: float):
-        super().__init__(inf=1 / (delta ** 2), convex=True, coercive=True)
-        self.inf = 1 / (2 * delta)  # To check
+        super().__init__(inf=1, convex=True, coercive=True)
         self.delta = delta
 
     def value(self, point: array) -> array:
@@ -647,13 +644,14 @@ class Hyperbolic(Potential):
         return point / np.sqrt(1 + (point ** 2) / self.delta ** 2)
 
     def __repr__(self):
-        return """
-          ⎛    _______     ⎞
-          ⎜   ╱     x²     ⎟
+        return f"""{type(self)}
+               _______
+          ⎛   ╱     u²     ⎞
 φ(u) = δ²⋅⎜  ╱  1 + ──  - 1⎟
           ⎝╲╱       δ²     ⎠
 
-Convex and coercive
+
+with δ = {self.delta}
 """
 
 
@@ -667,7 +665,7 @@ class HerbertLeahy(Potential):
     """
 
     def __init__(self, delta: float):
-        super().__init__(inf=np.inf, convex=False, coercive=True)
+        super().__init__(inf=2 / delta ** 2, convex=False, coercive=True)
         self.delta = delta
 
     def value(self, point: array) -> array:
@@ -677,12 +675,13 @@ class HerbertLeahy(Potential):
         return 2 * point / (self.delta ** 2 + point ** 2)
 
     def __repr__(self):
-        return """
+        return f"""{type(self)}
+
           ⎛    u²⎞
 φ(u) = log⎜1 + ──⎟
           ⎝    δ²⎠
 
-Non-convex and coercive
+with δ = {self.delta}
 """
 
 
@@ -706,12 +705,13 @@ class GemanMcClure(Potential):
         return 4 * point * self.delta ** 2 / (2 * self.delta ** 2 + point ** 2) ** 2
 
     def __repr__(self):
-        return """
+        return f"""{type(self)}
+
           u²
 φ(u) = ─────────
        u² + 2⋅δ²
 
-Non-convex and non-coercive
+with δ = {self.delta}
 """
 
 
@@ -735,13 +735,14 @@ class SquareTruncApprox(Potential):
         return point / (self.delta ** 2) * np.exp(-(point ** 2) / (2 * self.delta ** 2))
 
     def __repr__(self):
-        return """
+        return f"""{type(self)}
+
                u²
             - ────
               2⋅δ²
 φ(u) = 1 - e
 
-Non-convex and non-coercive
+with δ = {self.delta}
 """
 
 
@@ -772,8 +773,8 @@ class VmaxProj(Potential):
     D(u) = ½ ||P_]-∞, M](u) - M||²
     """
 
-    def __init__(self, vmax: float, convex=True, coercive=True):
-        super().__init__(inf=1)
+    def __init__(self, vmax: float):
+        super().__init__(inf=1, convex=True, coercive=True)
         self.vmax = vmax
 
     def value(self, point: array) -> array:
