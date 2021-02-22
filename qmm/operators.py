@@ -1,12 +1,25 @@
-#!/usr/bin/env python3
+# Q-MM: A Python Quadratic Majorization Minimization toolbox
+# Copyright (C) 2021 François Orieux <francois.orieux@universite-paris-saclay.fr>
 
-"""A module that implement high level interface to manipulate linear operators. This
-module is not required but can serve as guide or for reuse.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+"""A module that implement high level interface to manipulate linear operators.
+This module is not required by Q-MM but can serve as guide or for reuse.
 
 """
 
 import abc
-
 from typing import Tuple
 
 import numpy as np  # type: ignore
