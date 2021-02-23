@@ -1,11 +1,12 @@
-====================
- The ``qmm`` module
-====================
+================
+ ``qmm`` module
+================
 
 .. py:currentmodule:: qmm
 
-The optimization algorithms
-===========================
+=========================
+ Optimization algorithms
+=========================
 
 Two algorithms are implemented.
 
@@ -19,18 +20,19 @@ and use less memory.
 
 .. autofunction:: mmmg
 
-.. note::
+Criterion classes
+=================
 
-   The use of this list is necessary to allow efficient implementation and reuse
-   of calculations. See notes section for details.
+Criterion are defined from the abstract class :class:`BaseCrit` that have three
+abstract methods that must be implemented by the subclass. If users want to
+implements it's own criterion, he is encouraged to subclass :class:`BaseCrit`.
 
-The :class:`Criterion` classes
-==============================
+Two generic concrete classes of :class:`BaseCrit` can be used. The
+:class:`Criterion` class is the more general and :class:`QuadCriterion` is a
+specialized subclass that allows simplification an slightly faster computation.
 
-Two class can be used. The ``Criterion`` class is the more general and
-``QuadCriterion`` is a specialized subclass that allow simplification an
-slightly faster computation.
-
+.. autoclass:: BaseCrit
+   :members:
 
 .. autoclass:: Criterion
    :members:
@@ -38,23 +40,35 @@ slightly faster computation.
 .. autoclass:: QuadCriterion
    :members:
 
-The ``operator`` member
-=======================
-
 .. note::
-    Comments on `Criterion`
 
-    The module provides a `Criterion` object for convenience. This object has be
-    made to help the usage of optimization algorithm. However, thanks to dynamic
-    nature of python, the algorithms need in practice any object with three
-    specific methods.
+   The ``operator`` argument for :class:`Criterion` and :class:`QuadCriterion`
+   must be a callable that accept an ``array`` as input and return an array as
+   output. However, the operator **can also return** a ``list`` of array (for
+   data fusion for instance). In that case, all these array are internally
+   vectorized and the data are therefor memory copied.
 
-    - `operator` : a callable with a point `x` as unique array parameter, that must return the application of `V` (that is `V·x`).
-    - `gradient` : a callable with a point `x` as unique array parameter, that must return the gradient of the criterion (that is `Vᵗ·φ'(V·x - ω)`).
-    - `norm_mat_major` : a callable with two parameters. The first one is the result of the operator applied on the subspace vectors. The second is the point `x`, where the normal matrix of the quadratic major function must be returned.
+   If operator returns a list of array, the ``adjoint`` **must** accept a list of
+   array also. Again, everything is vectorized and the `Criterion` and
+   `QuadCriterion` rebuild the list of array internally.
 
-The :class:`Potential` classes
-==============================
+   If given, the ``normal`` argument for :class:`QuadCriterion` must accept an
+   array and returns an array.
+
+..
+   Specialized criterion
+   ---------------------
+
+   .. autoclass:: Vmin
+       :members:
+
+   .. autoclass:: Vmax
+       :members:
+
+
+
+:class:`Potential` classes
+==========================
 
 The :class:`Potential` is an abstract base class that can't be instancied and
 serve as parent class for all potential.
@@ -77,11 +91,6 @@ serve as parent class for all potential.
 .. autoclass:: GemanMcClure
    :members:
 
-.. autoclass:: SquareTruncApprox
+.. autoclass:: TruncSquareApprox
    :members:
 
-.. autoclass:: VminProj
-   :members:
-
-.. autoclass:: VmaxProj
-   :members:
