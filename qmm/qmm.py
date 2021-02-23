@@ -449,9 +449,9 @@ class QuadCriterion(Criterion):
         (Q·x - b)` where `b = Vᵗ·ω` instead of `∇ = μ Vᵗ·(V·x - ω)`. This is
         optional and in some case this is more efficient.
 
-        The variable `b = Vᵗ·ω` is precomputed at object creation.
+        The variable `b = Vᵗ·ω` is computed at object creation.
         """
-        super().__init__(operator, adjoint, Square(), hyper, data)
+        super().__init__(operator, adjoint, Square(), data=data, hyper=hyper)
         if normal is not None:
             self._normal = normal
         else:
