@@ -24,29 +24,31 @@ The potential implemented in the toolbox, in addition to the square function,
 are illustrated below. The Geman & Mc Clure and the truncated square
 approximation are not coercive.
 
-.. plot::
+.. image:: ./potentials.png
+..
+   .. plot::
 
-   import numpy as np
-   import matplotlib.pyplot as plt
+      import numpy as np
+      import matplotlib.pyplot as plt
 
-   import qmm
+      import qmm
 
-   u = np.linspace(-10, 10, 1000)
-   plt.subplot(2, 2, 1)
-   plt.plot(u, qmm.Huber(1)(u))
-   plt.plot(u, qmm.Hyperbolic(1)(u))
-   plt.title('Huber and Hyperbolic')
-   plt.subplot(2, 2, 2)
-   plt.plot(u, qmm.HerbertLeahy(1)(u))
-   plt.title('Herbert & Leahy')
-   plt.subplot(2, 2, 3)
-   plt.plot(u, qmm.GemanMcClure(1)(u))
-   plt.title('Geman & Mc Clure')
-   plt.subplot(2, 2, 4)
-   plt.plot(u, qmm.TruncSquareApprox(1)(u))
-   plt.title('Truncated square approximation')
+      u = np.linspace(-10, 10, 1000)
+      plt.subplot(2, 2, 1)
+      plt.plot(u, qmm.Huber(1)(u))
+      plt.plot(u, qmm.Hyperbolic(1)(u))
+      plt.title('Huber and Hyperbolic')
+      plt.subplot(2, 2, 2)
+      plt.plot(u, qmm.HerbertLeahy(1)(u))
+      plt.title('Herbert & Leahy')
+      plt.subplot(2, 2, 3)
+      plt.plot(u, qmm.GemanMcClure(1)(u))
+      plt.title('Geman & Mc Clure')
+      plt.subplot(2, 2, 4)
+      plt.plot(u, qmm.TruncSquareApprox(1)(u))
+      plt.title('Truncated square approximation')
 
-   plt.tight_layout()
+      plt.tight_layout()
 
 
 Example
