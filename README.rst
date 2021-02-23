@@ -28,7 +28,7 @@ Quadratic Majorize-Minimize
 
 The Q-MM optimization algorithms compute the minimiser of criteria like
 
-``J(x) = ∑ₖ  μₖ ψₖ(Vₖ·x - ωₖ)``
+``J(x) = ∑ₖ μₖ ψₖ(Vₖ·x - ωₖ)``
 
 where ``x`` is the unknown vector, ``Vₖ`` a linear operator, ``ωₖ`` a fixed
 data, ``μₖ`` a scalar, ``ψₖ(u) = ∑ᵢφₖ(uᵢ)``, and ``φₖ`` a function that must be
@@ -71,10 +71,14 @@ Features
 Installation and documentation
 ------------------------------
 
-`Documentation <https://qmm.readthedocs.io/en/latest/index.html>`_
+Q-MM is essentially just one module. We recommend using poetry for installation
 
-No installation procedure has been implemented at that time. Just copy the
-``qmm`` directory or the ``qmm.py`` file where the ``sys.path`` can find it.
+.. code-block:: sh
+
+   poetry add qmm
+
+More option are described in the `Documentation
+<https://qmm.readthedocs.io/en/latest/index.html>`_
 
 Q-MM only depends on ``numpy`` and Python 3.6.
 
