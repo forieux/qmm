@@ -78,13 +78,6 @@ No installation procedure has been implemented at that time. Just copy the
 
 Q-MM only depends on ``numpy`` and Python 3.6.
 
-Documentation
--------------
-
-
-Documentation is in ``./docs`` directory and is generated from the source files.
-You can see the ``demo.py`` file for an example.
-
 Example
 -------
 
@@ -149,5 +142,4 @@ The project is licensed under the GPLv3 license.
 TODO
 ----
 
-- Documentation improvement.
 - Add preconditionner to mmmg.
