@@ -41,7 +41,7 @@ Features
 Contribute
 ==========
 
-The code is hosted on `Github <https://github.com/forieux/qmm/>`_ under GPL3
+The code is hosted on `Github <https://github.com/forieux/qmm/>`_ under GPLv3
 Licence. Feel free to contribute or submit `issue
 <https://github.com/forieux/qmm/issues>`_.
 
@@ -69,15 +69,15 @@ a Matlab package that implements 3MG for image deconvolution on here `webpage
 License
 =======
 
-The project is licensed under the GPL3 license. If you use the library, please
+The project is licensed under the GPLv3 license. If you use the library, please
 cite it
 
 ::
 
-   @software{qmm,
-      title = {Q-MM: The Python Quadratic Majorize-Minimize toolbox},
-      author = {Orieux, Fran\c{c}ois},
-      url = {https://github.com/forieux/qmm},
-   }
+    @software{qmm,
+       title = {Q-MM: The Quadratic Python Majorize-Minimize toolbox},
+       author = {Orieux, Fran\c{c}ois},
+       url = {https://github.com/forieux/qmm},
+    }
 
 and associated publications, see :doc:`Background <background>`.

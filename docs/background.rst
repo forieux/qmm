@@ -76,10 +76,10 @@ as
 
 ::
 
-    @software{mmq,
-       title = {MM-Q: The Python Majorize-Minimize Quadratic toolbox},
+    @software{qmm,
+       title = {Q-MM: The Quadratic Python Majorize-Minimize toolbox},
        author = {Orieux, Fran\c{c}ois},
-       url = {https://github.com/forieux/mmq},
+       url = {https://github.com/forieux/qmm},
     }
 
 
@@ -88,17 +88,17 @@ as
        3, pp. 367–383, Mar. 1992, doi: 10.1109/34.120331.
 
 .. [b] D. Geman and C. Yang, “Nonlinear image recovery with half-quadratic
-       regularization,” IEEE Trans. on Image Process., vol. 4, no. 7, pp.
-       932–946, Jul. 1995, doi: 10.1109/83.392335.
+   regularization,” IEEE Trans. on Image Process., vol. 4, no. 7, pp. 932–946,
+   Jul. 1995, doi: 10.1109/83.392335.
 
 .. [c] M. Allain, J. Idier, and Y. Goussard, “On Global and Local Convergence of
-       Half-Quadratic Algorithms,” IEEE Trans. on Image Processing, vol.
-       15, no. 5, p. 13, 2006.
+   Half-Quadratic Algorithms,” IEEE Trans. on Image Processing, vol. 15, no.
+   5, p. 13, 2006.
 
 .. [d] C. Labat and J. Idier, “Convergence of Conjugate Gradient Methods with a
-       Closed-Form Stepsize Formula,” J Optim Theory Appl, p. 18, 2008.
+   Closed-Form Stepsize Formula,” J Optim Theory Appl, p. 18, 2008.
 
 .. [e] E. Chouzenoux, J. Idier, and S. Moussaoui, “A Majorize-Minimize Strategy
-       for Subspace Optimization Applied to Image Restoration,” IEEE Trans. on
-       Image Process., vol. 20, no. 6, pp. 1517–1528, Jun. 2011, doi:
-       10.1109/TIP.2010.2103083.
+   for Subspace Optimization Applied to Image Restoration,” IEEE Trans. on Image
+   Process., vol. 20, no. 6, pp. 1517–1528, Jun. 2011, doi:
+   10.1109/TIP.2010.2103083.

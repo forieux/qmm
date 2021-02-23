@@ -48,7 +48,7 @@ def mmmg(
 
     The `mmmg` (`3mg`) algorithm is a subspace memory-gradient optimization
     algorithm with an explicit step formula based on Majorize-Minimize Quadratic
-    approach.
+    approach [2]_.
 
     Parameters
     ----------
@@ -80,7 +80,7 @@ def mmmg(
 
     References
     ----------
-    .. [1] E. Chouzenoux, J. Idier, and S. Moussaoui, “A Majorize-Minimize
+    .. [2] E. Chouzenoux, J. Idier, and S. Moussaoui, “A Majorize-Minimize
        Strategy for Subspace Optimization Applied to Image Restoration,” IEEE
        Trans. on Image Process., vol. 20, no. 6, pp. 1517–1528, Jun. 2011, doi:
        10.1109/TIP.2010.2103083.
@@ -139,7 +139,8 @@ def mmcg(
     """The Majorize-Minimize Conjugate Gradient (MM-CG) algorithm.
 
     The MM-CG is a nonlinear conjugate gradient (NL-CG) optimization algorithm
-    with an explicit step formula based on Majorize-Minimize Quadratic approach.
+    with an explicit step formula based on Majorize-Minimize Quadratic approach
+    [1]_.
 
     Parameters
     ----------

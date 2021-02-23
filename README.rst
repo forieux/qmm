@@ -17,18 +17,18 @@ references above. A citation of this toolbox will also be appreciated.
 
 ::
 
-   @software{qmm,
-      title = {Q-MM: The Python Quadratic Majorize-Minimize toolbox},
-      author = {Orieux, Fran\c{c}ois},
-      url = {https://github.com/forieux/qmm},
-   }
+    @software{qmm,
+       title = {Q-MM: The Quadratic Python Majorize-Minimize toolbox},
+       author = {Orieux, Fran\c{c}ois},
+       url = {https://github.com/forieux/qmm},
+    }
 
 Quadratic Majorize-Minimize
 ---------------------------
 
 The Q-MM optimization algorithms compute the minimiser of criteria like
 
-``J(x) = ∑ᵢ μₖ ψₖ(Vₖ·x - ωₖ)``
+``J(x) = ∑ₖ  μₖ ψₖ(Vₖ·x - ωₖ)``
 
 where ``x`` is the unknown vector, ``Vₖ`` a linear operator, ``ωₖ`` a fixed
 data, ``μₖ`` a scalar, ``ψₖ(u) = ∑ᵢφₖ(uᵢ)``, and ``φₖ`` a function that must be
@@ -134,14 +134,14 @@ Acknowledgement
 Author would like to thanks `J. Idier
 <https://pagespersowp.ls2n.fr/jeromeidier/en/jerome-idier-3/>`_, `S. Moussaoui
 <https://scholar.google.fr/citations?user=Vkr8yxkAAAAJ&hl=fr>`_ and `É.
-Chouzenoux <http://www-syscom.univ-mlv.fr/~chouzeno/>`_. E. Chouzenoux has also
+Chouzenoux <http://www-syscom.univ-mlv.fr/~chouzeno/>`_. É. Chouzenoux has also
 a Matlab package that implements 3MG for image deconvolution that can be found
 `here <http://www-syscom.univ-mlv.fr/~chouzeno/Logiciel.html>`_.
 
 License
 -------
 
-The project is licensed under the GPL3 license.
+The project is licensed under the GPLv3 license.
 
 TODO
 ----
