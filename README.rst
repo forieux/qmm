@@ -132,7 +132,7 @@ Author would like to thanks `J. Idier
 <https://scholar.google.fr/citations?user=Vkr8yxkAAAAJ&hl=fr>`_ and `É.
 Chouzenoux <http://www-syscom.univ-mlv.fr/~chouzeno/>`_. É. Chouzenoux has also
 a Matlab package that implements 3MG for image deconvolution that can be found
-`here <http://www-syscom.univ-mlv.fr/~chouzeno/Logiciel.html>`_.
+on her `webpage <http://www-syscom.univ-mlv.fr/~chouzeno/Logiciel.html>`_.
 
 License
 -------
