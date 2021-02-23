@@ -2,7 +2,7 @@ Q-MM: A Python Quadratic Majorization Minimization toolbox
 ==========================================================
 
 Q-MM is a Python implementation of Majorize-Minimize Quadratic optimization
-algorithms. Algorithms provided here come from :
+algorithms. Algorithms provided here come from
 
 .. [1] C. Labat and J. Idier, “Convergence of Conjugate Gradient Methods with a
    Closed-Form Stepsize Formula,” J Optim Theory Appl, p. 18, 2008.
@@ -12,8 +12,8 @@ algorithms. Algorithms provided here come from :
    Image Process., vol. 20, no. 6, pp. 1517–1528, Jun. 2011, doi:
    10.1109/TIP.2010.2103083.
 
-If you use this code, please cite the references above. A citation of this
-toolbox will also be appreciated.
+See documentation for more background. If you use this code, please cite the
+references above. A citation of this toolbox will also be appreciated.
 
 ::
 
