@@ -41,23 +41,35 @@ Features
 Contribute
 ==========
 
-The code is hosted on `Github <https://github.com/forieux/qmm/>`_ under MIT
+The code is hosted on `Github <https://github.com/forieux/qmm/>`_ under GPL3
 Licence. Feel free to contribute or submit `issue
 <https://github.com/forieux/qmm/issues>`_.
 
-Author and support
-==================
+Author
+======
 
 If you are having issues, please let us know
 
 orieux AT l2s.centralesupelec.fr
 
-More information about me `here <https://pro.orieux.fr>`_.
+More information about me `here <https://pro.orieux.fr>`_. F. Orieux is
+affliated to the Signal and Systems Laboratory `L2S
+<https://l2s.centralesupelec.fr/>`_.
+
+Acknowledgement
+===============
+
+Author would like to thanks `Jérôme Idier
+<https://pagespersowp.ls2n.fr/jeromeidier/en/jerome-idier-3/>`_, `Saïd Moussaoui
+<https://scholar.google.fr/citations?user=Vkr8yxkAAAAJ&hl=fr>`_ and `Émilie
+Chouzenoux <http://www-syscom.univ-mlv.fr/~chouzeno/>`_. E. Chouzenoux has also
+a Matlab package that implements 3MG for image deconvolution `here
+<http://www-syscom.univ-mlv.fr/~chouzeno/Logiciel.html>`_.
 
 License
 =======
 
-The project is licensed under the MIT license. If you use the library, please
+The project is licensed under the GPL3 license. If you use the library, please
 cite it
 
 ::

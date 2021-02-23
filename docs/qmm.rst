@@ -4,9 +4,8 @@
 
 .. py:currentmodule:: qmm
 
-=========================
- Optimization algorithms
-=========================
+Optimization algorithms
+=======================
 
 Two algorithms are implemented.
 
@@ -67,11 +66,15 @@ specialized subclass that allows simplification an slightly faster computation.
 
 
 
-:class:`Potential` classes
-==========================
+Potential classes
+=================
 
 The :class:`Potential` is an abstract base class that can't be instancied and
 serve as parent class for all potential.
+
+At that time, the provided concrete potential are :class:`Square`,
+:class:`Huber`, :class:`Hyperbolic`, :class:`HerbertLeahy`,
+:class:`GemanMcClure`, :class:`TruncSquareApprox`.
 
 .. autoclass:: Potential
    :members:
