@@ -38,7 +38,6 @@ init_copy = init.copy()
 res, norm_grad = qmm.mmmg([data_adeq, priorr_adeq, priorc_adeq], init, max_iter=200)
 tot_time = time.time() - t0
 
-
 #%% Plot
 plt.figure(1)
 plt.clf()
@@ -61,6 +60,6 @@ plt.axis("off")
 plt.colorbar()
 plt.title("Restored")
 plt.subplot(2, 2, 4)
-plt.plot(norm_grad)
+plt.plot(norm_grad, ".-")
 plt.xlabel("Iteration")
 plt.title(f"Gradient norm (total time {tot_time:.2f} sec., {len(norm_grad)} it.)")
