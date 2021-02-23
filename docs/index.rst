@@ -13,7 +13,7 @@
  Q-MM's documentation
 ======================
 
-Q-MM is a small Python toolbox to optimise differentiable criterion
+Q-MM is a small Python toolbox to optimize differentiable criterion
 
 .. math::
    \hat x = \underset{x \in \mathbb{R}}{\text{arg min}}\ J(x)
@@ -21,7 +21,7 @@ Q-MM is a small Python toolbox to optimise differentiable criterion
 by Majorization-Minimization with quadratic surrogate function. In particular,
 **no linesearch** is necessary and **close form formula for the step** are used
 with guaranteed convergence. The explicit step formula allows fast convergence
-of the algorithm to a minimiser with minimal tuning parameters. However, the
+of the algorithm to a minimizer with minimal tuning parameters. However, the
 criterion must meet the conditions, see :doc:`Background <background>`.
 
 Features
@@ -42,7 +42,7 @@ Contribute
 ==========
 
 The code is hosted on `Github <https://github.com/forieux/qmm/>`_ under GPLv3
-Licence. Feel free to contribute or submit `issue
+License. Feel free to contribute or submit `issue
 <https://github.com/forieux/qmm/issues>`_.
 
 Author
@@ -53,7 +53,7 @@ If you are having issues, please let us know
 orieux AT l2s.centralesupelec.fr
 
 More information about me `here <https://pro.orieux.fr>`_. F. Orieux is
-affliated to the Signal and Systems Laboratory `L2S
+affiliated to the Signal and Systems Laboratory `L2S
 <https://l2s.centralesupelec.fr/>`_.
 
 Acknowledgement

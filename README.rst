@@ -64,7 +64,7 @@ Features
   formula.
 - Generic and flexible: there is no restriction on the number of regularizer,
   their type, .., as well as for data adequacy.
-- Provided base class for criterion and potential allowing easy and fast
+- Provided base class for criteria and potentials allowing easy and fast
   implementation.
 - Comes with examples of implemented linear operator.
 
@@ -77,7 +77,7 @@ Q-MM is essentially just one module. We recommend using poetry for installation
 
    poetry add qmm
 
-More option are described in the `Documentation
+More options are described in the `Documentation
 <https://qmm.readthedocs.io/en/latest/index.html>`_
 
 Q-MM only depends on ``numpy`` and Python 3.6.
@@ -108,7 +108,7 @@ Then you can run the algorithm
 
    res, norm_grad = qmm.mmmg([data_adeq, prior], init, max_iter=200)
 
-where :code:`[data_adeq, prior]` means that the two criterion are summed. For
+where :code:`[data_adeq, prior]` means that the two criteria are summed. For
 more details, see documentation.
 
 Contribute
@@ -125,7 +125,7 @@ If you are having issues, please let us know
 orieux AT l2s.centralesupelec.fr
 
 More information about me `here <https://pro.orieux.fr>`_. F. Orieux is
-affliated to the Signal and Systems Laboratory `L2S
+affiliated to the Signal and Systems Laboratory `L2S
 <https://l2s.centralesupelec.fr/>`_.
 
 Acknowledgement

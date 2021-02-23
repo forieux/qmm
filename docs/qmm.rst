@@ -28,7 +28,7 @@ implements it's own criterion, he is encouraged to subclass :class:`BaseCrit`.
 
 Two generic concrete classes of :class:`BaseCrit` can be used. The
 :class:`Criterion` class is the more general and :class:`QuadCriterion` is a
-specialized subclass that allows simplification an slightly faster computation.
+specialized subclass that allows simplification and slightly faster computation.
 
 .. autoclass:: BaseCrit
    :members:
@@ -44,8 +44,8 @@ specialized subclass that allows simplification an slightly faster computation.
    The ``operator`` argument for :class:`Criterion` and :class:`QuadCriterion`
    must be a callable that accept an ``array`` as input and return an array as
    output. However, the operator **can also return** a ``list`` of array (for
-   data fusion for instance). In that case, all these array are internally
-   vectorized and the data are therefor memory copied.
+   data fusion for instance). In that case, all these arrays are internally
+   vectorized and the data are therefore memory copied.
 
    If operator returns a list of array, the ``adjoint`` **must** accept a list of
    array also. Again, everything is vectorized and the `Criterion` and
@@ -69,7 +69,7 @@ specialized subclass that allows simplification an slightly faster computation.
 Potential classes
 =================
 
-The :class:`Potential` is an abstract base class that can't be instancied and
+The :class:`Potential` is an abstract base class that can't be instanced and
 serve as parent class for all potential.
 
 At that time, the provided concrete potential are :class:`Square`,

@@ -54,21 +54,21 @@ def mmmg(
     ----------
     crit_list : list of `BaseCrit`
         A list of :class:`BaseCrit` objects that each represent a `μ ψ(V·x - ω)`.
-        The criterion are implicitly summed.
+        The criteria are implicitly summed.
     init : array
-        The initial point. The `init` array is updated inplace to return the
+        The initial point. The `init` array is updated in place to return the
         output. The user must make a copy before calling `mmmg` if this is not
-        the desired behaviour.
+        the desired behavior.
     tol : float, optional
         The stopping tolerance. The algorithm is stopped when the gradient norm
         is inferior to `init.size * tol`.
     max_iter : int, optional
-        The maximum number of iteration.
+        The maximum number of iterations.
 
     Returns
     -------
-    minimiser : array
-        The minimiser of the criterion with same shape than `init`.
+    minimizer : array
+        The minimizer of the criterion with same shape than `init`.
     norm_grad : list of float
         The norm of the gradient during iterations.
 
@@ -146,11 +146,11 @@ def mmcg(
     ----------
     crit_list : list of `BaseCrit`
         A list of :class:`BaseCrit` objects that each represent a `μ ψ(V·x - ω)`.
-        The criterion are implicitly summed.
+        The criteria are implicitly summed.
     init : ndarray
-        The initial point. The `init` array is updated inplace to return the
+        The initial point. The `init` array is updated in place to return the
         output. The user must make a copy before calling `mmmg` if this is not
-        the desired behaviour.
+        the desired behavior.
     precond : callable, optional
         A callable that must implement a preconditioner, that is `M⁻¹·x`. Must
         be a callable with a unique input parameter `x` and unique output.
@@ -158,12 +158,12 @@ def mmcg(
         The stopping tolerance. The algorithm is stopped when the gradient norm
         is inferior to `init.size * tol`.
     max_iter : int, optional
-        The maximum number of iteration.
+        The maximum number of iterations.
 
     Returns
     -------
-    minimiser : array
-        The minimiser of the criterion with same shape than `init`.
+    minimizer : array
+        The minimizer of the criterion with same shape than `init`.
     norm_grad : list of float
         The norm of the gradient during iterations.
 
@@ -325,10 +325,10 @@ class Criterion(BaseCrit):
         methods of same name.
 
         If `data` is a list of array, `operator` must return a similar list with
-        array of same shape, and `adjoint` must accept a similar list also.
+        arrays of same shape, and `adjoint` must accept a similar list also.
 
-        In that case, however and for algorithm purpose, everything is
-        internally stacked as a column vector and values are therefor copied.
+        In that case, however, and for algorithm purpose, everything is
+        internally stacked as a column vector and values are therefore copied.
         This is not efficient but flexible. Users are encouraged to do the
         vectorization themselves and not use the list of array feature.
         """
@@ -569,9 +569,9 @@ class Vmax(BaseCrit):
 
 
 class Potential(abc.ABC):
-    """An abstract base class for the potentials φ.
+    """An abstract base class for potential φ.
 
-    The class has the following attributs.
+    The class has the following attributes.
 
     inf : float
       The value of lim_{u→0} φ'(u) / u.
@@ -582,7 +582,7 @@ class Potential(abc.ABC):
     """
 
     def __init__(self, inf: float, convex: bool = False, coercive: bool = False):
-        """The potentials φ
+        """The potential φ
 
         Parameters
         ----------
@@ -620,7 +620,7 @@ class Potential(abc.ABC):
 
 
 class Square(Potential):
-    r"""The square function
+    r"""The Square function
 
     .. math::
 
@@ -628,7 +628,7 @@ class Square(Potential):
     """
 
     def __init__(self):
-        """The square function
+        """The Square function
 
         φ(u) = ½ u².
         """
@@ -693,7 +693,7 @@ class Hyperbolic(Potential):
 
        \phi(u) = \delta^2 \left( \sqrt{1 + \frac{u^2}{\delta^2}} -1 \right)
 
-    This is called sometimes Pseudo-Huber.
+    This is sometimes called Pseudo-Huber.
     """
 
     def __init__(self, delta: float):

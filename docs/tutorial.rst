@@ -25,7 +25,7 @@ Operators
 
 The first thing to do is to implement the forward operator :math:`V` and adjoint
 :math:`V^t`. User is obviously in charge of it. They are callable that could be
-Python functions or methods of object.
+Python functions or methods of objects.
 
 .. code-block:: python
 
@@ -49,17 +49,17 @@ and returns a unique ``ndarray``, of any shape, as output.
 
 .. note::
 
-   The list of array allows mixed operators, like combination of forward model
-   of different instrument, or multiple regularization.
+   The list of array allows mixed operators, like combination of forward models
+   of different instruments, or multiple regularization.
 
-   Everything are internally vectorized. Therfor, the use of list of array imply
-   memory copy of array however.
+   Everything is internally vectorized. Therefore, the use of list of array implies
+   memory copies of arrays, however.
 
 
 Potentials
 ==========
 
-The second step is to instanciate a potential :math:`\phi`, Huber for instance
+The second step is to instantiate potential :math:`\phi`, Huber for instance
 
 .. code-block:: python
 
@@ -71,7 +71,7 @@ Several potential are implemented, see TODO.
 Criterions
 ==========
 
-Then, a criterion :math:`\mu \Psi(Vx)` named ``prior`` can be instancied
+Then, a criterion :math:`\mu \Psi(Vx)` named ``prior`` can be instanced.
 
 .. code-block:: python
 
@@ -92,7 +92,7 @@ class ``QuadCriterion`` can be used
    In the example above, the hyperparameter value is set to :math:`\mu = 1` and
    the data term is different that 0.
 
-Optimisation algorithms
+Optimization algorithms
 =======================
 
 Then you can run the algorithm
@@ -101,15 +101,15 @@ Then you can run the algorithm
 
    from qmm import mmcg
 
-   miniser, _ = qmm.mmcg([data_adeq, prior], init, max_iter=200)
+   minimizer, _ = qmm.mmcg([data_adeq, prior], init, max_iter=200)
 
-where :code:`[data_adeq, prior]` means that the two criterion are summed.
+where :code:`[data_adeq, prior]` means that the two criteria are summed.
 
-Two algorithm are proposed :
+Two algorithms are proposed :
 
 - ``mmcg`` that implements a Polak-Ribière Conjugate Gradient.
 - ``mmmg`` that implements a subspace by Memory-Gradient with 2D step (that,
-  therefor, include the conjugacy parameter).
+  therefore, include the conjugacy parameter).
 
-Both algorithm have close form formula for the 1D or 2D step by
+Both algorithms have close form formula for the 1D or 2D step by
 Majorization-Minimization Quadratic.
