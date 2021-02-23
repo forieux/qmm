@@ -2,7 +2,7 @@ Q-MM: A Python Quadratic Majorization Minimization toolbox
 ==========================================================
 
 Q-MM is a Python implementation of Majorize-Minimize Quadratic optimization
-algorithms. Algorithms provided here come from that research:
+algorithms. Algorithms provided here come from :
 
 .. [1] C. Labat and J. Idier, “Convergence of Conjugate Gradient Methods with a
    Closed-Form Stepsize Formula,” J Optim Theory Appl, p. 18, 2008.
@@ -23,10 +23,10 @@ toolbox will also be appreciated.
       url = {https://github.com/forieux/qmm},
    }
 
-Majorize-Minimize Quadratic
+Quadratic Majorize-Minimize
 ---------------------------
 
-The Q-MM optimization algorithms allow finding the minimum of criteria like
+The Q-MM optimization algorithms compute the minimiser of criteria like
 
 ``J(x) = ∑ᵢ μₖ ψₖ(Vₖ·x - ωₖ)``
 
@@ -35,8 +35,8 @@ data, ``μₖ`` a scalar, ``ψₖ(u) = ∑ᵢφₖ(uᵢ)``, and ``φₖ`` a func
 differentiable, even, coercive, ``φ(√(·))`` concave, and ``0 < φ'(u) / u < +∞``.
 
 The optimization is done thanks to quadratic sugorate function. In particular,
-no linesearch is necessary and close form formula for the step are used with
-guaranteed convergence.
+no linesearch or sub-iteration is necessary, and close form formula for the step
+are used with guaranteed convergence.
 
 A classical example, like in the figure below that show an image deconvolution
 problem, is the resolution of an inverse problem with the minimization of
@@ -57,46 +57,16 @@ Features
   and [2] for details.
 - The ``mmcg``, Majorize-Minimize Conjugate Gradient algorithm. See
   documentation and [1] for details.
-- **No linesearch**: the step is obtained from a close form formula.
+- **No linesearch**: the step is obtained from a close form formula without
+  sub-iteration.
 - **No conjugacy choice**: a conjugacy strategy is not necessary thanks to the
   subspace nature of the algorithms. The ``mmcg`` algorithm use a Polak-Ribière
   formula.
 - Generic and flexible: there is no restriction on the number of regularizer,
   their type, .., as well as for data adequacy.
-- Provided base class for criterion allowing easier and fast implementation.
+- Provided base class for criterion and potential allowing easy and fast
+  implementation.
 - Comes with examples of implemented linear operator.
-
-Example
--------
-
-The ``demo.py`` presents an example on image deconvolution. The first step is to
-implement the operators ``V`` and the adjoint ``Vᵗ`` as callable (function or
-methods). The user is in charge of these operators and these callable must
-accept a unique parameter ``x`` and a unique return value. There is no
-constraints on the shape, everything is vectorized internally.
-
-After import of ``qmm``, you must instantiate ``Potential`` objects that
-implement ``φ`` and ``Criterion`` object that implements ``μ ψ(V·x - ω)``
-
-.. code:: python
-
-   import qmm
-   # φ
-   phi = qmm.Huber(delta=10)
-
-   # ||y - H·x||²
-   data_adeq = qmm.QuadCriterion(H, Ht, HtH, data=data)
-   # μ ψ(V·x) = μ ∑ᵢ φ(vᵢᵗ·x)
-   prior = qmm.Criterion(V, Vt, phi, hyper=0.01)
-   
-Then you can run the algorithm
-
-.. code:: python
-
-   res, norm_grad = qmm.mmmg([data_adeq, prior], init, max_iter=200)
-
-where :code:`[data_adeq, prior]` means that the two criterion are summed. For
-more details, see documentation.
 
 Installation
 ------------
@@ -111,6 +81,35 @@ Documentation
 
 Documentation is in ``./docs`` directory and is generated from the source files.
 You can see the ``demo.py`` file for an example.
+
+Example
+-------
+
+The ``demo.py`` presents an example on image deconvolution. The first step is to
+implement the operators ``V`` and the adjoint ``Vᵗ`` as callable (function or
+methods). The user is in charge of these operators and these callable must
+accept a unique parameter ``x`` and a unique return value. There is no
+constraints on the shape, everything is vectorized internally.
+
+After import of ``qmm``, user must instantiate ``Potential`` objects that
+implement ``φ`` and ``Criterion`` object that implements ``μ ψ(V·x - ω)``
+
+.. code:: python
+
+   import qmm
+   phi = qmm.Huber(delta=10)  # φ
+
+   data_adeq = qmm.QuadCriterion(H, Ht, HtH, data=data)  # ||y - H·x||²
+   prior = qmm.Criterion(V, Vt, phi, hyper=0.01)  # μ ψ(V·x) = μ ∑ᵢ φ(vᵢᵗ·x)
+   
+Then you can run the algorithm
+
+.. code:: python
+
+   res, norm_grad = qmm.mmmg([data_adeq, prior], init, max_iter=200)
+
+where :code:`[data_adeq, prior]` means that the two criterion are summed. For
+more details, see documentation.
 
 Contribute
 ----------
@@ -132,9 +131,9 @@ affliated to the Signal and Systems Laboratory `L2S
 Acknowledgement
 ---------------
 
-Author would like to thanks `Jérôme Idier
-<https://pagespersowp.ls2n.fr/jeromeidier/en/jerome-idier-3/>`_, `Saïd Moussaoui
-<https://scholar.google.fr/citations?user=Vkr8yxkAAAAJ&hl=fr>`_ and `Émilie
+Author would like to thanks `J. Idier
+<https://pagespersowp.ls2n.fr/jeromeidier/en/jerome-idier-3/>`_, `S. Moussaoui
+<https://scholar.google.fr/citations?user=Vkr8yxkAAAAJ&hl=fr>`_ and `É.
 Chouzenoux <http://www-syscom.univ-mlv.fr/~chouzeno/>`_. E. Chouzenoux has also
 a Matlab package that implements 3MG for image deconvolution that can be found
 `here <http://www-syscom.univ-mlv.fr/~chouzeno/Logiciel.html>`_.
