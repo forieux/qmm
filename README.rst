@@ -68,8 +68,10 @@ Features
   implementation.
 - Comes with examples of implemented linear operator.
 
-Installation
-------------
+Installation and documentation
+------------------------------
+
+`Documentation <https://qmm.readthedocs.io/en/latest/index.html>`_
 
 No installation procedure has been implemented at that time. Just copy the
 ``qmm`` directory or the ``qmm.py`` file where the ``sys.path`` can find it.
@@ -78,6 +80,7 @@ Q-MM only depends on ``numpy`` and Python 3.6.
 
 Documentation
 -------------
+
 
 Documentation is in ``./docs`` directory and is generated from the source files.
 You can see the ``demo.py`` file for an example.
