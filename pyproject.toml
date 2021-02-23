@@ -3,7 +3,7 @@ name = "qmm"
 version = "0.1.0"
 description = "The Quadratic Majorize-Minimize toolbox"
 authors = ["François Orieux <orieux@l2s.centralesupelec.fr>"]
-license = "MIT"
+license = "GPL3"
 
 [tool.poetry.dependencies]
 python = "^3.6"
