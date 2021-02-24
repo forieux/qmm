@@ -72,14 +72,15 @@ Features
 Installation and documentation
 ------------------------------
 
-Q-MM is essentially just one module. We recommend using poetry for installation
+Q-MM is essentially just one file ``qmm.py``. We recommend using poetry for
+installation
 
 .. code-block:: sh
 
    poetry add qmm
 
-but the package can be installed with pip also. More options are described in
-the `documentation <https://qmm.readthedocs.io/en/latest/index.html>`_.
+The package can also be installed with pip. More options are described in the
+`documentation <https://qmm.readthedocs.io/en/latest/index.html>`_.
 
 Q-MM only depends on ``numpy`` and Python 3.6.
 
@@ -148,4 +149,5 @@ The project is licensed under the GPLv3 license.
 TODO
 ----
 
+- Add operator.py description.
 - Add preconditionner to mmmg.
