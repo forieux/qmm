@@ -12,8 +12,9 @@ algorithms. Algorithms provided here come from
    Image Process., vol. 20, no. 6, pp. 1517–1528, Jun. 2011, doi:
    10.1109/TIP.2010.2103083.
 
-See documentation for more background. If you use this code, please cite the
-references above. A citation of this toolbox will also be appreciated.
+See `documentation <https://qmm.readthedocs.io/en/latest/index.html>`_ for more
+background. If you use this code, please cite the references above. A citation
+of this toolbox will also be appreciated.
 
 ::
 
@@ -26,13 +27,13 @@ references above. A citation of this toolbox will also be appreciated.
 Quadratic Majorize-Minimize
 ---------------------------
 
-The Q-MM optimization algorithms compute the minimiser of criteria like
+The Q-MM optimization algorithms compute the minimizer of criteria like
 
-``J(x) = ∑ₖ μₖ ψₖ(Vₖ·x - ωₖ)``
+J(x) = ∑ₖ μₖ ψₖ(Vₖ·x - ωₖ)
 
-where ``x`` is the unknown vector, ``Vₖ`` a linear operator, ``ωₖ`` a fixed
-data, ``μₖ`` a scalar, ``ψₖ(u) = ∑ᵢφₖ(uᵢ)``, and ``φₖ`` a function that must be
-differentiable, even, coercive, ``φ(√(·))`` concave, and ``0 < φ'(u) / u < +∞``.
+where x is the unknown vector, Vₖ a linear operator, ωₖ a fixed data, μₖ a
+scalar, ψₖ(u) = ∑ᵢφₖ(uᵢ), and φₖ a function that must be differentiable, even,
+coercive, φ(√·) concave, and 0 < φ'(u) / u < +∞.
 
 The optimization is done thanks to quadratic sugorate function. In particular,
 no linesearch or sub-iteration is necessary, and close form formula for the step
@@ -41,12 +42,12 @@ are used with guaranteed convergence.
 A classical example, like in the figure below that show an image deconvolution
 problem, is the resolution of an inverse problem with the minimization of
 
-``J(x) = ||y - H·x||² + μ ψ(V·x)``
+J(x) = ||y - H·x||² + μ ψ(V·x)
 
-where ``H`` is a low-pass forward model, ``V`` a regularization operator that
-approximate gradient (kind of high-pass filter) and ``ψ`` an edge preserving
-function like Huber. The above criterion is obtained with ``k ∈ {1, 2}``,
-``ψ₁(·) = ||·||²``, ``V₁ = H``, ``ω₁ = y``, and ``ω₂ = 0``.
+where H is a low-pass forward model, V a regularization operator that
+approximate gradient (kind of high-pass filter) and ψ an edge preserving
+function like Huber. The above criterion is obtained with k ∈ {1, 2}, ψ₁(·) =
+||·||², V₁ = H, ω₁ = y, and ω₂ = 0.
 
 .. image:: ./docs/image.png
 
@@ -77,8 +78,8 @@ Q-MM is essentially just one module. We recommend using poetry for installation
 
    poetry add qmm
 
-More options are described in the `Documentation
-<https://qmm.readthedocs.io/en/latest/index.html>`_
+but the package can be installed with pip also. More options are described in
+the `documentation <https://qmm.readthedocs.io/en/latest/index.html>`_.
 
 Q-MM only depends on ``numpy`` and Python 3.6.
 
@@ -109,7 +110,8 @@ Then you can run the algorithm
    res, norm_grad = qmm.mmmg([data_adeq, prior], init, max_iter=200)
 
 where :code:`[data_adeq, prior]` means that the two criteria are summed. For
-more details, see documentation.
+more details, see `documentation
+<https://qmm.readthedocs.io/en/latest/index.html>`_.
 
 Contribute
 ----------
