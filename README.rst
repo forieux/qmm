@@ -149,5 +149,4 @@ The project is licensed under the GPLv3 license.
 TODO
 ----
 
-- Add operators.py description.
 - Add preconditionner to mmmg.
