@@ -2,4 +2,7 @@
  ``operators`` module
 ======================
 
-TODO
+.. py:currentmodule:: qmm
+
+.. automodule:: operators
+    :members:

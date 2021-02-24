@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-"""A module that implement high level interface to manipulate linear operators.
-This module is not required by Q-MM but can serve as guide or for reuse.
+"""Implements high level interface to manipulate linear operators. This module
+is not required by Q-MM, is basic, but can serve as guide or for reuse.
 
 """
 
