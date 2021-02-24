@@ -7,6 +7,7 @@
    installation
    tutorial
    qmm
+   operators
    extend
 
 ======================
