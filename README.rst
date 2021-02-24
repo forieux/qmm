@@ -12,7 +12,7 @@ algorithms. Algorithms provided here come from
    Image Process., vol. 20, no. 6, pp. 1517–1528, Jun. 2011, doi:
    10.1109/TIP.2010.2103083.
 
-See `documentation <https://qmm.readthedocs.io/en/latest/index.html>`_ for more
+See `documentation <https://qmm.readthedocs.io/en/stable/index.html>`_ for more
 background. If you use this code, please cite the references above. A citation
 of this toolbox will also be appreciated.
 
@@ -80,7 +80,7 @@ installation
    poetry add qmm
 
 The package can also be installed with pip. More options are described in the
-`documentation <https://qmm.readthedocs.io/en/latest/index.html>`_.
+`documentation <https://qmm.readthedocs.io/en/stable/index.html>`_.
 
 Q-MM only depends on ``numpy`` and Python 3.6.
 
@@ -112,7 +112,7 @@ Then you can run the algorithm
 
 where :code:`[data_adeq, prior]` means that the two criteria are summed. For
 more details, see `documentation
-<https://qmm.readthedocs.io/en/latest/index.html>`_.
+<https://qmm.readthedocs.io/en/stable/index.html>`_.
 
 Contribute
 ----------
