@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "qmm"
-version = "0.2.0"
+version = "0.2.1"
 description = "The Quadratic Majorize-Minimize toolbox"
 authors = ["François Orieux <francois.orieux@universite-paris-saclay.fr>"]
 maintainers = ["François Orieux <francois.orieux@universite-paris-saclay.fr>"]
@@ -22,7 +22,7 @@ classifiers = [
 ]
 
 [tool.poetry.urls]
-"Bug Tracker" = "https://github.com/forieux/qmm/"
+"Bug Tracker" = "https://github.com/forieux/qmm/issues"
 "Author webpage" = "https://pro.orieux.fr/"
 
 [tool.poetry.dependencies]
