@@ -1,6 +1,8 @@
 Q-MM: A Python Quadratic Majorization Minimization toolbox
 ==========================================================
 
+.. image:: ./docs/qmm.png
+
 Q-MM is a Python implementation of Majorize-Minimize Quadratic optimization
 algorithms. Algorithms provided here come from
 
@@ -98,7 +100,7 @@ implement ``φ`` and ``Criterion`` object that implements ``μ ψ(V·x - ω)``
 
 .. code:: python
 
-   import qmm
+   from qmm import qmm
    phi = qmm.Huber(delta=10)  # φ
 
    data_adeq = qmm.QuadCriterion(H, Ht, HtH, data=data)  # ||y - H·x||²
