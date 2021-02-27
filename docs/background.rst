@@ -5,6 +5,7 @@
 MM-Q is Python toolbox to optimise criterion or loss function like
 
 .. math::
+
    J(x) = \sum_k \mu_k \Psi_k(V_k x - \omega_k)
 
 where :math:`x` is the unknown of size :math:`N`, :math:`V_k` a matrix or linear
@@ -25,6 +26,8 @@ are illustrated below. The Geman & Mc Clure and the truncated square
 approximation are not coercive.
 
 .. image:: ./potentials.png
+    :align: center
+
 ..
    .. plot::
 

@@ -17,6 +17,7 @@
 Q-MM is a small Python toolbox to optimize differentiable criterion
 
 .. math::
+
    \hat x = \underset{x \in \mathbb{R}}{\text{arg min}}\ J(x)
 
 by Majorization-Minimization with quadratic surrogate function. In particular,
