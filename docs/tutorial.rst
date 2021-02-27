@@ -63,6 +63,7 @@ The second step is to instantiate potential :math:`\phi`, Huber for instance
 
 .. code-block:: python
 
+   from qmm import qmm
    from qmm import Huber
    phi = Huber(delta=10)
 
