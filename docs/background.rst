@@ -80,11 +80,10 @@ as
 ::
 
     @software{qmm,
-       title = {Q-MM: The Quadratic Python Majorize-Minimize toolbox},
+       title = {Q-MM: The Quadratic Majorize-Minimize Python toolbox},
        author = {Orieux, Fran\c{c}ois},
        url = {https://github.com/forieux/qmm},
     }
-
 
 .. [a] D. Geman and G. Reynolds, “Constrained restoration and the recovery of
        discontinuities,” IEEE Trans. Pattern Anal. Machine Intell., vol. 14, no.

@@ -77,7 +77,7 @@ cite it
 ::
 
     @software{qmm,
-       title = {Q-MM: The Quadratic Python Majorize-Minimize toolbox},
+       title = {Q-MM: The Quadratic Majorize-Minimize Python toolbox},
        author = {Orieux, Fran\c{c}ois},
        url = {https://github.com/forieux/qmm},
     }
