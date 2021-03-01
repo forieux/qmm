@@ -41,6 +41,20 @@ specialized subclass that allows simplification and slightly faster computation.
 
 .. note::
 
+   The :class:`Criterion` class implements ``__call__`` interface allowing
+   objects to behave like callable (function), returning the criterion value
+
+   .. code-block:: python
+
+      identity = lambda x: x
+
+      crit = qmm.Criterion(identity, identity, qmm.Square())
+      x = np.random.standard_normal((100, ))
+      crit(x) == crit.value(x)
+
+
+.. note::
+
    The ``operator`` argument for :class:`Criterion` and :class:`QuadCriterion`
    must be a callable that accept an ``array`` as input and return an array as
    output. However, the operator **can also return** a ``list`` of array (for
@@ -75,6 +89,18 @@ serve as parent class for all potential.
 At that time, the provided concrete potential are :class:`Square`,
 :class:`Huber`, :class:`Hyperbolic`, :class:`HerbertLeahy`,
 :class:`GemanMcClure`, :class:`TruncSquareApprox`.
+
+.. note::
+
+   The :class:`Potential` class implements ``__call__`` interface allowing
+   objects to behave like callable (function), returning the function value
+
+   .. code-block:: python
+
+      u = np.linspace(-5, 5, 1000)
+      pot = qmm.Huber(1)
+      plt.plot(u, pot(u))
+
 
 .. autoclass:: Potential
    :members:
