@@ -1,5 +1,5 @@
-Q-MM: A Python Quadratic Majorization Minimization toolbox
-==========================================================
+Q-MM: A Python toolbox for Quadratic Majorization-Minimization
+==============================================================
 
 .. image:: ./docs/qmm.png
 
