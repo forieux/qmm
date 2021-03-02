@@ -232,7 +232,7 @@ def _vect(func: Callable[[array], array], point: array, shape: Tuple) -> array:
 
 
 # Vectorized gradient
-def _gradient(crit_list: Sequence["Criterion"], point: array, shape: Tuple) -> array:
+def _gradient(crit_list: Sequence["BaseCrit"], point: array, shape: Tuple) -> array:
     """Compute sum of gradient with vectorized parameters and return"""
     return sum(_vect(crit.gradient, point, shape) for crit in crit_list)
 
@@ -335,7 +335,6 @@ class Criterion(BaseCrit):
         self._operator = operator
         self._adjoint = adjoint
 
-        self._data = data
         if isinstance(data, list):
             self._stacked = True
             self._shape = [arr.shape for arr in data]
@@ -348,9 +347,8 @@ class Criterion(BaseCrit):
         self.hyper = hyper
         self.potential = potential
 
-    def _list2vec(
-        self, arr_list: Sequence[array]
-    ) -> array:  #  pylint: disable=no-self-use
+    @staticmethod
+    def _list2vec(arr_list: Sequence[array]) -> array:  #  pylint: disable=no-self-use
         """Vectorize a list of array."""
         return np.vstack([arr.reshape((-1, 1)) for arr in arr_list])
 
