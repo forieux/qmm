@@ -29,17 +29,17 @@ The ``Potential`` classes are used by ``Criterion``.
 
 import abc
 import functools
-from typing import Callable, List, Tuple, Union
+from typing import Callable, List, Sequence, Tuple, Union
 
 import numpy as np  # type: ignore
 import numpy.linalg as la  # type: ignore
 from numpy import ndarray as array
 
-ArrOrList = Union[array, List[array]]
+ArrOrSeq = Union[array, Sequence[array]]
 
 
 def mmmg(
-    crit_list: List["BaseCrit"],
+    crit_list: Sequence["BaseCrit"],
     init: array,
     tol: float = 1e-4,
     max_iter: int = 500,
@@ -130,7 +130,7 @@ def mmmg(
 
 
 def mmcg(
-    crit_list: List["BaseCrit"],
+    crit_list: Sequence["BaseCrit"],
     init: array,
     precond: Callable[[array], array] = None,
     tol: float = 1e-4,
@@ -232,7 +232,7 @@ def _vect(func: Callable[[array], array], point: array, shape: Tuple) -> array:
 
 
 # Vectorized gradient
-def _gradient(crit_list: List["Criterion"], point: array, shape: Tuple) -> array:
+def _gradient(crit_list: Sequence["Criterion"], point: array, shape: Tuple) -> array:
     """Compute sum of gradient with vectorized parameters and return"""
     return sum(_vect(crit.gradient, point, shape) for crit in crit_list)
 
@@ -298,10 +298,10 @@ class Criterion(BaseCrit):
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
-        operator: Callable[[array], ArrOrList],
-        adjoint: Callable[[ArrOrList], array],
+        operator: Callable[[array], ArrOrSeq],
+        adjoint: Callable[[ArrOrSeq], array],
         potential: "Potential",
-        data: ArrOrList = 0,
+        data: ArrOrSeq = 0,
         hyper: float = 1,
     ):
         """A criterion μ ψ(V·x - ω).
@@ -348,7 +348,9 @@ class Criterion(BaseCrit):
         self.hyper = hyper
         self.potential = potential
 
-    def _list2vec(self, arr_list: List[array]) -> array:  #  pylint: disable=no-self-use
+    def _list2vec(
+        self, arr_list: Sequence[array]
+    ) -> array:  #  pylint: disable=no-self-use
         """Vectorize a list of array."""
         return np.vstack([arr.reshape((-1, 1)) for arr in arr_list])
 
@@ -423,8 +425,8 @@ class QuadCriterion(Criterion):
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
-        operator: Callable[[array], ArrOrList],
-        adjoint: Callable[[ArrOrList], array],
+        operator: Callable[[array], ArrOrSeq],
+        adjoint: Callable[[ArrOrSeq], array],
         normal: Callable[[array], array] = None,
         data: array = 0,
         hyper: float = 1,
