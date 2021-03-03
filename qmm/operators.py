@@ -90,7 +90,7 @@ class Operator(abc.ABC):
         """Return HᵗH·x"""
         return self.backward(self.forward(point))
 
-    def t(self, point: ArrOrList) -> array:
+    def T(self, point: ArrOrList) -> array:
         """Return Hᵗ·e"""
         return self.adjoint(point)
 
@@ -139,7 +139,7 @@ class Conv2(Operator):
 
     def forward(self, point: array) -> array:
         return idft2(dft2(point) * self.freq_resp, self.shape)[
-            : -self._ir_shape[0], : -self._ir_shape[1]
+            : -self._ir_shape[0] + 1, : -self._ir_shape[1] + 1
         ]
 
     def adjoint(self, point: array) -> array:
@@ -149,8 +149,8 @@ class Conv2(Operator):
 
     def fwback(self, point: array) -> array:
         out = idft2(dft2(point) * self.freq_resp, self.shape)
-        out[-self._ir_shape[0] :, :] = 0
-        out[:, -self._ir_shape[1] :] = 0
+        out[-self._ir_shape[0] + 1 :, :] = 0
+        out[:, -self._ir_shape[1] + 1 :] = 0
         return idft2(dft2(out) * self.freq_resp.conj(), self.shape)
 
 

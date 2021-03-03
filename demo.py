@@ -7,6 +7,7 @@ import time
 import matplotlib.pyplot as plt  # type: ignore
 import numpy as np  # type: ignore
 import scipy.misc  # type: ignore
+from scipy.signal import convolve2d
 
 from qmm import operators, qmm  # type: ignore
 
@@ -18,7 +19,8 @@ ir = np.ones((5, 5)) / 25
 obs = operators.Conv2(ir, shape)
 
 #%% Simulated data
-data = obs(imag)
+data = convolve2d(imag, ir, mode="valid")
+# data = obs(imag)
 data += np.random.standard_normal(data.shape)
 init = obs.adjoint(data)
 
