@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "qmm"
-version = "0.2.2"
+version = "0.2.3"
 description = "The Quadratic Majorize-Minimize toolbox"
 authors = ["François Orieux <francois.orieux@universite-paris-saclay.fr>"]
 maintainers = ["François Orieux <francois.orieux@universite-paris-saclay.fr>"]
