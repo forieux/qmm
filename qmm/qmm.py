@@ -719,8 +719,8 @@ with δ = {self.delta}
 """
 
 
-class HerbertLeahy(Potential):
-    r"""The non-convex coercive function Herbert & Leahy
+class HebertLeahy(Potential):
+    r"""The non-convex coercive function Hebert & Leahy
 
     .. math::
 
@@ -729,7 +729,7 @@ class HerbertLeahy(Potential):
     """
 
     def __init__(self, delta: float):
-        """The Herbert & Leahy function."""
+        """The Hebert & Leahy function."""
         super().__init__(inf=2 / delta ** 2, convex=False, coercive=True)
         self.delta = delta
 

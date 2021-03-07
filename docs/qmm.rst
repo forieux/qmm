@@ -114,7 +114,7 @@ At that time, the provided concrete potential are :class:`Square`,
 .. autoclass:: Hyperbolic
    :members:
 
-.. autoclass:: HerbertLeahy
+.. autoclass:: HebertLeahy
    :members:
 
 .. autoclass:: GemanMcClure
