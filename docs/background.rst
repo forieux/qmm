@@ -9,8 +9,8 @@ MM-Q is Python toolbox to optimise criterion or loss function like
    J(x) = \sum_k \mu_k \Psi_k(V_k x - \omega_k)
 
 where :math:`x` is the unknown of size :math:`N`, :math:`V_k` a matrix or linear
-operator of size :math:`M_k \times N`, :math:`ω_k` a data fixed vector of size
-:math:`M_k`, :math:`\mu_k` a scalar hyperparameter, and :math:`\Psi_k(u) =
+operator of size :math:`M_k \times N`, :math:`\omega_k` a data fixed vector of
+size :math:`M_k`, :math:`\mu_k` a scalar hyperparameter, and :math:`\Psi_k(u) =
 \sum_i \phi_k(u_i)`. MM-Q suppose that the scalar functions :math:`\phi` are
 differentiable, even, coercive, :math:`\phi(\sqrt{\cdot})` concave, and :math:`0
 < \dot{\phi}(u) / u < +\infty`.
