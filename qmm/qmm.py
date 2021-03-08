@@ -188,9 +188,14 @@ def mmcg(
     sec = precond(residual)
     direction = sec
     delta = residual.T @ direction
-    norm_res: List[float] = [la.norm(residual)]
+    norm_res: List[float] = []
 
     for _ in range(max_iter):
+        # Stop test
+        norm_res.append(la.norm(residual))
+        if norm_res[-1] < point.size * tol:
+            break
+
         # update
         op_direction = [
             _vect(crit.operator, direction, init.shape) for crit in crit_list
@@ -206,11 +211,6 @@ def mmcg(
 
         # Gradient
         residual = -_gradient(crit_list, point, init.shape)
-
-        # Stop test
-        norm_res.append(la.norm(residual))
-        if norm_res[-1] < point.size * tol:
-            break
 
         # Conjugate direction. No reset is done, see Shewchuck.
         delta_old = delta
@@ -232,7 +232,7 @@ def _vect(func: Callable[[array], array], point: array, shape: Tuple) -> array:
 
 
 # Vectorized gradient
-def _gradient(crit_list: List["Criterion"], point: array, shape: Tuple) -> array:
+def _gradient(crit_list: List["BaseCrit"], point: array, shape: Tuple) -> array:
     """Compute sum of gradient with vectorized parameters and return"""
     return sum(_vect(crit.gradient, point, shape) for crit in crit_list)
 
