@@ -24,8 +24,8 @@ Operators
 =========
 
 The first thing to do is to implement the forward operator :math:`V` and adjoint
-:math:`V^t`. User is obviously in charge of it. They are callable that could be
-Python functions or methods of objects.
+:math:`V^t`. User is in charge of it. They are callable that could be Python
+functions or methods of objects.
 
 .. code-block:: python
 
@@ -33,7 +33,7 @@ Python functions or methods of objects.
        # ...
        # do computation
        # ...
-       return out  # Must be an array or a list of array
+       return out  # An array or a list of array
 
    def adjoint(out):
        # ...
@@ -42,10 +42,13 @@ Python functions or methods of objects.
        return array
 
 The forward parameter must accept a ``numpy.ndarray`` :math:`x`, of any shape,
-as unique parameter . The output of the forward operator must be a ``ndarray``
-of any shape, or a list of ``ndarray`` (of any shape also). Consequently, the
-adjoint operator must accept as parameter a ``ndarray`` or a list of ``ndarray``
-and returns a unique ``ndarray``, of any shape, as output.
+as unique parameter . The output of the forward operator must be
+
+* a ``ndarray`` of any shape,
+* or a list of ``ndarray`` (of any shape also).
+
+Consequently, the adjoint operator must accept as parameter a ``ndarray`` or a
+list of ``ndarray`` and returns a unique ``ndarray``, of any shape, as output.
 
 .. note::
 
@@ -63,20 +66,18 @@ The second step is to instantiate potential :math:`\phi`, Huber for instance
 
 .. code-block:: python
 
-   from qmm import qmm
-   from qmm import Huber
+   from qmm.qmm import Huber, Criterion, QuadCriterion, mmmg
    phi = Huber(delta=10)
 
-Several potential are implemented, see TODO.
+Several potential are implemented, see :doc:`Background <background>` and the
+:doc:`qmm <qmm>` module.
 
 Criterions
 ==========
 
-Then, a criterion :math:`\mu \Psi(Vx)` named ``prior`` can be instanced.
+Then, a criterion :math:`\mu \Psi(Vx)` named ``prior`` can be instanced
 
 .. code-block:: python
-
-   from qmm import Criterion
 
    prior = Criterion(forward, adjoint, phi, hyper=0.01)
 
@@ -85,13 +86,13 @@ class ``QuadCriterion`` can be used
 
 .. code-block:: python
 
-   from qmm import QuadCriterion
    data_adeq = QuadCriterion(H, Ht, data=data)
 
 .. note::
 
    In the example above, the hyperparameter value is set to :math:`\mu = 1` and
-   the data term is different that 0.
+   the data term is different that 0. For the prior term, the data is 0 by
+   default and the hyperparameter is set to 0.01.
 
 Optimization algorithms
 =======================
@@ -100,11 +101,10 @@ Then you can run the algorithm
 
 .. code:: python
 
-   from qmm import mmcg
+   minimizer, _ = mmmg([data_adeq, prior], init, max_iter=200)
 
-   minimizer, _ = qmm.mmcg([data_adeq, prior], init, max_iter=200)
-
-where :code:`[data_adeq, prior]` means that the two criteria are summed.
+where the list :code:`[data_adeq, prior]` means that the two criteria are
+summed.
 
 Two algorithms are proposed :
 
