@@ -29,6 +29,8 @@ The ``Potential`` classes are used by ``Criterion``.
 
 import abc
 import functools
+from functools import reduce
+from operator import iadd
 from typing import Callable, List, Tuple, Union
 
 import numpy as np  # type: ignore
@@ -56,9 +58,7 @@ def mmmg(
         A list of :class:`BaseCrit` objects that each represent a `μ ψ(V·x - ω)`.
         The criteria are implicitly summed.
     init : array
-        The initial point. The `init` array is updated in place to return the
-        output. The user must make a copy before calling `mmmg` if this is not
-        the desired behavior.
+        The initial point.
     tol : float, optional
         The stopping tolerance. The algorithm is stopped when the gradient norm
         is inferior to `init.size * tol`.
@@ -148,9 +148,7 @@ def mmcg(
         A list of :class:`BaseCrit` objects that each represent a `μ ψ(V·x - ω)`.
         The criteria are implicitly summed.
     init : ndarray
-        The initial point. The `init` array is updated in place to return the
-        output. The user must make a copy before calling `mmmg` if this is not
-        the desired behavior.
+        The initial point.
     precond : callable, optional
         A callable that must implement a preconditioner, that is `M⁻¹·x`. Must
         be a callable with a unique input parameter `x` and unique output.
@@ -234,7 +232,8 @@ def _vect(func: Callable[[array], array], point: array, shape: Tuple) -> array:
 # Vectorized gradient
 def _gradient(crit_list: List["BaseCrit"], point: array, shape: Tuple) -> array:
     """Compute sum of gradient with vectorized parameters and return"""
-    return sum(_vect(crit.gradient, point, shape) for crit in crit_list)
+    # The use of reduce and iadd do an more efficient numpy inplace sum
+    return reduce(iadd, (_vect(crit.gradient, point, shape) for crit in crit_list))
 
 
 class BaseCrit(abc.ABC):
