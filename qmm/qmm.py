@@ -86,7 +86,7 @@ def mmmg(
        10.1109/TIP.2010.2103083.
 
     """
-    point = init.reshape((-1, 1))
+    point = init.copy().reshape((-1, 1))
     norm_grad = []
 
     # The first previous moves are initialized with 0 array. Consequently, the
@@ -182,7 +182,7 @@ def mmcg(
     if precond is None:
         precond = lambda x: x
 
-    point = init.reshape((-1, 1))
+    point = init.copy().reshape((-1, 1))
 
     residual = -_gradient(crit_list, point, init.shape)
     sec = precond(residual)
