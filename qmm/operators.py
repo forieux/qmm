@@ -20,7 +20,7 @@ is not required by Q-MM, is basic, but can serve as guide or for reuse.
 """
 
 import abc
-from typing import List, Tuple, Union
+from typing import List, Sequence, Tuple, Union
 
 import numpy as np  # type: ignore
 from numpy import ndarray as array
@@ -88,7 +88,7 @@ class Operator(abc.ABC):
 
     def fwback(self, point: array) -> array:
         """Return HᵗH·x"""
-        return self.backward(self.forward(point))
+        return self.adjoint(self.forward(point))
 
     def T(self, point: ArrOrList) -> array:
         """Return Hᵗ·e"""
@@ -189,11 +189,11 @@ class Diff(Operator):
         response.
 
         """
-        ir = np.zeros(ndim * [2])
+        imp_resp = np.zeros(ndim * [2])
         index = ndim * [0]
         index[self.axis] = slice(None, None)
-        ir[tuple(index)] = [1, -1]
-        return ir
+        imp_resp[tuple(index)] = [1, -1]
+        return imp_resp
 
     def freq_response(self, ndim, shape):
         """The frequency response."""
@@ -207,7 +207,10 @@ class Diff(Operator):
 
 
 def ir2fr(
-    imp_resp: array, shape: Tuple[int], center: Tuple[int] = None, real: bool = True
+    imp_resp: array,
+    shape: Sequence[int],
+    center: Sequence[int] = None,
+    real: bool = True,
 ) -> array:
     """Return the frequency response from impulse responses.
 

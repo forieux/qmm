@@ -9,8 +9,8 @@ MM-Q is Python toolbox to optimise criterion or loss function like
    J(x) = \sum_k \mu_k \Psi_k(V_k x - \omega_k)
 
 where :math:`x` is the unknown of size :math:`N`, :math:`V_k` a matrix or linear
-operator of size :math:`M_k \times N`, :math:`ω_k` a data fixed vector of size
-:math:`M_k`, :math:`\mu_k` a scalar hyperparameter, and :math:`\Psi_k(u) =
+operator of size :math:`M_k \times N`, :math:`\omega_k` a data fixed vector of
+size :math:`M_k`, :math:`\mu_k` a scalar hyperparameter, and :math:`\Psi_k(u) =
 \sum_i \phi_k(u_i)`. MM-Q suppose that the scalar functions :math:`\phi` are
 differentiable, even, coercive, :math:`\phi(\sqrt{\cdot})` concave, and :math:`0
 < \dot{\phi}(u) / u < +\infty`.
@@ -28,30 +28,36 @@ approximation are not coercive.
 .. image:: ./potentials.png
     :align: center
 
+
 ..
-   .. plot::
+    .. plot::
+       :align: center
 
-      import numpy as np
-      import matplotlib.pyplot as plt
+       import numpy as np
+       import matplotlib.pyplot as plt
 
-      import qmm
+       from qmm import qmm
 
-      u = np.linspace(-10, 10, 1000)
-      plt.subplot(2, 2, 1)
-      plt.plot(u, qmm.Huber(1)(u))
-      plt.plot(u, qmm.Hyperbolic(1)(u))
-      plt.title('Huber and Hyperbolic')
-      plt.subplot(2, 2, 2)
-      plt.plot(u, qmm.HerbertLeahy(1)(u))
-      plt.title('Herbert & Leahy')
-      plt.subplot(2, 2, 3)
-      plt.plot(u, qmm.GemanMcClure(1)(u))
-      plt.title('Geman & Mc Clure')
-      plt.subplot(2, 2, 4)
-      plt.plot(u, qmm.TruncSquareApprox(1)(u))
-      plt.title('Truncated square approximation')
+       u = np.linspace(-10, 10, 1000)
 
-      plt.tight_layout()
+       plt.figure(1)
+       plt.clf()
+       plt.subplot(2, 2, 1)
+       plt.plot(u, qmm.Square()(u))
+       plt.title('Square')
+       plt.subplot(2, 2, 2)
+       plt.plot(u, qmm.Huber(1)(u))
+       plt.plot(u, qmm.Hyperbolic(1)(u))
+       plt.title('Huber and Hyperbolic')
+       plt.subplot(2, 2, 3)
+       plt.plot(u, qmm.HebertLeahy(1)(u))
+       plt.title('Hebert & Leahy')
+       plt.subplot(2, 2, 4)
+       plt.plot(u, qmm.GemanMcClure(1)(u))
+       plt.plot(u, qmm.TruncSquareApprox(1)(u))
+       plt.title('Geman & Mc Clure and\nTruncated square approx.')
+
+       plt.tight_layout()
 
 
 Example
@@ -74,8 +80,8 @@ References
 
 The toolbox is funded on following papers. The papers [a]_, [b]_, and [c]_ are
 historical foundations. The implemented algorithms in the toolbox come from [d]_
-and [e]_. If you use this toolbox please cite these two papers and this toolbox
-as
+and [e]_. If you use this toolbox please cite_these last two papers and this
+toolbox as
 
 ::
 

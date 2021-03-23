@@ -29,6 +29,8 @@ The ``Potential`` classes are used by ``Criterion``.
 
 import abc
 import functools
+from functools import reduce
+from operator import iadd
 from typing import Callable, List, Sequence, Tuple, Union
 
 import numpy as np  # type: ignore
@@ -56,9 +58,7 @@ def mmmg(
         A list of :class:`BaseCrit` objects that each represent a `μ ψ(V·x - ω)`.
         The criteria are implicitly summed.
     init : array
-        The initial point. The `init` array is updated in place to return the
-        output. The user must make a copy before calling `mmmg` if this is not
-        the desired behavior.
+        The initial point.
     tol : float, optional
         The stopping tolerance. The algorithm is stopped when the gradient norm
         is inferior to `init.size * tol`.
@@ -86,7 +86,7 @@ def mmmg(
        10.1109/TIP.2010.2103083.
 
     """
-    point = init.reshape((-1, 1))
+    point = init.copy().reshape((-1, 1))
     norm_grad = []
 
     # The first previous moves are initialized with 0 array. Consequently, the
@@ -148,9 +148,7 @@ def mmcg(
         A list of :class:`BaseCrit` objects that each represent a `μ ψ(V·x - ω)`.
         The criteria are implicitly summed.
     init : ndarray
-        The initial point. The `init` array is updated in place to return the
-        output. The user must make a copy before calling `mmmg` if this is not
-        the desired behavior.
+        The initial point.
     precond : callable, optional
         A callable that must implement a preconditioner, that is `M⁻¹·x`. Must
         be a callable with a unique input parameter `x` and unique output.
@@ -182,15 +180,20 @@ def mmcg(
     if precond is None:
         precond = lambda x: x
 
-    point = init.reshape((-1, 1))
+    point = init.copy().reshape((-1, 1))
 
     residual = -_gradient(crit_list, point, init.shape)
     sec = precond(residual)
     direction = sec
     delta = residual.T @ direction
-    norm_res: List[float] = [la.norm(residual)]
+    norm_res: List[float] = []
 
     for _ in range(max_iter):
+        # Stop test
+        norm_res.append(la.norm(residual))
+        if norm_res[-1] < point.size * tol:
+            break
+
         # update
         op_direction = [
             _vect(crit.operator, direction, init.shape) for crit in crit_list
@@ -206,11 +209,6 @@ def mmcg(
 
         # Gradient
         residual = -_gradient(crit_list, point, init.shape)
-
-        # Stop test
-        norm_res.append(la.norm(residual))
-        if norm_res[-1] < point.size * tol:
-            break
 
         # Conjugate direction. No reset is done, see Shewchuck.
         delta_old = delta
@@ -234,7 +232,8 @@ def _vect(func: Callable[[array], array], point: array, shape: Tuple) -> array:
 # Vectorized gradient
 def _gradient(crit_list: Sequence["BaseCrit"], point: array, shape: Tuple) -> array:
     """Compute sum of gradient with vectorized parameters and return"""
-    return sum(_vect(crit.gradient, point, shape) for crit in crit_list)
+    # The use of reduce and iadd do an more efficient numpy inplace sum
+    return reduce(iadd, (_vect(crit.gradient, point, shape) for crit in crit_list))
 
 
 class BaseCrit(abc.ABC):
@@ -719,8 +718,8 @@ with δ = {self.delta}
 """
 
 
-class HerbertLeahy(Potential):
-    r"""The non-convex coercive function Herbert & Leahy
+class HebertLeahy(Potential):
+    r"""The non-convex coercive function Hebert & Leahy
 
     .. math::
 
@@ -729,7 +728,7 @@ class HerbertLeahy(Potential):
     """
 
     def __init__(self, delta: float):
-        """The Herbert & Leahy function."""
+        """The Hebert & Leahy function."""
         super().__init__(inf=2 / delta ** 2, convex=False, coercive=True)
         self.delta = delta
 
