@@ -231,7 +231,7 @@ def hqgr(
     tol: float = 1e-4,
     gr_iter: int = 30,
     cg_iter: int = 30,
-) -> OptimizeRes:
+) -> "OptimizeRes":
 
     point = init.copy().reshape((-1, 1))
     res = OptimizeRes()
@@ -314,9 +314,7 @@ def lcg(
 
     point = init.copy().reshape((-1, 1))
 
-    second_term = reduce(
-        iadd, (_vect(c.adjoint, c.data, init.shape) for c in crit_list)
-    )
+    second_term = np.reshape(reduce(iadd, (c.data_t for c in crit_list)), (-1, 1))
 
     def hessian(arr):
         return reduce(iadd, (_vect(c.hessp, arr, init.shape) for c in crit_list))
@@ -324,34 +322,34 @@ def lcg(
     # Gradient at current init
     residual = second_term - hessian(point)
     direction = _vect(precond, residual, init.shape)
-    grad_norm: List[float] = [la.norm(residual)]
+    grad_norm: List[float] = [np.sum(np.real(np.conj(residual) * direction))]
 
-    for iteration in range(init.size):
+    for iteration in range(max_iter):
         hess_dir = hessian(direction)
         # s = rᵗr / dᵗAd
         # Optimal step
-        step = grad_norm[-1] ** 2 / np.sum(np.real(np.conj(direction) * hess_dir))
+        step = grad_norm[-1] / np.sum(np.real(np.conj(direction) * hess_dir))
 
         # Descent x^(i+1) = x^(i) + s*d
-        point = point + step * direction
+        point += step * direction
 
         # r^(i+1) = r^(i) - s * A·d
         if iteration % 50 == 0:
             residual = second_term - hessian(point)
         else:
-            residual = residual - step * hess_dir
+            residual -= step * hess_dir
 
         # Conjugate direction with preconditionner
         secant = _vect(precond, residual, init.shape)
         grad_norm.append(np.sum(np.real(np.conj(residual) * secant)))
 
         # Stopping criterion
-        if grad_norm[-1] < point.size * tol:
+        if np.sqrt(grad_norm[-1]) < point.size * tol:
             break
 
-        direction = secant + grad_norm[-1] / grad_norm[-2] * direction
+        direction = secant + (grad_norm[-1] / grad_norm[-2]) * direction
 
-    return point, list(np.sqrt(grad_norm))
+    return point.reshape(init.shape), list(np.sqrt(grad_norm))
 
 
 class OptimizeRes(dict):
@@ -480,7 +478,7 @@ class Criterion(BaseCrit):
         operator: Callable[[array], ArrOrSeq],
         adjoint: Callable[[ArrOrSeq], array],
         potential: "Potential",
-        data: ArrOrSeq = 0,
+        data: ArrOrSeq = None,
         hyper: float = 1,
     ):
         """A criterion μ ψ(V·x - ω).
@@ -521,7 +519,7 @@ class Criterion(BaseCrit):
             self.data = self._list2vec(data)
         else:
             self._stacked = False
-            self.data = data
+            self.data = 0 if data is None else data
 
         self.hyper = hyper
         self.potential = potential
@@ -609,7 +607,7 @@ class QuadCriterion(Criterion):
         operator: Callable[[array], ArrOrSeq],
         adjoint: Callable[[ArrOrSeq], array],
         hessp: Callable[[array], array] = None,
-        data: array = 0,
+        data: array = None,
         hyper: float = 1,
         metric: array = None,
     ):
@@ -644,11 +642,14 @@ class QuadCriterion(Criterion):
         self._metric = metric
 
         if hessp is not None:
-            self.hessp = hessp
+            self.hessp = lambda x: self.hyper * hessp(x)
         else:
-            self.hessp = lambda x: adjoint(self._metricp(operator(x)))
+            self.hessp = lambda x: self.hyper * adjoint(self._metricp(operator(x)))
 
-        self._data_t = self._metricp(self.adjoint(self.data))
+        if data is None:
+            self.data_t = 0
+        else:
+            self.data_t = self._metricp(self.adjoint(self.data))
 
     def _metricp(self, array: array) -> array:
         if self._metric is None:
@@ -672,7 +673,7 @@ class QuadCriterion(Criterion):
 
         Return `∇ = μ (Q·x - b) = μ Vᵗ·B·(V·x - ω)`.
         """
-        return self.hyper * (self.hessp(point) - self._data_t)
+        return self.hyper * (self.hessp(point) - self.data_t)
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
         return vecs.T @ vecs
