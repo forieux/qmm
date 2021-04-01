@@ -17,7 +17,7 @@
 """The ``qmm`` module
 ==================
 
-This module implements Majorize-Minimize Quadratic optimization algorithms
+This module implements Quadratic Majorize-Minimize optimization algorithms
 
 The main points of interest are the ``mmmg`` and ``mmcg`` functions.
 ``Criterion`` is used to easily build criterion optimized by these algorithms.
@@ -29,6 +29,7 @@ The ``Potential`` classes are used by ``Criterion``.
 
 import abc
 import functools
+from collections.abc import MutableMapping
 from functools import reduce
 from operator import iadd
 from typing import Callable, List, Sequence, Tuple, Union
@@ -69,14 +70,14 @@ def mmmg(
     -------
     minimizer : array
         The minimizer of the criterion with same shape than `init`.
-    norm_grad : list of float
-        The norm of the gradient during iterations.
+    grad_norm : list of float
+        The gradient norm during iterations.
 
     Notes
     -----
     The output of :meth:`BaseCrit.operator`, and the `init` value, are
-    automatically vectorized internally. However, the output is reshaped as the
-    `init` array.
+    automatically vectorized internally. The output is reshaped as the `init`
+    array.
 
     References
     ----------
@@ -87,7 +88,7 @@ def mmmg(
 
     """
     point = init.copy().reshape((-1, 1))
-    norm_grad = []
+    grad_norm = []
 
     # The first previous moves are initialized with 0 array. Consequently, the
     # first iterations implementation can be improved, at the cost of if
@@ -101,10 +102,10 @@ def mmmg(
     for _ in range(max_iter):
         # Vectorized gradient
         grad = _gradient(crit_list, point, init.shape)
-        norm_grad.append(la.norm(grad))
+        grad_norm.append(la.norm(grad))
 
         # Stopping test
-        if norm_grad[-1] < point.size * tol:
+        if grad_norm[-1] < point.size * tol:
             break
 
         # Memory gradient directions
@@ -126,7 +127,7 @@ def mmmg(
         # update
         point += move
 
-    return np.reshape(point, init.shape), norm_grad
+    return np.reshape(point, init.shape), grad_norm
 
 
 def mmcg(
@@ -162,14 +163,14 @@ def mmcg(
     -------
     minimizer : array
         The minimizer of the criterion with same shape than `init`.
-    norm_grad : list of float
+    grad_norm : list of float
         The norm of the gradient during iterations.
 
     Notes
     -----
     The output of :meth:`BaseCrit.operator`, and the `init` value, are
-    automatically vectorized internally. However, the output is reshaped as the
-    `init` array.
+    automatically vectorized internally. The output is reshaped as the `init`
+    array.
 
     References
     ----------
@@ -183,15 +184,15 @@ def mmcg(
     point = init.copy().reshape((-1, 1))
 
     residual = -_gradient(crit_list, point, init.shape)
-    sec = precond(residual)
+    sec = _vect(precond, residual, init.shape)
     direction = sec
     delta = residual.T @ direction
-    norm_res: List[float] = []
+    grad_norm: List[float] = []
 
     for _ in range(max_iter):
         # Stop test
-        norm_res.append(la.norm(residual))
-        if norm_res[-1] < point.size * tol:
+        grad_norm.append(la.norm(residual))
+        if grad_norm[-1] < point.size * tol:
             break
 
         # update
@@ -213,14 +214,193 @@ def mmcg(
         # Conjugate direction. No reset is done, see Shewchuck.
         delta_old = delta
         delta_mid = residual.T @ sec
-        sec = precond(residual)
+        sec = _vect(precond, residual, init.shape)
         delta = residual.T @ sec
         if (delta - delta_mid) / delta_old >= 0:
             direction = sec + (delta - delta_mid) / delta_old * direction
         else:
             direction = sec
 
-    return np.reshape(point, init.shape), norm_res
+    return np.reshape(point, init.shape), grad_norm
+
+
+def hqgr(
+    crit_list: Sequence["BaseCrit"],
+    init: array,
+    precond: Callable[[array], array] = None,
+    tol: float = 1e-4,
+    gr_iter: int = 30,
+    cg_iter: int = 30,
+) -> OptimizeRes:
+
+    point = init.copy().reshape((-1, 1))
+    res = OptimizeRes()
+    res.grad_norm: List[float] = []
+
+    quad_list: List["QuadCriterion"] = []
+
+    for _ in range(gr_iter):
+        for crit in crit_list:
+            if isinstance(crit, "QuadCriterion"):
+                quad_list.append(crit)
+            else:
+                quad_list.append(
+                    QuadCriterion(
+                        crit.operator,
+                        crit.adjoint,
+                        data=crit.data,
+                        hyper=crit.hyper,
+                        metric=crit.gr_coeffs(point),
+                    ),
+                )
+
+        point, gradn = lcg(quad_list, point, precond, tol, max_iter=cg_iter)
+        res.grad_norm.extend(gradn)
+        quad_list.clear()
+
+    res.x = point
+    res.succes = False
+    res.status = 2
+    res.message = "Maximum iteration reached"
+    res.njev = gr_iter * cg_iter
+    res.nit = gr_iter * cg_iter
+
+    return res
+
+
+def lcg(
+    crit_list: Sequence["QuadCriterion"],
+    init: array,
+    precond: Callable[[array], array] = None,
+    tol: float = 1e-4,
+    max_iter: int = 500,
+) -> Tuple[array, List[float]]:
+    """Linear Conjugate Gradient (CG) algorithm.
+
+    Linear Conjugate Gradient optimization algorithm for quadratic criterion.
+
+    Parameters
+    ----------
+    crit_list : list of `QuadCriterion`
+        A list of :class:`QuadCriterion` objects that each represent a `½ μ
+        ||V·x - ω||²`. The criteria are implicitly summed.
+    init : ndarray
+        The initial point.
+    precond : callable, optional
+        A callable that must implement a preconditioner, that is `M⁻¹·x`. Must
+        be a callable with a unique input parameter `x` and unique output.
+    tol : float, optional
+        The stopping tolerance. The algorithm is stopped when the gradient norm
+        is inferior to `init.size * tol`.
+    max_iter : int, optional
+        The maximum number of iterations.
+
+    Returns
+    -------
+    minimizer : array
+        The minimizer of the criterion with same shape than `init`.
+    grad_norm : list of float
+        The norm of the gradient during iterations.
+
+    Notes
+    -----
+    The output of :meth:`BaseCrit.operator`, and the `init` value, are
+    automatically vectorized internally. However, the output is reshaped as the
+    `init` array.
+
+    """
+    if precond is None:
+        precond = lambda x: x
+
+    point = init.copy().reshape((-1, 1))
+
+    second_term = reduce(
+        iadd, (_vect(c.adjoint, c.data, init.shape) for c in crit_list)
+    )
+
+    def hessian(arr):
+        return reduce(iadd, (_vect(c.hessp, arr, init.shape) for c in crit_list))
+
+    # Gradient at current init
+    residual = second_term - hessian(point)
+    direction = _vect(precond, residual, init.shape)
+    grad_norm: List[float] = [la.norm(residual)]
+
+    for iteration in range(init.size):
+        hess_dir = hessian(direction)
+        # s = rᵗr / dᵗAd
+        # Optimal step
+        step = grad_norm[-1] ** 2 / np.sum(np.real(np.conj(direction) * hess_dir))
+
+        # Descent x^(i+1) = x^(i) + s*d
+        point = point + step * direction
+
+        # r^(i+1) = r^(i) - s * A·d
+        if iteration % 50 == 0:
+            residual = second_term - hessian(point)
+        else:
+            residual = residual - step * hess_dir
+
+        # Conjugate direction with preconditionner
+        secant = _vect(precond, residual, init.shape)
+        grad_norm.append(np.sum(np.real(np.conj(residual) * secant)))
+
+        # Stopping criterion
+        if grad_norm[-1] < point.size * tol:
+            break
+
+        direction = secant + grad_norm[-1] / grad_norm[-2] * direction
+
+    return point, list(np.sqrt(grad_norm))
+
+
+class OptimizeRes(dict):
+    """Represents the optimization result.
+
+    x: array
+        The solution of the optimization.
+    succes: sbool
+        Whether or not the optimizer exited successfully.
+    status: int
+        Termination status of the optimizer. Its value depends on the underlying
+        solver. Refer to message for details.
+    message: str
+        Description of the cause of the termination.
+    njev: int
+        Number of evaluations of the Jacobian (gradient).
+    nit: int
+        Number of iterations performed by the optimizer.
+
+    Notes
+    -----
+    :class:`OptimizeRes` are mimics `OptimizeRes` of scipy.
+
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
+        self["maxcv"] = 0
+        self["nfev"] = 0
+        self["nhev"] = 0
+        self["jac"] = None
+        self["jav"] = None
+        self["hess"] = None
+        self["hess_inv"] = None
+
+    def __getattr__(self, name):
+        if name in self:
+            return self[name]
+        else:
+            raise AttributeError("No such attribute: " + name)
+
+    def __setattr__(self, name, value):
+        self[name] = value
+
+    def __delattr__(self, name):
+        if name in self:
+            del self[name]
+        else:
+            raise AttributeError("No such attribute: " + name)
 
 
 # Vectorized call
@@ -384,17 +564,16 @@ class Criterion(BaseCrit):
     def gradient(self, point: array) -> array:
         """The gradient of the criterion at given point
 
-        Return μ Vᵗ·ψ'(V·x - ω)
+        Return μ Vᵗ·φ'(V·x - ω)
         """
-        return self.hyper * self.adjoint(
-            self.potential.gradient(self.operator(point) - self.data)
-        )
+        residual = self.operator(point) - self.data
+        crit = self.hyper * np.sum(self.potential(residual))
+        grad = self.hyper * self.adjoint(self.potential.gradient(residual))
+        return grad
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
         matrix = vecs.T @ (self.gr_coeffs(point).reshape((-1, 1)) * vecs)
-        if matrix.size == 1:
-            matrix = float(matrix)
-        return matrix
+        return float(matrix) if matrix.size == 1 else matrix
 
     def gr_coeffs(self, point: array) -> array:
         """The Geman & Reynolds coefficients at given point
@@ -412,7 +591,12 @@ class QuadCriterion(Criterion):
     r"""A quadratic criterion
 
     .. math::
-        J(x) = \frac{1}{2} \mu \|V x - \omega\|_2^2.
+        :nowrap:
+
+        \begin{aligned}
+        J(x) & = \frac{1}{2} \mu \|V x - \omega\|_B^2 \\
+             & = \frac{1}{2} \mu (V x - \omega)^tB(V x - \omega) \\
+        \end{aligned}
 
     data : array
         The `data` array, or the vectorized list of array given at init.
@@ -424,11 +608,12 @@ class QuadCriterion(Criterion):
         self,
         operator: Callable[[array], ArrOrSeq],
         adjoint: Callable[[ArrOrSeq], array],
-        normal: Callable[[array], array] = None,
+        hessp: Callable[[array], array] = None,
         data: array = 0,
         hyper: float = 1,
+        metric: array = None,
     ):
-        """A quadratic criterion ½ μ ||V·x - ω||²
+        """A quadratic criterion ½ μ ||V·x - ω||_B²
 
         Parameters
         ----------
@@ -436,41 +621,58 @@ class QuadCriterion(Criterion):
             A callable that compute the output V·x.
         adjoint: callable
             A callable that compute Vᵗ·e.
-        normal: callable, optional
+        hessp: callable, optional
             A callable that compute Q·x as Q·x = VᵗV·x
         data: array or list of array, optional
             The data vector ω.
         hyper: float, optional
             The hyperparameter μ.
+        metric: array, optional
+            The **diagonal** of the metric matrix B. Equivalent to Identity if
+            not provided.
 
         Notes
         -----
-        The `normal` (`Q`) callable is used for gradient computation as `∇ = μ
-        (Q·x - b)` where `b = Vᵗ·ω` instead of `∇ = μ Vᵗ·(V·x - ω)`. This is
+        The `hessp` (`Q`) callable is used for gradient computation as `∇ = μ
+        (Q·x - b)` where `b = B·Vᵗ·ω` instead of `∇ = μ Vᵗ·B·(V·x - ω)`. This is
         optional and in some case this is more efficient.
 
-        The variable `b = Vᵗ·ω` is computed at object creation.
+        The variable `b = B·Vᵗ·ω` is computed at object creation.
+
         """
         super().__init__(operator, adjoint, Square(), data=data, hyper=hyper)
-        if normal is not None:
-            self._normal = normal
+        self._metric = metric
+
+        if hessp is not None:
+            self.hessp = hessp
         else:
-            self._normal = lambda x: adjoint(operator(x))
-        self._data_t = self.adjoint(self.data)
+            self.hessp = lambda x: adjoint(self._metricp(operator(x)))
+
+        self._data_t = self._metricp(self.adjoint(self.data))
+
+    def _metricp(self, array: array) -> array:
+        if self._metric is None:
+            return array
+        else:
+            return self._metric * array
 
     def value(self, point: array) -> float:
         """The value of the criterion at given point
 
-        Return ½ μ ||V·x - ω||².
+        Return ½ μ ||V·x - ω||_B².
         """
-        return self.hyper * np.sum((self.operator(point) - self.data) ** 2) / 2
+        return (
+            self.hyper
+            * np.sum(self._metricp((self.operator(point) - self.data) ** 2))
+            / 2
+        )
 
     def gradient(self, point: array) -> array:
         """The gradient at given point
 
-        Return `∇ = μ (Q·x - b) = μ Vᵗ·(V·x - ω)`.
+        Return `∇ = μ (Q·x - b) = μ Vᵗ·B·(V·x - ω)`.
         """
-        return self.hyper * (self._normal(point) - self._data_t)
+        return self.hyper * (self.hessp(point) - self._data_t)
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
         return vecs.T @ vecs
