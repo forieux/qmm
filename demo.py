@@ -20,7 +20,6 @@ obs = operators.Conv2(ir, shape)
 
 #%% Simulated data
 data = convolve2d(imag, ir, mode="valid")
-# data = obs(imag)
 data += np.random.standard_normal(data.shape)
 init = obs.adjoint(data)
 
@@ -35,10 +34,7 @@ priorr_adeq = qmm.Criterion(diffr.forward, diffr.adjoint, pot, hyper=0.01)
 priorc_adeq = qmm.Criterion(diffc.forward, diffc.adjoint, pot, hyper=0.01)
 
 #%% Optimization algorithm
-t0 = time.time()
-init_copy = init.copy()
-res, norm_grad = qmm.mmmg([data_adeq, priorr_adeq, priorc_adeq], init, max_iter=200)
-tot_time = time.time() - t0
+res = qmm.mmmg([data_adeq, priorr_adeq, priorc_adeq], init, max_iter=300, tol=5e-5)
 
 #%% Plot
 plt.figure(1)
@@ -56,12 +52,12 @@ plt.axis("off")
 plt.title("Data")
 plt.colorbar()
 plt.subplot(2, 2, 3)
-plt.imshow(res, vmin=imag.min(), vmax=imag.max())
+plt.imshow(res.x, vmin=imag.min(), vmax=imag.max())
 plt.axis([50, 250, 450, 250])
 plt.axis("off")
 plt.colorbar()
 plt.title("Restored")
 plt.subplot(2, 2, 4)
-plt.plot(norm_grad, ".-")
+plt.plot(res.grad_norm, ".-")
 plt.xlabel("Iteration")
-plt.title(f"Gradient norm (total time {tot_time:.2f} sec., {len(norm_grad)} it.)")
+plt.title(f"Gradient norm (total time {res.time[-1]:.2f} sec., {res.nit} it.)")

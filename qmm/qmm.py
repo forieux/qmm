@@ -104,9 +104,8 @@ def mmmg(
 
     for iteration in range(max_iter):
         # Vectorized gradient
-        grad, crit = _gradient(crit_list, point, init.shape)
+        grad = _gradient(crit_list, point, init.shape)
         res["grad_norm"].append(la.norm(grad))
-        res["crit"].append(crit)
 
         # Stopping test
         if res["grad_norm"][-1] < point.size * tol:
@@ -204,13 +203,11 @@ def mmcg(
 
     point = init.copy().reshape((-1, 1))
 
-    grad, crit = _gradient(crit_list, point, init.shape)
-    residual = -grad
+    residual = -_gradient(crit_list, point, init.shape)
     sec = _vect(precond, residual, init.shape)
     direction = sec
     delta = residual.T @ direction
 
-    res["crit"].append(crit)
     res["time"].append(time.time())
 
     for iteration in range(max_iter):
@@ -236,8 +233,7 @@ def mmcg(
         res["time"].append(time.time())
 
         # Gradient
-        grad, crit = _gradient(crit_list, point, init.shape)
-        residual = -grad
+        residual = -_gradient(crit_list, point, init.shape)
 
         # Conjugate direction. No reset is done, see Shewchuck.
         delta_old = delta
@@ -316,14 +312,10 @@ def lcg(
     def hessian(arr):
         return reduce(iadd, (_vect(c.hessp, arr, init.shape) for c in crit_list))
 
-    def crit(arr, residual):
-        return _q_value_residual(arr, residual, second_term, constant)
-
     # Gradient at current init
     residual = second_term - hessian(point)
     direction = _vect(precond, residual, init.shape)
 
-    res["crit"].append(crit(point, residual))
     res["grad_norm"].append(np.sum(np.real(np.conj(residual) * direction)))
     res["time"].append(time.time())
 
@@ -347,7 +339,6 @@ def lcg(
         res["grad_norm"].append(np.sum(np.real(np.conj(residual) * secant)))
         direction = secant + (res["grad_norm"][-1] / res["grad_norm"][-2]) * direction
 
-        res["crit"].append(crit(point, residual))
         res["diff"].append(np.sum(step * direction) ** 2)
         res["time"].append(time.time())
 
@@ -390,8 +381,6 @@ class OptimizeResult(dict):
         Number of iterations performed by the optimizer.
     grad_norm: list of float
         The gradient norm at each iteration
-    crit: list of float
-        The criterion value at each iteration
     diff: list of float
         The value of ||x^(k+1) - x^(k)||² at each iteration
     time: list of float
@@ -418,7 +407,6 @@ class OptimizeResult(dict):
         self.njev = 0
         self.nit = 0
         self.grad_norm = []
-        self.crit = []
         self.diff = []
         self.time = []
 
@@ -448,14 +436,7 @@ def _vect(func: Callable[[array], array], point: array, shape: Tuple) -> array:
 def _gradient(crit_list: Sequence["BaseCrit"], point: array, shape: Tuple) -> array:
     """Compute sum of gradient with vectorized parameters and return"""
     # The use of reduce and iadd do an more efficient numpy inplace sum
-    grad = np.zeros_like(point)
-    crit_value = 0
-    for crit in crit_list:
-        gradc, critc = crit.gradient(point.reshape(shape))
-        grad += gradc.reshape((-1, 1))
-        crit_value += critc
-
-    return grad, crit_value
+    return reduce(iadd, (_vect(c.gradient, point, shape) for c in crit_list))
 
 
 class BaseCrit(abc.ABC):
@@ -603,15 +584,14 @@ class Criterion(BaseCrit):
         """
         return self.hyper * np.sum(self.potential(self.operator(point) - self.data))
 
-    def gradient(self, point: array) -> Tuple[array, float]:
+    def gradient(self, point: array) -> array:
         """The gradient and value at given point
 
         Return μ Vᵗ·φ'(V·x - ω)
         """
         residual = self.operator(point) - self.data
-        crit = self.hyper * np.sum(self.potential(residual))
-        grad = self.hyper * self.adjoint(self.potential.gradient(residual))
-        return grad, crit
+        # crit = self.hyper * np.sum(self.potential(residual))
+        return self.hyper * self.adjoint(self.potential.gradient(residual))
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
         matrix = vecs.T @ (self.gr_coeffs(point).reshape((-1, 1)) * vecs)
@@ -716,7 +696,7 @@ class QuadCriterion(Criterion):
             / 2
         )
 
-    def gradient(self, point: array) -> Tuple[array, float]:
+    def gradient(self, point: array) -> array:
         """The gradient and value at given point
 
         Return `∇ = μ (Q·x - b) = μ Vᵗ·B·(V·x - ω)`.
@@ -727,10 +707,9 @@ class QuadCriterion(Criterion):
 
         J(x) = ½ (xᵗ·∇ - xᵗ·b + μ ωᵗ·B·ω)
         """
-        Qx = self.hessp(point)
-        grad = Qx - self.data_t
-        crit = self.value_hessp(point, Qx)
-        return grad, crit
+        # Qx = self.hessp(point)
+        # crit = self.value_hessp(point, Qx)
+        return self.hessp(point) - self.data_t
 
     def value_hessp(self, point, hessp):
         return (np.sum(point * hessp) + np.sum(point * self.data_t) + self.constant) / 2
@@ -793,9 +772,8 @@ class Vmin(BaseCrit):
         """Return the value at current point."""
         return self.hyper * np.sum((point[point <= self.vmin] - self.vmin) ** 2 / 2)
 
-    def gradient(self, point: array) -> Tuple[array, float]:
-        grad = self.hyper * np.where(point <= self.vmin, point - self.vmin, 0)
-        return grad, self.value(point)
+    def gradient(self, point: array) -> array:
+        return self.hyper * np.where(point <= self.vmin, point - self.vmin, 0)
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
         return vecs.T @ vecs
@@ -836,9 +814,8 @@ class Vmax(BaseCrit):
         """Return the value at current point."""
         return self.hyper * np.sum((point[point >= self.vmax] - self.vmax) ** 2 / 2)
 
-    def gradient(self, point: array) -> Tuple[array, float]:
-        grad = self.hyper * np.where(point >= self.vmax, point - self.vmax, 0)
-        return grad, self.value(point)
+    def gradient(self, point: array) -> array:
+        return self.hyper * np.where(point >= self.vmax, point - self.vmax, 0)
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
         return vecs.T @ vecs
