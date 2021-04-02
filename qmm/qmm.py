@@ -17,11 +17,7 @@
 """The ``qmm`` module
 ==================
 
-This module implements Quadratic Majorize-Minimize optimization algorithms
-
-The main points of interest are the ``mmmg`` and ``mmcg`` functions.
-``Criterion`` is used to easily build criterion optimized by these algorithms.
-The ``Potential`` classes are used by ``Criterion``.
+This module implements Quadratic Majorize-Minimize optimization algorithms.
 
 """
 
@@ -40,12 +36,74 @@ from numpy import ndarray as array
 ArrOrSeq = Union[array, Sequence[array]]
 
 
+class OptimizeResult(dict):
+    """Represents the optimization result.
+
+    x: array
+        The solution of the optimization, with same shape than `init`.
+    success: bool
+        Whether or not the optimizer exited successfully.
+    status: int
+        Termination status of the optimizer. Its value depends on the underlying
+        solver. Refer to message for details.
+    message: str
+        Description of the cause of the termination.
+    nit: int
+        Number of iterations performed by the optimizer.
+    grad_norm: list of float
+        The gradient norm at each iteration
+    diff: list of float
+        The value of ||x^(k+1) - x^(k)||² at each iteration
+    time: list of float
+        The time at each iteration, starting at 0, in seconds.
+
+    Notes
+    -----
+    :class:`OptimizeResult` mime `OptimizeResult` of scipy for compatibility.
+
+    """
+
+    def __init__(self, /, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.maxcv = 0
+        self.nfev = 0
+        self.nhev = 0
+        self.jac = None
+        self.jav = None
+        self.hess = None
+        self.hess_inv = None
+        self.success = False
+        self.status = 99
+        self.message = "Not applicable"
+        self.njev = 0
+        self.nit = 0
+        self.grad_norm = []
+        self.diff = []
+        self.time = []
+        self.x = None
+
+    def __getattr__(self, name):
+        if name in self:
+            return self[name]
+        raise AttributeError("No such attribute: " + name)
+
+    def __setattr__(self, name, value):
+        self[name] = value
+
+    def __delattr__(self, name):
+        if name in self:
+            del self[name]
+        else:
+            raise AttributeError("No such attribute: " + name)
+
+
 def mmmg(
     crit_list: Sequence["BaseCrit"],
     init: array,
     tol: float = 1e-4,
     max_iter: int = 500,
-) -> "OptimizeResult":
+    callback: Callable[[OptimizeResult], None] = None,
+) -> OptimizeResult:
     r"""The Majorize-Minimize Memory Gradient (`3mg`) algorithm.
 
     The `mmmg` (`3mg`) algorithm is a subspace memory-gradient optimization
@@ -64,15 +122,12 @@ def mmmg(
         is inferior to `init.size * tol`.
     max_iter : int, optional
         The maximum number of iterations.
+    callback : callable
+        A function that receive the `OptimizeResult` at the end of each iteration.
 
     Returns
     -------
     result : OptimizeResult
-
-    Notes
-    -----
-    Everything is vectorized internally. The output `result.x` is reshaped as
-    the `init` array.
 
     References
     ----------
@@ -128,6 +183,9 @@ def mmmg(
         res["diff"].append(np.sum(move) ** 2)
         res["time"].append(time.time())
 
+        if callback is not None:
+            callback(res)
+
     if res.status == 0:
         res["message"] = "Stopping conditions reached"
     else:
@@ -148,7 +206,8 @@ def mmcg(
     precond: Callable[[array], array] = None,
     tol: float = 1e-4,
     max_iter: int = 500,
-) -> "OptimizeResult":
+    callback: Callable[[OptimizeResult], None] = None,
+) -> OptimizeResult:
     """The Majorize-Minimize Conjugate Gradient (MM-CG) algorithm.
 
     The MM-CG is a nonlinear conjugate gradient (NL-CG) optimization algorithm
@@ -170,15 +229,12 @@ def mmcg(
         is inferior to `init.size * tol`.
     max_iter : int, optional
         The maximum number of iterations.
+    callback : callable
+        A function that receive the `OptimizeResult` at the end of each iteration.
 
     Returns
     -------
     result : OptimizeResult
-
-    Notes
-    -----
-    Everything is vectorized internally. The output `result.x` is reshaped as
-    the `init` array.
 
     References
     ----------
@@ -233,6 +289,9 @@ def mmcg(
         else:
             direction = sec
 
+        if callback is not None:
+            callback(res)
+
     if res.status == 0:
         res["message"] = "Stopping conditions reached"
     else:
@@ -253,7 +312,8 @@ def lcg(
     precond: Callable[[array], array] = None,
     tol: float = 1e-4,
     max_iter: int = 500,
-) -> "OptimizeResult":
+    callback: Callable[[OptimizeResult], None] = None,
+) -> OptimizeResult:
     """Linear Conjugate Gradient (CG) algorithm.
 
     Linear Conjugate Gradient optimization algorithm for quadratic criterion.
@@ -273,15 +333,14 @@ def lcg(
         is inferior to `init.size * tol`.
     max_iter : int, optional
         The maximum number of iterations.
+    callback : callable
+        A function that receive the `OptimizeResult` at the end of each iteration.
 
     Returns
     -------
     result : OptimizeResult
+    """
 
-    Notes
-    -----
-    Everything is vectorized internally. The output `result.x` is reshaped as
-    the `init` array."""
     if precond is None:
         precond = lambda x: x
     res = OptimizeResult()
@@ -329,6 +388,9 @@ def lcg(
             res["status"] = 0
             break
 
+        if callback is not None:
+            callback(res)
+
     if res.status == 0:
         res["message"] = "Stopping conditions reached"
     else:
@@ -342,67 +404,6 @@ def lcg(
     res["time"] = list(np.asarray(res.time) - res.time[0])
 
     return res
-
-
-class OptimizeResult(dict):
-    """Represents the optimization result.
-
-    x: array
-        The solution of the optimization.
-    success: bool
-        Whether or not the optimizer exited successfully.
-    status: int
-        Termination status of the optimizer. Its value depends on the underlying
-        solver. Refer to message for details.
-    message: str
-        Description of the cause of the termination.
-    nit: int
-        Number of iterations performed by the optimizer.
-    grad_norm: list of float
-        The gradient norm at each iteration
-    diff: list of float
-        The value of ||x^(k+1) - x^(k)||² at each iteration
-    time: list of float
-        The time at each iteration, starting at 0, in seconds.
-
-    Notes
-    -----
-    :class:`OptimizeResult` mime `OptimizeResult` of scipy for compatibility.
-
-    """
-
-    def __init__(self, /, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.maxcv = 0
-        self.nfev = 0
-        self.nhev = 0
-        self.jac = None
-        self.jav = None
-        self.hess = None
-        self.hess_inv = None
-        self.success = False
-        self.status = 99
-        self.message = "Not applicable"
-        self.njev = 0
-        self.nit = 0
-        self.grad_norm = []
-        self.diff = []
-        self.time = []
-        self.x = None
-
-    def __getattr__(self, name):
-        if name in self:
-            return self[name]
-        raise AttributeError("No such attribute: " + name)
-
-    def __setattr__(self, name, value):
-        self[name] = value
-
-    def __delattr__(self, name):
-        if name in self:
-            del self[name]
-        else:
-            raise AttributeError("No such attribute: " + name)
 
 
 # Vectorized call
@@ -946,7 +947,7 @@ with δ = {self.delta}
 
 
 class HebertLeahy(Potential):
-    r"""The non-convex coercive function Hebert & Leahy
+    r"""The non-convex coercive function from Hebert & Leahy
 
     .. math::
 
@@ -977,7 +978,7 @@ with δ = {self.delta}
 
 
 class GemanMcClure(Potential):
-    r"""The non-convex non-coervice Geman & McClure function
+    r"""The non-convex non-coervice function from Geman & McClure
 
     .. math::
 
