@@ -11,6 +11,8 @@ Two algorithms are implemented.
 
 1. :func:`mmcg` that use the Majorize-Minimize Conjugate Gradient (MM-CG) and
 2. :func:`mmmg` that use the Majorize Minimize Memory Gradient (3MG).
+3. :func:`lcg` that use the Linear Conjugate Gradient (CG) for quadratic
+   criterion, with explicit and optimal step and conjugacy parameters.
 
 The 3MG algorithm is usually faster but use more memory. The MM-CG can be faster
 and use less memory.
@@ -18,6 +20,21 @@ and use less memory.
 .. autofunction:: mmcg
 
 .. autofunction:: mmmg
+
+.. autofunction:: lcg
+
+Optimization results
+====================
+
+The output are instance of :class:`OptimizeResult` that behave like
+`OptimizeResult
+<https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.OptimizeResult.html#scipy.optimize.OptimizeResult>`_
+of `scipy <https://www.scipy.org/>`_. They behave like Python dictionary and are
+implemented to avoid dependency to scipy.
+
+.. autoclass:: OptimizeResult
+   :members:
+   :exclude-members: __init__
 
 Criterion classes
 =================
@@ -33,8 +50,17 @@ specialized subclass that allows simplification and slightly faster computation.
 .. autoclass:: BaseCrit
    :members:
 
+Main criterion class
+--------------------
+
 .. autoclass:: Criterion
    :members:
+
+Quadratic criterion
+-------------------
+
+This class implements specific properties or methods associated to quadratic
+criterion.
 
 .. autoclass:: QuadCriterion
    :members:
@@ -68,16 +94,15 @@ specialized subclass that allows simplification and slightly faster computation.
    If given, the ``normal`` argument for :class:`QuadCriterion` must accept an
    array and returns an array.
 
-..
-   Specialized criterion
-   ---------------------
 
-   .. autoclass:: Vmin
-       :members:
+Specific criterion classes
+--------------------------
 
-   .. autoclass:: Vmax
-       :members:
+.. autoclass:: Vmin
+    :members:
 
+.. autoclass:: Vmax
+    :members:
 
 
 Potential classes
@@ -88,7 +113,7 @@ serve as parent class for all potential.
 
 At that time, the provided concrete potential are :class:`Square`,
 :class:`Huber`, :class:`Hyperbolic`, :class:`HerbertLeahy`,
-:class:`GemanMcClure`, :class:`TruncSquareApprox`.
+:class:`GemanMcClure`, and :class:`TruncSquareApprox`.
 
 .. note::
 
@@ -105,20 +130,38 @@ At that time, the provided concrete potential are :class:`Square`,
 .. autoclass:: Potential
    :members:
 
+Square
+------
+
 .. autoclass:: Square
    :members:
+
+Huber
+-----
 
 .. autoclass:: Huber
    :members:
 
+Hyperbolic or Pseudo-Huber
+--------------------------
+
 .. autoclass:: Hyperbolic
    :members:
+
+Hebert & Leahy
+--------------
 
 .. autoclass:: HebertLeahy
    :members:
 
+Geman & Mc Clure
+----------------
+
 .. autoclass:: GemanMcClure
    :members:
+
+Truncated Square approximation
+------------------------------
 
 .. autoclass:: TruncSquareApprox
    :members:
