@@ -451,11 +451,11 @@ def _gradient(crit_list: Sequence["BaseCrit"], point: array, shape: Tuple) -> ar
     grad = np.zeros_like(point)
     crit_value = 0
     for crit in crit_list:
-        gradc, critc = crit.gradient(point)
-        grad += gradc
+        gradc, critc = crit.gradient(point.reshape(shape))
+        grad += gradc.reshape((-1, 1))
         crit_value += critc
 
-    return grad.reshape((-1, 1)), crit_value
+    return grad, crit_value
 
 
 class BaseCrit(abc.ABC):
@@ -699,7 +699,7 @@ class QuadCriterion(Criterion):
             self.data_t = hyper * self._metricp(adjoint(data))
             self.constant = hyper * np.sum(data * self._metricp(data))  # c = ωᵗ·B·ω
 
-    def _metricp(self, array: arr) -> array:
+    def _metricp(self, arr: array) -> array:
         if self._metric is None:
             return arr
         else:
