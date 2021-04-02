@@ -28,9 +28,7 @@ The ``Potential`` classes are used by ``Criterion``.
 # pylint: disable=bad-continuation
 
 import abc
-import functools
 import time
-from collections.abc import MutableMapping
 from functools import reduce
 from operator import iadd
 from typing import Callable, List, Sequence, Tuple, Union
@@ -69,16 +67,12 @@ def mmmg(
 
     Returns
     -------
-    minimizer : array
-        The minimizer of the criterion with same shape than `init`.
-    grad_norm : list of float
-        The gradient norm during iterations.
+    result : OptimizeResult
 
     Notes
     -----
-    The output of :meth:`BaseCrit.operator`, and the `init` value, are
-    automatically vectorized internally. The output is reshaped as the `init`
-    array.
+    Everything is vectorized internally. The output `result.x` is reshaped as
+    the `init` array.
 
     References
     ----------
@@ -86,15 +80,14 @@ def mmmg(
        Strategy for Subspace Optimization Applied to Image Restoration,” IEEE
        Trans. on Image Process., vol. 20, no. 6, pp. 1517–1528, Jun. 2011, doi:
        10.1109/TIP.2010.2103083.
-
     """
-    point = init.copy().reshape((-1, 1))
     res = OptimizeResult()
+    res["x"] = init.copy().reshape((-1, 1))
 
     # The first previous moves are initialized with 0 array. Consequently, the
     # first iterations implementation can be improved, at the cost of if
     # statement.
-    move = np.zeros_like(point)
+    move = np.zeros_like(res["x"])
     op_directions = [
         np.tile(_vect(crit.operator, move, init.shape), 2) for crit in crit_list
     ]
@@ -104,11 +97,11 @@ def mmmg(
 
     for iteration in range(max_iter):
         # Vectorized gradient
-        grad = _gradient(crit_list, point, init.shape)
+        grad = _gradient(crit_list, res["x"], init.shape)
         res["grad_norm"].append(la.norm(grad))
 
         # Stopping test
-        if res["grad_norm"][-1] < point.size * tol:
+        if res["grad_norm"][-1] < init.size * tol:
             res["success"] = True
             res["status"] = 0
             break
@@ -123,14 +116,14 @@ def mmmg(
         ]
         step = -la.pinv(
             sum(
-                crit.norm_mat_major(i_op_dir, point.reshape(init.shape))
+                crit.norm_mat_major(i_op_dir, res["x"].reshape(init.shape))
                 for crit, i_op_dir in zip(crit_list, op_directions)
             )
         ) @ (directions.T @ grad)
         move = directions @ step
 
         # update
-        point += move
+        res["x"] += move
 
         res["diff"].append(np.sum(move) ** 2)
         res["time"].append(time.time())
@@ -141,7 +134,7 @@ def mmmg(
         res["success"] = False
         res["status"] = 1
         res["message"] = "Maximum number of iteration reached"
-    res["x"] = point.reshape(init.shape)
+    res["x"] = res["x"].reshape(init.shape)
     res["njev"] = iteration + 1
     res["nit"] = iteration + 1
     res["time"] = list(np.asarray(res.time) - res.time[0])
@@ -180,30 +173,25 @@ def mmcg(
 
     Returns
     -------
-    minimizer : array
-        The minimizer of the criterion with same shape than `init`.
-    grad_norm : list of float
-        The norm of the gradient during iterations.
+    result : OptimizeResult
 
     Notes
     -----
-    The output of :meth:`BaseCrit.operator`, and the `init` value, are
-    automatically vectorized internally. The output is reshaped as the `init`
-    array.
+    Everything is vectorized internally. The output `result.x` is reshaped as
+    the `init` array.
 
     References
     ----------
     .. [1] C. Labat and J. Idier, “Convergence of Conjugate Gradient Methods
        with a Closed-Form Stepsize Formula,” J Optim Theory Appl, p. 18, 2008.
-
     """
     if precond is None:
         precond = lambda x: x
     res = OptimizeResult()
 
-    point = init.copy().reshape((-1, 1))
+    res["x"] = init.copy().reshape((-1, 1))
 
-    residual = -_gradient(crit_list, point, init.shape)
+    residual = -_gradient(crit_list, res["x"], init.shape)
     sec = _vect(precond, residual, init.shape)
     direction = sec
     delta = residual.T @ direction
@@ -213,7 +201,7 @@ def mmcg(
     for iteration in range(max_iter):
         # Stop test
         res["grad_norm"].append(la.norm(residual))
-        if res["grad_norm"][-1] < point.size * tol:
+        if res["grad_norm"][-1] < init.size * tol:
             break
 
         # update
@@ -223,17 +211,17 @@ def mmcg(
 
         step = direction.T @ residual
         step = step / sum(
-            crit.norm_mat_major(i_op_dir, point.reshape(init.shape))
+            crit.norm_mat_major(i_op_dir, res["x"].reshape(init.shape))
             for crit, i_op_dir in zip(crit_list, op_direction)
         )
 
-        point += step * direction
+        res["x"] += step * direction
 
         res["diff"].append(np.sum(step * direction) ** 2)
         res["time"].append(time.time())
 
         # Gradient
-        residual = -_gradient(crit_list, point, init.shape)
+        residual = -_gradient(crit_list, res["x"], init.shape)
 
         # Conjugate direction. No reset is done, see Shewchuck.
         delta_old = delta
@@ -251,7 +239,7 @@ def mmcg(
         res["success"] = False
         res["status"] = 1
         res["message"] = "Maximum number of iteration reached"
-    res["x"] = point.reshape(init.shape)
+    res["x"] = res["x"].reshape(init.shape)
     res["njev"] = iteration + 1
     res["nit"] = iteration + 1
     res["time"] = list(np.asarray(res.time) - res.time[0])
@@ -288,32 +276,25 @@ def lcg(
 
     Returns
     -------
-    minimizer : array
-        The minimizer of the criterion with same shape than `init`.
-    grad_norm : list of float
-        The norm of the gradient during iterations.
+    result : OptimizeResult
 
     Notes
     -----
-    The output of :meth:`BaseCrit.operator`, and the `init` value, are
-    automatically vectorized internally. However, the output is reshaped as the
-    `init` array.
-
-    """
+    Everything is vectorized internally. The output `result.x` is reshaped as
+    the `init` array."""
     if precond is None:
         precond = lambda x: x
     res = OptimizeResult()
 
-    point = init.copy().reshape((-1, 1))
+    res["x"] = init.copy().reshape((-1, 1))
 
     second_term = np.reshape(reduce(iadd, (c.data_t for c in crit_list)), (-1, 1))
-    constant = sum(c.constant for c in crit_list)
 
     def hessian(arr):
         return reduce(iadd, (_vect(c.hessp, arr, init.shape) for c in crit_list))
 
     # Gradient at current init
-    residual = second_term - hessian(point)
+    residual = second_term - hessian(res["x"])
     direction = _vect(precond, residual, init.shape)
 
     res["grad_norm"].append(np.sum(np.real(np.conj(residual) * direction)))
@@ -326,11 +307,11 @@ def lcg(
         step = res.grad_norm[-1] / np.sum(np.real(np.conj(direction) * hess_dir))
 
         # Descent x^(i+1) = x^(i) + s*d
-        point += step * direction
+        res["x"] += step * direction
 
         # r^(i+1) = r^(i) - s * A·d
         if iteration % 50 == 0:
-            residual = second_term - hessian(point)
+            residual = second_term - hessian(res["x"])
         else:
             residual -= step * hess_dir
 
@@ -343,7 +324,7 @@ def lcg(
         res["time"].append(time.time())
 
         # Stopping condition
-        if np.sqrt(res.grad_norm[-1]) < point.size * tol:
+        if np.sqrt(res.grad_norm[-1]) < init.size * tol:
             res["success"] = True
             res["status"] = 0
             break
@@ -354,7 +335,7 @@ def lcg(
         res["success"] = False
         res["status"] = 1
         res["message"] = "Maximum number of iteration reached"
-    res["x"] = point.reshape(init.shape)
+    res["x"] = res.x.reshape(init.shape)
     res["njev"] = iteration + 1
     res["nit"] = iteration + 1
     res["grad_norm"] = list(np.sqrt(res.grad_norm))
@@ -375,8 +356,6 @@ class OptimizeResult(dict):
         solver. Refer to message for details.
     message: str
         Description of the cause of the termination.
-    njev: int
-        Number of evaluations of the Jacobian (gradient).
     nit: int
         Number of iterations performed by the optimizer.
     grad_norm: list of float
@@ -388,7 +367,7 @@ class OptimizeResult(dict):
 
     Notes
     -----
-    :class:`OptimizeResult` mimics `OptimizeResult` of scipy for compatibility.
+    :class:`OptimizeResult` mime `OptimizeResult` of scipy for compatibility.
 
     """
 
@@ -409,12 +388,12 @@ class OptimizeResult(dict):
         self.grad_norm = []
         self.diff = []
         self.time = []
+        self.x = None
 
     def __getattr__(self, name):
         if name in self:
             return self[name]
-        else:
-            raise AttributeError("No such attribute: " + name)
+        raise AttributeError("No such attribute: " + name)
 
     def __setattr__(self, name, value):
         self[name] = value
@@ -538,12 +517,10 @@ class Criterion(BaseCrit):
         self._adjoint = adjoint
 
         if isinstance(data, list):
-            self._stacked = True
             self._shape = [arr.shape for arr in data]
             self._idx = np.cumsum([0] + [arr.size for arr in data])
             self.data = self._list2vec(data)
         else:
-            self._stacked = False
             self.data = 0 if data is None else data
 
         self.hyper = hyper
@@ -563,19 +540,15 @@ class Criterion(BaseCrit):
 
     def operator(self, point: array) -> array:
         """Return V·x"""
-        if self._stacked:
-            out = self._list2vec(self._operator(point))
-        else:
-            out = self._operator(point)
-        return out
+        if hasattr(self, "_shape"):
+            return self._list2vec(self._operator(point))
+        return self._operator(point)
 
     def adjoint(self, point: array) -> array:
         """Return Vᵗ·x"""
-        if self._stacked:
-            out = self._adjoint(self._vec2list(point))
-        else:
-            out = self._adjoint(point)
-        return out
+        if hasattr(self, "_shape"):
+            return self._adjoint(self._vec2list(point))
+        return self._adjoint(point)
 
     def value(self, point: array) -> float:
         """The value of the criterion at given point
@@ -682,8 +655,7 @@ class QuadCriterion(Criterion):
     def _metricp(self, arr: array) -> array:
         if self._metric is None:
             return arr
-        else:
-            return self._metric * arr
+        return self._metric * arr
 
     def value(self, point: array) -> float:
         """The value of the criterion at given point
@@ -712,6 +684,11 @@ class QuadCriterion(Criterion):
         return self.hessp(point) - self.data_t
 
     def value_hessp(self, point, hessp):
+        """Return J(x) value given q = Qx
+
+        thanks to relation
+
+        J(x) =  ½ (xᵗ·q + xᵗ·b + μ ωᵗ·B·ω)"""
         return (np.sum(point * hessp) + np.sum(point * self.data_t) + self.constant) / 2
 
     def value_residual(self, point, residual):
@@ -731,10 +708,6 @@ class QuadCriterion(Criterion):
 
     def __call__(self, point: array) -> float:
         return self.value(point)
-
-
-def _q_value_residual(point, residual, second_term, constant):
-    return (np.sum(point * (-second_term - residual)) + constant) / 2
 
 
 class Vmin(BaseCrit):
@@ -1064,39 +1037,6 @@ class TruncSquareApprox(Potential):
 
 with δ = {self.delta}
 """
-
-
-# Not used finally
-def _vectorize(
-    func: Callable[[array], array], input_shape: Tuple
-) -> Callable[[array], array]:
-    """Vectorize a callable.
-
-    Wrap a function to accept a vectorized version of the input and to produce
-    vectorized version of the ouput
-
-
-    Parameters
-    ----------
-    func : callable
-        The function to wrap. Must be a single ndarray parameter callable that
-        produce a single ndarray output.
-    input_shape : tuple
-        The shape that `func` ask as input.
-
-    Returns
-    -------
-    out : callable
-      The wrapped callable.
-
-    """
-
-    @functools.wraps(func)
-    def wrapper(arr):
-        out = func(np.reshape(arr, input_shape))
-        return out.reshape((-1, 1))
-
-    return wrapper
 
 
 ### Local Variables:
