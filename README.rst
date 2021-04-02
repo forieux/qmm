@@ -110,7 +110,7 @@ Then you can run the algorithm
 
 .. code:: python
 
-   res, norm_grad = qmm.mmmg([data_adeq, prior], init, max_iter=200)
+   res = qmm.mmmg([data_adeq, prior], init, max_iter=200)
 
 where :code:`[data_adeq, prior]` means that the two criteria are summed. For
 more details, see `documentation

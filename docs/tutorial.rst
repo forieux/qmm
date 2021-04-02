@@ -2,6 +2,8 @@
  Tutorial
 ==========
 
+.. py:currentmodule:: qmm
+
 The toolbox is just one file, the ``qmm.py`` module. The module contains
 essentially three part:
 
@@ -62,7 +64,7 @@ list of ``ndarray`` and returns a unique ``ndarray``, of any shape, as output.
 Potentials
 ==========
 
-The second step is to instantiate potential :math:`\phi`, Huber for instance
+The second step is to instantiate potential :math:`\phi`, :class:`Huber` for instance
 
 .. code-block:: python
 
@@ -75,14 +77,14 @@ Several potential are implemented, see :doc:`Background <background>` and the
 Criterions
 ==========
 
-Then, a criterion :math:`\mu \Psi(Vx)` named ``prior`` can be instanced
+Then, a :class:`Criterion` :math:`\mu \Psi(Vx)` named ``prior`` can be instanced
 
 .. code-block:: python
 
    prior = Criterion(forward, adjoint, phi, hyper=0.01)
 
 If a quadratic criterion like :math:`\|y - H x\|_2^2` is needed, the specific
-class ``QuadCriterion`` can be used
+class :class:`QuadCriterion` can be used
 
 .. code-block:: python
 
@@ -97,14 +99,14 @@ class ``QuadCriterion`` can be used
 Optimization algorithms
 =======================
 
-Then you can run the algorithm
+Then you can run the algorithm, :func:`mmmg` for instance,
 
 .. code:: python
 
-   minimizer, _ = mmmg([data_adeq, prior], init, max_iter=200)
+   result = mmmg([data_adeq, prior], init, max_iter=200)
 
 where the list :code:`[data_adeq, prior]` means that the two criteria are
-summed.
+summed. The output `result` is an instance of :class:`OptimizeResult`.
 
 Two algorithms are proposed :
 
