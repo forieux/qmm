@@ -29,6 +29,7 @@ The ``Potential`` classes are used by ``Criterion``.
 
 import abc
 import functools
+import time
 from collections.abc import MutableMapping
 from functools import reduce
 from operator import iadd
@@ -46,7 +47,7 @@ def mmmg(
     init: array,
     tol: float = 1e-4,
     max_iter: int = 500,
-) -> Tuple[array, List[float]]:
+) -> "OptimizeResult":
     r"""The Majorize-Minimize Memory Gradient (`3mg`) algorithm.
 
     The `mmmg` (`3mg`) algorithm is a subspace memory-gradient optimization
@@ -88,7 +89,7 @@ def mmmg(
 
     """
     point = init.copy().reshape((-1, 1))
-    grad_norm = []
+    res = OptimizeResult()
 
     # The first previous moves are initialized with 0 array. Consequently, the
     # first iterations implementation can be improved, at the cost of if
@@ -99,13 +100,18 @@ def mmmg(
     ]
     step = np.ones((2, 1))
 
-    for _ in range(max_iter):
+    res["time"].append(time.time())
+
+    for iteration in range(max_iter):
         # Vectorized gradient
-        grad = _gradient(crit_list, point, init.shape)
-        grad_norm.append(la.norm(grad))
+        grad, crit = _gradient(crit_list, point, init.shape)
+        res["grad_norm"].append(la.norm(grad))
+        res["crit"].append(crit)
 
         # Stopping test
-        if grad_norm[-1] < point.size * tol:
+        if res["grad_norm"][-1] < point.size * tol:
+            res["success"] = True
+            res["status"] = 0
             break
 
         # Memory gradient directions
@@ -127,7 +133,21 @@ def mmmg(
         # update
         point += move
 
-    return np.reshape(point, init.shape), grad_norm
+        res["diff"].append(np.sum(move) ** 2)
+        res["time"].append(time.time())
+
+    if res.status == 0:
+        res["message"] = "Stopping conditions reached"
+    else:
+        res["success"] = False
+        res["status"] = 1
+        res["message"] = "Maximum number of iteration reached"
+    res["x"] = point.reshape(init.shape)
+    res["njev"] = iteration + 1
+    res["nit"] = iteration + 1
+    res["time"] = list(np.asarray(res.time) - res.time[0])
+
+    return res
 
 
 def mmcg(
@@ -136,7 +156,7 @@ def mmcg(
     precond: Callable[[array], array] = None,
     tol: float = 1e-4,
     max_iter: int = 500,
-) -> Tuple[array, List[float]]:
+) -> "OptimizeResult":
     """The Majorize-Minimize Conjugate Gradient (MM-CG) algorithm.
 
     The MM-CG is a nonlinear conjugate gradient (NL-CG) optimization algorithm
@@ -180,19 +200,23 @@ def mmcg(
     """
     if precond is None:
         precond = lambda x: x
+    res = OptimizeResult()
 
     point = init.copy().reshape((-1, 1))
 
-    residual = -_gradient(crit_list, point, init.shape)
+    grad, crit = _gradient(crit_list, point, init.shape)
+    residual = -grad
     sec = _vect(precond, residual, init.shape)
     direction = sec
     delta = residual.T @ direction
-    grad_norm: List[float] = []
 
-    for _ in range(max_iter):
+    res["crit"].append(crit)
+    res["time"].append(time.time())
+
+    for iteration in range(max_iter):
         # Stop test
-        grad_norm.append(la.norm(residual))
-        if grad_norm[-1] < point.size * tol:
+        res["grad_norm"].append(la.norm(residual))
+        if res["grad_norm"][-1] < point.size * tol:
             break
 
         # update
@@ -208,8 +232,12 @@ def mmcg(
 
         point += step * direction
 
+        res["diff"].append(np.sum(step * direction) ** 2)
+        res["time"].append(time.time())
+
         # Gradient
-        residual = -_gradient(crit_list, point, init.shape)
+        grad, crit = _gradient(crit_list, point, init.shape)
+        residual = -grad
 
         # Conjugate direction. No reset is done, see Shewchuck.
         delta_old = delta
@@ -221,49 +249,16 @@ def mmcg(
         else:
             direction = sec
 
-    return np.reshape(point, init.shape), grad_norm
-
-
-def hqgr(
-    crit_list: Sequence["BaseCrit"],
-    init: array,
-    precond: Callable[[array], array] = None,
-    tol: float = 1e-4,
-    gr_iter: int = 30,
-    cg_iter: int = 30,
-) -> "OptimizeRes":
-
-    point = init.copy().reshape((-1, 1))
-    res = OptimizeRes()
-    res.grad_norm: List[float] = []
-
-    quad_list: List["QuadCriterion"] = []
-
-    for _ in range(gr_iter):
-        for crit in crit_list:
-            if isinstance(crit, "QuadCriterion"):
-                quad_list.append(crit)
-            else:
-                quad_list.append(
-                    QuadCriterion(
-                        crit.operator,
-                        crit.adjoint,
-                        data=crit.data,
-                        hyper=crit.hyper,
-                        metric=crit.gr_coeffs(point),
-                    ),
-                )
-
-        point, gradn = lcg(quad_list, point, precond, tol, max_iter=cg_iter)
-        res.grad_norm.extend(gradn)
-        quad_list.clear()
-
-    res.x = point
-    res.succes = False
-    res.status = 2
-    res.message = "Maximum iteration reached"
-    res.njev = gr_iter * cg_iter
-    res.nit = gr_iter * cg_iter
+    if res.status == 0:
+        res["message"] = "Stopping conditions reached"
+    else:
+        res["success"] = False
+        res["status"] = 1
+        res["message"] = "Maximum number of iteration reached"
+    res["x"] = point.reshape(init.shape)
+    res["njev"] = iteration + 1
+    res["nit"] = iteration + 1
+    res["time"] = list(np.asarray(res.time) - res.time[0])
 
     return res
 
@@ -274,7 +269,7 @@ def lcg(
     precond: Callable[[array], array] = None,
     tol: float = 1e-4,
     max_iter: int = 500,
-) -> Tuple[array, List[float]]:
+) -> "OptimizeResult":
     """Linear Conjugate Gradient (CG) algorithm.
 
     Linear Conjugate Gradient optimization algorithm for quadratic criterion.
@@ -311,24 +306,32 @@ def lcg(
     """
     if precond is None:
         precond = lambda x: x
+    res = OptimizeResult()
 
     point = init.copy().reshape((-1, 1))
 
     second_term = np.reshape(reduce(iadd, (c.data_t for c in crit_list)), (-1, 1))
+    constant = sum(c.constant for c in crit_list)
 
     def hessian(arr):
         return reduce(iadd, (_vect(c.hessp, arr, init.shape) for c in crit_list))
 
+    def crit(arr, residual):
+        return _q_value_residual(arr, residual, second_term, constant)
+
     # Gradient at current init
     residual = second_term - hessian(point)
     direction = _vect(precond, residual, init.shape)
-    grad_norm: List[float] = [np.sum(np.real(np.conj(residual) * direction))]
+
+    res["crit"].append(crit(point, residual))
+    res["grad_norm"].append(np.sum(np.real(np.conj(residual) * direction)))
+    res["time"].append(time.time())
 
     for iteration in range(max_iter):
         hess_dir = hessian(direction)
         # s = rᵗr / dᵗAd
         # Optimal step
-        step = grad_norm[-1] / np.sum(np.real(np.conj(direction) * hess_dir))
+        step = res.grad_norm[-1] / np.sum(np.real(np.conj(direction) * hess_dir))
 
         # Descent x^(i+1) = x^(i) + s*d
         point += step * direction
@@ -341,23 +344,40 @@ def lcg(
 
         # Conjugate direction with preconditionner
         secant = _vect(precond, residual, init.shape)
-        grad_norm.append(np.sum(np.real(np.conj(residual) * secant)))
+        res["grad_norm"].append(np.sum(np.real(np.conj(residual) * secant)))
+        direction = secant + (res["grad_norm"][-1] / res["grad_norm"][-2]) * direction
 
-        # Stopping criterion
-        if np.sqrt(grad_norm[-1]) < point.size * tol:
+        res["crit"].append(crit(point, residual))
+        res["diff"].append(np.sum(step * direction) ** 2)
+        res["time"].append(time.time())
+
+        # Stopping condition
+        if np.sqrt(res.grad_norm[-1]) < point.size * tol:
+            res["success"] = True
+            res["status"] = 0
             break
 
-        direction = secant + (grad_norm[-1] / grad_norm[-2]) * direction
+    if res.status == 0:
+        res["message"] = "Stopping conditions reached"
+    else:
+        res["success"] = False
+        res["status"] = 1
+        res["message"] = "Maximum number of iteration reached"
+    res["x"] = point.reshape(init.shape)
+    res["njev"] = iteration + 1
+    res["nit"] = iteration + 1
+    res["grad_norm"] = list(np.sqrt(res.grad_norm))
+    res["time"] = list(np.asarray(res.time) - res.time[0])
 
-    return point.reshape(init.shape), list(np.sqrt(grad_norm))
+    return res
 
 
-class OptimizeRes(dict):
+class OptimizeResult(dict):
     """Represents the optimization result.
 
     x: array
         The solution of the optimization.
-    succes: sbool
+    success: bool
         Whether or not the optimizer exited successfully.
     status: int
         Termination status of the optimizer. Its value depends on the underlying
@@ -368,22 +388,39 @@ class OptimizeRes(dict):
         Number of evaluations of the Jacobian (gradient).
     nit: int
         Number of iterations performed by the optimizer.
+    grad_norm: list of float
+        The gradient norm at each iteration
+    crit: list of float
+        The criterion value at each iteration
+    diff: list of float
+        The value of ||x^(k+1) - x^(k)||² at each iteration
+    time: list of float
+        The time at each iteration, starting at 0, in seconds.
 
     Notes
     -----
-    :class:`OptimizeRes` are mimics `OptimizeRes` of scipy.
+    :class:`OptimizeResult` mimics `OptimizeResult` of scipy for compatibility.
 
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(args, kwargs)
-        self["maxcv"] = 0
-        self["nfev"] = 0
-        self["nhev"] = 0
-        self["jac"] = None
-        self["jav"] = None
-        self["hess"] = None
-        self["hess_inv"] = None
+    def __init__(self, /, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.maxcv = 0
+        self.nfev = 0
+        self.nhev = 0
+        self.jac = None
+        self.jav = None
+        self.hess = None
+        self.hess_inv = None
+        self.success = False
+        self.status = 99
+        self.message = "Not applicable"
+        self.njev = 0
+        self.nit = 0
+        self.grad_norm = []
+        self.crit = []
+        self.diff = []
+        self.time = []
 
     def __getattr__(self, name):
         if name in self:
@@ -411,7 +448,14 @@ def _vect(func: Callable[[array], array], point: array, shape: Tuple) -> array:
 def _gradient(crit_list: Sequence["BaseCrit"], point: array, shape: Tuple) -> array:
     """Compute sum of gradient with vectorized parameters and return"""
     # The use of reduce and iadd do an more efficient numpy inplace sum
-    return reduce(iadd, (_vect(crit.gradient, point, shape) for crit in crit_list))
+    grad = np.zeros_like(point)
+    crit_value = 0
+    for crit in crit_list:
+        gradc, critc = crit.gradient(point)
+        grad += gradc
+        crit_value += critc
+
+    return grad.reshape((-1, 1)), crit_value
 
 
 class BaseCrit(abc.ABC):
@@ -559,15 +603,15 @@ class Criterion(BaseCrit):
         """
         return self.hyper * np.sum(self.potential(self.operator(point) - self.data))
 
-    def gradient(self, point: array) -> array:
-        """The gradient of the criterion at given point
+    def gradient(self, point: array) -> Tuple[array, float]:
+        """The gradient and value at given point
 
         Return μ Vᵗ·φ'(V·x - ω)
         """
         residual = self.operator(point) - self.data
         crit = self.hyper * np.sum(self.potential(residual))
         grad = self.hyper * self.adjoint(self.potential.gradient(residual))
-        return grad
+        return grad, crit
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
         matrix = vecs.T @ (self.gr_coeffs(point).reshape((-1, 1)) * vecs)
@@ -600,6 +644,8 @@ class QuadCriterion(Criterion):
         The `data` array, or the vectorized list of array given at init.
     hyper : float
         The hyperparameter value μ.
+    data_t : array
+        The retroprojected data B·Vᵗ·ω.
     """
 
     def __init__(  # pylint: disable=too-many-arguments
@@ -611,7 +657,7 @@ class QuadCriterion(Criterion):
         hyper: float = 1,
         metric: array = None,
     ):
-        """A quadratic criterion ½ μ ||V·x - ω||_B²
+        """A quadratic criterion ½ μ ||V·x - ω||²_B
 
         Parameters
         ----------
@@ -642,25 +688,27 @@ class QuadCriterion(Criterion):
         self._metric = metric
 
         if hessp is not None:
-            self.hessp = lambda x: self.hyper * hessp(x)
+            self.hessp = lambda x: hyper * hessp(x)
         else:
-            self.hessp = lambda x: self.hyper * adjoint(self._metricp(operator(x)))
+            self.hessp = lambda x: hyper * adjoint(self._metricp(operator(x)))
 
         if data is None:
             self.data_t = 0
+            self.constant = 0  # c = ωᵗ·B·ω
         else:
-            self.data_t = self._metricp(self.adjoint(self.data))
+            self.data_t = hyper * self._metricp(adjoint(data))
+            self.constant = hyper * np.sum(data * self._metricp(data))  # c = ωᵗ·B·ω
 
-    def _metricp(self, array: array) -> array:
+    def _metricp(self, array: arr) -> array:
         if self._metric is None:
-            return array
+            return arr
         else:
-            return self._metric * array
+            return self._metric * arr
 
     def value(self, point: array) -> float:
         """The value of the criterion at given point
 
-        Return ½ μ ||V·x - ω||_B².
+        Return ½ μ ||V·x - ω||²_B.
         """
         return (
             self.hyper
@@ -668,12 +716,32 @@ class QuadCriterion(Criterion):
             / 2
         )
 
-    def gradient(self, point: array) -> array:
-        """The gradient at given point
+    def gradient(self, point: array) -> Tuple[array, float]:
+        """The gradient and value at given point
 
         Return `∇ = μ (Q·x - b) = μ Vᵗ·B·(V·x - ω)`.
+
+        Notes
+        -----
+        Criterion value is computed at lower cost thanks to the relation
+
+        J(x) = ½ (xᵗ·∇ - xᵗ·b + μ ωᵗ·B·ω)
         """
-        return self.hyper * (self.hessp(point) - self.data_t)
+        Qx = self.hessp(point)
+        grad = Qx - self.data_t
+        crit = self.value_hessp(point, Qx)
+        return grad, crit
+
+    def value_hessp(self, point, hessp):
+        return (np.sum(point * hessp) + np.sum(point * self.data_t) + self.constant) / 2
+
+    def value_residual(self, point, residual):
+        """Return J(x) value given x and r = b - Qx
+
+        thanks to relation
+
+        J(x) =  ½ (xᵗ·(-b - r) + μ ωᵗ·B·ω)"""
+        return (np.sum(point * (-self.data_t - residual)) + self.constant) / 2
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
         return vecs.T @ vecs
@@ -684,6 +752,10 @@ class QuadCriterion(Criterion):
 
     def __call__(self, point: array) -> float:
         return self.value(point)
+
+
+def _q_value_residual(point, residual, second_term, constant):
+    return (np.sum(point * (-second_term - residual)) + constant) / 2
 
 
 class Vmin(BaseCrit):
@@ -721,8 +793,9 @@ class Vmin(BaseCrit):
         """Return the value at current point."""
         return self.hyper * np.sum((point[point <= self.vmin] - self.vmin) ** 2 / 2)
 
-    def gradient(self, point: array) -> array:
-        return self.hyper * np.where(point <= self.vmin, point - self.vmin, 0)
+    def gradient(self, point: array) -> Tuple[array, float]:
+        grad = self.hyper * np.where(point <= self.vmin, point - self.vmin, 0)
+        return grad, self.value(point)
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
         return vecs.T @ vecs
@@ -763,8 +836,9 @@ class Vmax(BaseCrit):
         """Return the value at current point."""
         return self.hyper * np.sum((point[point >= self.vmax] - self.vmax) ** 2 / 2)
 
-    def gradient(self, point: array) -> array:
-        return self.hyper * np.where(point >= self.vmax, point - self.vmax, 0)
+    def gradient(self, point: array) -> Tuple[array, float]:
+        grad = self.hyper * np.where(point >= self.vmax, point - self.vmax, 0)
+        return grad, self.value(point)
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
         return vecs.T @ vecs
@@ -1046,3 +1120,8 @@ def _vectorize(
         return out.reshape((-1, 1))
 
     return wrapper
+
+
+### Local Variables:
+### ispell-local-dictionary: "english"
+### End:
