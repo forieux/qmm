@@ -23,6 +23,7 @@ and use less memory.
 
 .. autofunction:: lcg
 
+
 Optimization results
 ====================
 
@@ -35,6 +36,7 @@ implemented to avoid dependency to scipy.
 .. autoclass:: OptimizeResult
    :members:
    :exclude-members: __init__
+
 
 Criterion classes
 =================
@@ -50,11 +52,13 @@ specialized subclass that allows simplification and slightly faster computation.
 .. autoclass:: BaseCrit
    :members:
 
+
 Main criterion class
 --------------------
 
 .. autoclass:: Criterion
    :members:
+
 
 Quadratic criterion
 -------------------
@@ -64,6 +68,7 @@ criterion.
 
 .. autoclass:: QuadCriterion
    :members:
+
 
 .. note::
 
@@ -101,6 +106,7 @@ Specific criterion classes
 .. autoclass:: Vmin
     :members:
 
+
 .. autoclass:: Vmax
     :members:
 
@@ -130,11 +136,13 @@ At that time, the provided concrete potential are :class:`Square`,
 .. autoclass:: Potential
    :members:
 
+
 Square
 ------
 
 .. autoclass:: Square
    :members:
+
 
 Huber
 -----
@@ -142,11 +150,13 @@ Huber
 .. autoclass:: Huber
    :members:
 
+
 Hyperbolic or Pseudo-Huber
 --------------------------
 
 .. autoclass:: Hyperbolic
    :members:
+
 
 Hebert & Leahy
 --------------
@@ -154,15 +164,16 @@ Hebert & Leahy
 .. autoclass:: HebertLeahy
    :members:
 
+
 Geman & Mc Clure
 ----------------
 
 .. autoclass:: GemanMcClure
    :members:
 
+
 Truncated Square approximation
 ------------------------------
 
 .. autoclass:: TruncSquareApprox
    :members:
-

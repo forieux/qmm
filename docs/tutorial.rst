@@ -2,6 +2,8 @@
  Tutorial
 ==========
 
+.. py:currentmodule:: qmm
+
 The toolbox is just one file, the ``qmm.py`` module. The module contains
 essentially three part:
 
