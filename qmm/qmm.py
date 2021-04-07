@@ -98,7 +98,7 @@ class OptimizeResult(dict):
 
 
 def mmmg(
-    crit_list: Sequence["BaseCrit"],
+    objv_list: Sequence["BaseObjective"],
     init: array,
     tol: float = 1e-4,
     max_iter: int = 500,
@@ -112,9 +112,9 @@ def mmmg(
 
     Parameters
     ----------
-    crit_list : list of `BaseCrit`
-        A list of :class:`BaseCrit` objects that each represent a `μ ψ(V·x - ω)`.
-        The criteria are implicitly summed.
+    objv_list : list of `BaseObjective`
+        A list of :class:`BaseObjective` objects that each represent a `μ ψ(V·x - ω)`.
+        The objectives are implicitly summed.
     init : array
         The initial point.
     tol : float, optional
@@ -144,7 +144,7 @@ def mmmg(
     # statement.
     move = np.zeros_like(res["x"])
     op_directions = [
-        np.tile(_vect(crit.operator, move, init.shape), 2) for crit in crit_list
+        np.tile(_vect(objv.operator, move, init.shape), 2) for objv in objv_list
     ]
     step = np.ones((2, 1))
 
@@ -152,7 +152,7 @@ def mmmg(
 
     for iteration in range(max_iter):
         # Vectorized gradient
-        grad = _gradient(crit_list, res["x"], init.shape)
+        grad = _gradient(objv_list, res["x"], init.shape)
         res["grad_norm"].append(la.norm(grad))
 
         # Stopping test
@@ -166,13 +166,13 @@ def mmmg(
 
         # Step by Majorize-Minimize
         op_directions = [
-            np.c_[_vect(crit.operator, grad, init.shape), i_op_dir @ step]
-            for crit, i_op_dir in zip(crit_list, op_directions)
+            np.c_[_vect(objv.operator, grad, init.shape), i_op_dir @ step]
+            for objv, i_op_dir in zip(objv_list, op_directions)
         ]
         step = -la.pinv(
             sum(
-                crit.norm_mat_major(i_op_dir, res["x"].reshape(init.shape))
-                for crit, i_op_dir in zip(crit_list, op_directions)
+                objv.norm_mat_major(i_op_dir, res["x"].reshape(init.shape))
+                for objv, i_op_dir in zip(objv_list, op_directions)
             )
         ) @ (directions.T @ grad)
         move = directions @ step
@@ -201,7 +201,7 @@ def mmmg(
 
 
 def mmcg(
-    crit_list: Sequence["BaseCrit"],
+    objv_list: Sequence["BaseObjective"],
     init: array,
     precond: Callable[[array], array] = None,
     tol: float = 1e-4,
@@ -216,9 +216,9 @@ def mmcg(
 
     Parameters
     ----------
-    crit_list : list of `BaseCrit`
-        A list of :class:`BaseCrit` objects that each represent a `μ ψ(V·x - ω)`.
-        The criteria are implicitly summed.
+    objv_list : list of `BaseObjective`
+        A list of :class:`BaseObjective` objects that each represent a `μ ψ(V·x - ω)`.
+        The objectives are implicitly summed.
     init : ndarray
         The initial point.
     precond : callable, optional
@@ -247,7 +247,7 @@ def mmcg(
 
     res["x"] = init.copy().reshape((-1, 1))
 
-    residual = -_gradient(crit_list, res["x"], init.shape)
+    residual = -_gradient(objv_list, res["x"], init.shape)
     sec = _vect(precond, residual, init.shape)
     direction = sec
     delta = residual.T @ direction
@@ -262,13 +262,13 @@ def mmcg(
 
         # update
         op_direction = [
-            _vect(crit.operator, direction, init.shape) for crit in crit_list
+            _vect(objv.operator, direction, init.shape) for objv in objv_list
         ]
 
         step = direction.T @ residual
         step = step / sum(
-            crit.norm_mat_major(i_op_dir, res["x"].reshape(init.shape))
-            for crit, i_op_dir in zip(crit_list, op_direction)
+            objv.norm_mat_major(i_op_dir, res["x"].reshape(init.shape))
+            for objv, i_op_dir in zip(objv_list, op_direction)
         )
 
         res["x"] += step * direction
@@ -277,7 +277,7 @@ def mmcg(
         res["time"].append(time.time())
 
         # Gradient
-        residual = -_gradient(crit_list, res["x"], init.shape)
+        residual = -_gradient(objv_list, res["x"], init.shape)
 
         # Conjugate direction. No reset is done, see Shewchuck.
         delta_old = delta
@@ -307,7 +307,7 @@ def mmcg(
 
 
 def lcg(
-    crit_list: Sequence["QuadCriterion"],
+    objv_list: Sequence["QuadObjective"],
     init: array,
     precond: Callable[[array], array] = None,
     tol: float = 1e-4,
@@ -316,13 +316,13 @@ def lcg(
 ) -> OptimizeResult:
     """Linear Conjugate Gradient (CG) algorithm.
 
-    Linear Conjugate Gradient optimization algorithm for quadratic criterion.
+    Linear Conjugate Gradient optimization algorithm for quadratic objective.
 
     Parameters
     ----------
-    crit_list : list of `QuadCriterion`
-        A list of :class:`QuadCriterion` objects that each represent a `½ μ
-        ||V·x - ω||²`. The criteria are implicitly summed.
+    objv_list : list of `QuadObjective`
+        A list of :class:`QuadObjective` objects that each represent a `½ μ
+        ||V·x - ω||²`. The objectives are implicitly summed.
     init : ndarray
         The initial point.
     precond : callable, optional
@@ -347,10 +347,10 @@ def lcg(
 
     res["x"] = init.copy().reshape((-1, 1))
 
-    second_term = np.reshape(reduce(iadd, (c.data_t for c in crit_list)), (-1, 1))
+    second_term = np.reshape(reduce(iadd, (c.data_t for c in objv_list)), (-1, 1))
 
     def hessian(arr):
-        return reduce(iadd, (_vect(c.hessp, arr, init.shape) for c in crit_list))
+        return reduce(iadd, (_vect(c.hessp, arr, init.shape) for c in objv_list))
 
     # Gradient at current init
     residual = second_term - hessian(res["x"])
@@ -413,14 +413,16 @@ def _vect(func: Callable[[array], array], point: array, shape: Tuple) -> array:
 
 
 # Vectorized gradient
-def _gradient(crit_list: Sequence["BaseCrit"], point: array, shape: Tuple) -> array:
+def _gradient(
+    objv_list: Sequence["BaseObjective"], point: array, shape: Tuple
+) -> array:
     """Compute sum of gradient with vectorized parameters and return"""
     # The use of reduce and iadd do an more efficient numpy inplace sum
-    return reduce(iadd, (_vect(c.gradient, point, shape) for c in crit_list))
+    return reduce(iadd, (_vect(c.gradient, point, shape) for c in objv_list))
 
 
-class BaseCrit(abc.ABC):
-    r"""An abstract base class for criterion
+class BaseObjective(abc.ABC):
+    r"""An abstract base class for objective function
 
     .. math::
         J(x) = \mu \Psi \left(V x - \omega \right)
@@ -462,8 +464,8 @@ class BaseCrit(abc.ABC):
         return NotImplemented
 
 
-class Criterion(BaseCrit):
-    r"""A criterion defined as
+class Objective(BaseObjective):
+    r"""An objective function defined as
 
     .. math::
         J(x) = \mu \Psi \left(V x - \omega \right)
@@ -487,7 +489,7 @@ class Criterion(BaseCrit):
         data: ArrOrSeq = None,
         hyper: float = 1,
     ):
-        """A criterion μ ψ(V·x - ω).
+        """A objective function μ ψ(V·x - ω).
 
         Parameters
         ----------
@@ -527,6 +529,7 @@ class Criterion(BaseCrit):
 
         self.hyper = hyper
         self.loss = loss
+        self.lastv = 0
 
     @staticmethod
     def _list2vec(arr_list: Sequence[array]) -> array:  #  pylint: disable=no-self-use
@@ -553,7 +556,7 @@ class Criterion(BaseCrit):
         return self._adjoint(point)
 
     def value(self, point: array) -> float:
-        """The value of the criterion at given point
+        """The value of the objective function at given point
 
         Return μ ψ(V·x - ω)
         """
@@ -584,8 +587,8 @@ class Criterion(BaseCrit):
         return self.value(point)
 
 
-class QuadCriterion(Criterion):
-    r"""A quadratic criterion
+class QuadObjective(Objective):
+    r"""A quadratic objective function
 
     .. math::
         :nowrap:
@@ -612,7 +615,7 @@ class QuadCriterion(Criterion):
         hyper: float = 1,
         metric: array = None,
     ):
-        """A quadratic criterion ½ μ ||V·x - ω||²_B
+        """A quadratic objective ½ μ ||V·x - ω||²_B
 
         Parameters
         ----------
@@ -660,7 +663,7 @@ class QuadCriterion(Criterion):
         return self._metric * arr
 
     def value(self, point: array) -> float:
-        """The value of the criterion at given point
+        """The value of the objective function at given point
 
         Return ½ μ ||V·x - ω||²_B.
         """
@@ -677,7 +680,7 @@ class QuadCriterion(Criterion):
 
         Notes
         -----
-        Criterion value is computed at lower cost thanks to the relation
+        Objective value is computed at lower cost thanks to the relation
 
         J(x) = ½ (xᵗ·∇ - xᵗ·b + μ ωᵗ·B·ω)
         """
@@ -712,8 +715,8 @@ class QuadCriterion(Criterion):
         return self.value(point)
 
 
-class Vmin(BaseCrit):
-    r"""A minimum value criterion
+class Vmin(BaseObjective):
+    r"""A minimum value objective function
 
     .. math::
 
@@ -726,7 +729,7 @@ class Vmin(BaseCrit):
     """
 
     def __init__(self, vmin: float, hyper: float):
-        """A minimum value criterion
+        """A minimum value objective function
 
         J(u) = ½ μ ||P_[m, +∞[(u) - m||².
 
@@ -739,6 +742,7 @@ class Vmin(BaseCrit):
         """
         self.vmin = vmin
         self.hyper = hyper
+        self.lastv = 0
 
     def operator(self, point):
         return point[point <= self.vmin]
@@ -756,8 +760,8 @@ class Vmin(BaseCrit):
         return vecs.T @ vecs
 
 
-class Vmax(BaseCrit):
-    r"""A maximum value criterion
+class Vmax(BaseObjective):
+    r"""A maximum value objective function
 
     .. math::
 
@@ -770,7 +774,7 @@ class Vmax(BaseCrit):
     """
 
     def __init__(self, vmax: float, hyper: float):
-        """A maximum value criterion
+        """A maximum value objective function
 
         Return J(u) = ½ μ ||P_[M, +∞[(u) - M||².
 
