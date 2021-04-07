@@ -111,9 +111,12 @@ are summed. The output `result` is an instance of :class:`OptimizeResult`.
 
 Two algorithms are proposed :
 
-- ``mmcg`` that implements a Polak-Ribière Conjugate Gradient.
-- ``mmmg`` that implements a subspace by Memory-Gradient with 2D step (that,
+- :func:`mmcg` that implements a Polak-Ribière Conjugate Gradient.
+- :func:`mmmg` that implements a subspace by Memory-Gradient with 2D step (that,
   therefore, include the conjugacy parameter).
+
+In addition a Linear Conjugate Gradient :func:`lcg` is implemented for quadratic
+objective.
 
 Both algorithms have close form formula for the 1D or 2D step by
 Majorization-Minimization Quadratic.
