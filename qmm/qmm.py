@@ -681,11 +681,11 @@ class QuadCriterion(Criterion):
 
         J(x) = ½ (xᵗ·∇ - xᵗ·b + μ ωᵗ·B·ω)
         """
-        # Qx = self.hessp(point)
-        # crit = self.value_hessp(point, Qx)
+        Qx = self.hessp(point)
+        self.lastv = self._value_hessp(point, Qx)
         return self.hessp(point) - self.data_t
 
-    def value_hessp(self, point, hessp):
+    def _value_hessp(self, point, hessp):
         """Return J(x) value given q = Qx
 
         thanks to relation
@@ -745,10 +745,12 @@ class Vmin(BaseCrit):
 
     def value(self, point: array) -> array:
         """Return the value at current point."""
-        return self.hyper * np.sum((point[point <= self.vmin] - self.vmin) ** 2 / 2)
+        return self.hyper * np.sum((point[point <= self.vmin] - self.vmin) ** 2) / 2
 
     def gradient(self, point: array) -> array:
-        return self.hyper * np.where(point <= self.vmin, point - self.vmin, 0)
+        idx = point <= self.vmin
+        self.lastv = self.hyper * np.sum((point[idx] - self.vmin) ** 2) / 2
+        return self.hyper * np.where(idx, point - self.vmin, 0)
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
         return vecs.T @ vecs
