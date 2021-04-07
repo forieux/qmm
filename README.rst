@@ -153,7 +153,6 @@ TODO
 ----
 
 - Add preconditionner to mmmg.
-- Logo ?
 
 Changelog
 ---------
