@@ -130,8 +130,8 @@ If you are having issues, please let us know
 
 orieux AT l2s.centralesupelec.fr
 
-More information about me `here <https://pro.orieux.fr>`_. F. Orieux is
-affiliated to the Signal and Systems Laboratory `L2S
+More information about me `here <https://pro.orieux.fr>`_. F. Orieux and R.
+Abirizk are affiliated to the Signal and Systems Laboratory `L2S
 <https://l2s.centralesupelec.fr/>`_.
 
 Acknowledgement
