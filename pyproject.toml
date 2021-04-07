@@ -2,7 +2,7 @@
 name = "qmm"
 version = "0.4.0"
 description = "The Quadratic Majorize-Minimize toolbox"
-authors = ["François Orieux <francois.orieux@universite-paris-saclay.fr>"]
+authors = ["François Orieux <francois.orieux@universite-paris-saclay.fr>", "Ralph Abirizk  <ralph.abirizk@universite-paris-saclay.fr>"]
 maintainers = ["François Orieux <francois.orieux@universite-paris-saclay.fr>"]
 readme = "README.rst"
 license = "GPL-3.0-or-later"

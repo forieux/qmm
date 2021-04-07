@@ -54,8 +54,8 @@ If you are having issues, please let us know
 
 orieux AT l2s.centralesupelec.fr
 
-More information about me `here <https://pro.orieux.fr>`_. F. Orieux is
-affiliated to the Signal and Systems Laboratory `L2S
+More information about me `here <https://pro.orieux.fr>`_. F. Orieux and R.
+Abirizk are affiliated to the Signal and Systems Laboratory `L2S
 <https://l2s.centralesupelec.fr/>`_.
 
 Acknowledgement
@@ -78,7 +78,7 @@ cite it
 
     @software{qmm,
        title = {Q-MM: The Quadratic Majorize-Minimize Python toolbox},
-       author = {Orieux, Fran\c{c}ois},
+       author = {Orieux, Fran\c{c}ois and Abirizk, Ralph},
        url = {https://github.com/forieux/qmm},
     }
 

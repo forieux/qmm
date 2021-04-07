@@ -22,7 +22,7 @@ of this toolbox will also be appreciated.
 
     @software{qmm,
        title = {Q-MM: The Quadratic Majorize-Minimize Python toolbox},
-       author = {Orieux, Fran\c{c}ois},
+       author = {Orieux, Fran\c{c}ois and Abirizk, Ralph},
        url = {https://github.com/forieux/qmm},
     }
 
