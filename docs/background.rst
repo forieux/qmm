@@ -25,7 +25,7 @@ The losses implemented in the toolbox, in addition to the square function, are
 illustrated below. The Geman & Mc Clure and the truncated square approximation
 are not coercive.
 
-.. image:: ./potentials.png
+.. image:: ./losses.png
     :align: center
 
 

@@ -29,7 +29,8 @@ of this toolbox will also be appreciated.
 Quadratic Majorize-Minimize
 ---------------------------
 
-The Q-MM optimization algorithms compute the minimizer of criteria like
+The Q-MM optimization algorithms compute the minimizer of objective function
+like
 
 J(x) = ∑ₖ μₖ ψₖ(Vₖ·x - ωₖ)
 
@@ -48,7 +49,7 @@ J(x) = ||y - H·x||² + μ ψ(V·x)
 
 where H is a low-pass forward model, V a regularization operator that
 approximate gradient (kind of high-pass filter) and ψ an edge preserving
-function like Huber. The above criterion is obtained with k ∈ {1, 2}, ψ₁(·) =
+function like Huber. The above objective is obtained with k ∈ {1, 2}, ψ₁(·) =
 ||·||², V₁ = H, ω₁ = y, and ω₂ = 0.
 
 .. image:: ./docs/image.png
@@ -67,7 +68,7 @@ Features
   formula.
 - Generic and flexible: there is no restriction on the number of regularizer,
   their type, .., as well as for data adequacy.
-- Provided base class for criteria and potentials allowing easy and fast
+- Provided base class for objectives and losses allowing easy and fast
   implementation.
 - Comes with examples of implemented linear operator.
 
@@ -96,15 +97,15 @@ accept a unique parameter ``x`` and a unique return value. There is no
 constraints on the shape, everything is vectorized internally.
 
 After import of ``qmm``, user must instantiate ``Potential`` objects that
-implement ``φ`` and ``Criterion`` object that implements ``μ ψ(V·x - ω)``
+implement ``φ`` and ``Objective`` object that implements ``μ ψ(V·x - ω)``
 
 .. code:: python
 
    from qmm import qmm
    phi = qmm.Huber(delta=10)  # φ
 
-   data_adeq = qmm.QuadCriterion(H, Ht, HtH, data=data)  # ||y - H·x||²
-   prior = qmm.Criterion(V, Vt, phi, hyper=0.01)  # μ ψ(V·x) = μ ∑ᵢ φ(vᵢᵗ·x)
+   data_adeq = qmm.QuadObjective(H, Ht, HtH, data=data)  # ||y - H·x||²
+   prior = qmm.Objective(V, Vt, phi, hyper=0.01)  # μ ψ(V·x) = μ ∑ᵢ φ(vᵢᵗ·x)
    
 Then you can run the algorithm
 
@@ -112,8 +113,8 @@ Then you can run the algorithm
 
    res = qmm.mmmg([data_adeq, prior], init, max_iter=200)
 
-where :code:`[data_adeq, prior]` means that the two criteria are summed. For
-more details, see `documentation
+where :code:`[data_adeq, prior]` means that the two objective functions are
+summed. For more details, see `documentation
 <https://qmm.readthedocs.io/en/stable/index.html>`_.
 
 Contribute
