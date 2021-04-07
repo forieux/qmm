@@ -470,19 +470,20 @@ class Criterion(BaseCrit):
 
     with :math:`\Psi(u) = \sum_i \phi(u_i)`.
 
+
     data : array
         The `data` array, or the vectorized list of array given at init.
     hyper : float
         The hyperparameter value μ.
-    potential : Potential
-        The potential φ.
+    loss : Loss
+        The loss φ.
     """
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
         operator: Callable[[array], ArrOrSeq],
         adjoint: Callable[[ArrOrSeq], array],
-        potential: "Potential",
+        loss: "Loss",
         data: ArrOrSeq = None,
         hyper: float = 1,
     ):
@@ -494,8 +495,8 @@ class Criterion(BaseCrit):
             A callable that compute the output V·x.
         adjoint: callable
             A callable that compute Vᵗ·e.
-        potential: Potential
-            The potential φ
+        loss: Loss
+            The loss φ
         data: array or list of array, optional
             The data vector ω.
         hyper: float, optional
@@ -525,7 +526,7 @@ class Criterion(BaseCrit):
             self.data = 0 if data is None else data
 
         self.hyper = hyper
-        self.potential = potential
+        self.loss = loss
 
     @staticmethod
     def _list2vec(arr_list: Sequence[array]) -> array:  #  pylint: disable=no-self-use
@@ -556,7 +557,7 @@ class Criterion(BaseCrit):
 
         Return μ ψ(V·x - ω)
         """
-        return self.hyper * np.sum(self.potential(self.operator(point) - self.data))
+        return self.hyper * np.sum(self.loss(self.operator(point) - self.data))
 
     def gradient(self, point: array) -> array:
         """The gradient and value at given point
@@ -564,8 +565,8 @@ class Criterion(BaseCrit):
         Return μ Vᵗ·φ'(V·x - ω)
         """
         residual = self.operator(point) - self.data
-        # crit = self.hyper * np.sum(self.potential(residual))
-        return self.hyper * self.adjoint(self.potential.gradient(residual))
+        self.lastv = self.hyper * np.sum(self.loss(residual))
+        return self.hyper * self.adjoint(self.loss.gradient(residual))
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
         matrix = vecs.T @ (self.gr_coeffs(point).reshape((-1, 1)) * vecs)
@@ -577,7 +578,7 @@ class Criterion(BaseCrit):
         Given `x` return `φ'(V·x - ω) / (V·x - ω)`
         """
         obj = self.operator(point) - self.data
-        return self.potential.gr_coeffs(obj)
+        return self.loss.gr_coeffs(obj)
 
     def __call__(self, point: array) -> float:
         return self.value(point)
@@ -716,7 +717,7 @@ class Vmin(BaseCrit):
 
     .. math::
 
-        J(u) = \frac{1}{2} \mu \|P_{]-\infty, m]}(u) - m\|^2.
+        J(u) = \frac{1}{2} \mu \|P_{]-\infty, m]}(u) - m\|_2^2.
 
     vmin : float
         The minimum value `m`.
@@ -758,7 +759,7 @@ class Vmax(BaseCrit):
 
     .. math::
 
-        J(u) = \frac{1}{2} \mu \|P_{[M, +\infty[}(u) - m\|^2.
+        J(u) = \frac{1}{2} \mu \|P_{[M, +\infty[}(u) - m\|_2^2.
 
     vmax : float
         The maximum value `M`.
@@ -786,39 +787,41 @@ class Vmax(BaseCrit):
 
     def value(self, point: array) -> array:
         """Return the value at current point."""
-        return self.hyper * np.sum((point[point >= self.vmax] - self.vmax) ** 2 / 2)
+        return self.hyper * np.sum((point[point >= self.vmax] - self.vmax) ** 2) / 2
 
     def gradient(self, point: array) -> array:
-        return self.hyper * np.where(point >= self.vmax, point - self.vmax, 0)
+        idx = point >= self.vmax
+        self.lastv = self.hyper * np.sum((point[idx] - self.vmax) ** 2) / 2
+        return self.hyper * np.where(idx, point - self.vmax, 0)
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
         return vecs.T @ vecs
 
 
-class Potential(abc.ABC):
-    """An abstract base class for potential φ.
+class Loss(abc.ABC):
+    """An abstract base class for loss φ.
 
     The class has the following attributes.
 
     inf : float
       The value of lim_{u→0} φ'(u) / u.
     convex : boolean
-      A flag indicating if the potential is convex.
+      A flag indicating if the loss is convex (not used).
     coercive : boolean
-      A flag indicating if the potential is coercive.
+      A flag indicating if the loss is coercive (not used).
     """
 
     def __init__(self, inf: float, convex: bool = False, coercive: bool = False):
-        """The potential φ
+        """The loss φ
 
         Parameters
         ----------
         inf : float
           The value of lim_{u→0} φ'(u) / u
         convex : boolean
-          A flag indicating if the potential is convex.
+          A flag indicating if the loss is convex.
         coercive : boolean
-          A flag indicating if the potential is coercive.
+          A flag indicating if the loss is coercive.
         """
         self.inf = inf
         self.convex = convex
@@ -846,7 +849,7 @@ class Potential(abc.ABC):
         return self.value(point)
 
 
-class Square(Potential):
+class Square(Loss):
     r"""The Square function
 
     .. math::
@@ -872,7 +875,7 @@ class Square(Potential):
 """
 
 
-class Huber(Potential):
+class Huber(Loss):
     r"""The convex coercive Huber function
 
     .. math::
@@ -913,7 +916,7 @@ with δ = {self.delta}
 """
 
 
-class Hyperbolic(Potential):
+class Hyperbolic(Loss):
     r"""The convex coercive hyperbolic function
 
     .. math::
@@ -946,7 +949,7 @@ with δ = {self.delta}
 """
 
 
-class HebertLeahy(Potential):
+class HebertLeahy(Loss):
     r"""The non-convex coercive function from Hebert & Leahy
 
     .. math::
@@ -977,7 +980,7 @@ with δ = {self.delta}
 """
 
 
-class GemanMcClure(Potential):
+class GemanMcClure(Loss):
     r"""The non-convex non-coervice function from Geman & McClure
 
     .. math::
@@ -1008,7 +1011,7 @@ with δ = {self.delta}
 """
 
 
-class TruncSquareApprox(Potential):
+class TruncSquareApprox(Loss):
     r"""The non-convex non-coercive truncated square approximation
 
     .. math::

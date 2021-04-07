@@ -21,9 +21,9 @@ with guaranteed convergence. The explicit step formula allows fast convergence
 of the algorithm to a minimiser of the criterion without tuning parameters. On
 the contrary, the criterion must meet the conditions above.
 
-The potential implemented in the toolbox, in addition to the square function,
-are illustrated below. The Geman & Mc Clure and the truncated square
-approximation are not coercive.
+The losses implemented in the toolbox, in addition to the square function, are
+illustrated below. The Geman & Mc Clure and the truncated square approximation
+are not coercive.
 
 .. image:: ./potentials.png
     :align: center

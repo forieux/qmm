@@ -111,20 +111,20 @@ Specific criterion classes
     :members:
 
 
-Potential classes
-=================
+Losses classes
+==============
 
-The :class:`Potential` is an abstract base class that can't be instanced and
-serve as parent class for all potential.
+The :class:`Loss` is an abstract base class that can't be instanced and
+serve as parent class for all losses.
 
-At that time, the provided concrete potential are :class:`Square`,
+At that time, the provided concrete loss functions are :class:`Square`,
 :class:`Huber`, :class:`Hyperbolic`, :class:`HerbertLeahy`,
 :class:`GemanMcClure`, and :class:`TruncSquareApprox`.
 
 .. note::
 
-   The :class:`Potential` class implements ``__call__`` interface allowing
-   objects to behave like callable (function), returning the function value
+   The :class:`Loss` class implements ``__call__`` interface allowing objects to
+   behave like callable (function), returning the function value
 
    .. code-block:: python
 
@@ -133,7 +133,7 @@ At that time, the provided concrete potential are :class:`Square`,
       plt.plot(u, pot(u))
 
 
-.. autoclass:: Potential
+.. autoclass:: Loss
    :members:
 
 

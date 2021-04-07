@@ -19,7 +19,7 @@ essentially three part:
 
 where :math:`u` is a vector and :math:`\phi` a scalar function.
 
-- the ``Potential`` class that implement :math:`\phi`.
+- the ``Loss`` class that implement :math:`\phi`.
 
 
 Operators
@@ -61,17 +61,18 @@ list of ``ndarray`` and returns a unique ``ndarray``, of any shape, as output.
    memory copies of arrays, however.
 
 
-Potentials
-==========
+Losses
+======
 
-The second step is to instantiate potential :math:`\phi`, :class:`Huber` for instance
+The second step is to instantiate loss function :math:`\phi`, :class:`Huber` for
+instance
 
 .. code-block:: python
 
    from qmm.qmm import Huber, Criterion, QuadCriterion, mmmg
    phi = Huber(delta=10)
 
-Several potential are implemented, see :doc:`Background <background>` and the
+Several losses are implemented, see :doc:`Background <background>` and the
 :doc:`qmm <qmm>` module.
 
 Criterions
