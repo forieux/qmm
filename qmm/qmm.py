@@ -24,6 +24,7 @@ This module implements Quadratic Majorize-Minimize optimization algorithms.
 # pylint: disable=bad-continuation
 
 import abc
+import itertools as it
 import time
 from functools import reduce
 from operator import iadd
@@ -56,6 +57,8 @@ class OptimizeResult(dict):
         The value of ||x^(k+1) - x^(k)||² at each iteration
     time: list of float
         The time at each iteration, starting at 0, in seconds.
+    objv_val: list of float
+        The objective value at each iteration
 
     Notes
     -----
@@ -80,9 +83,16 @@ class OptimizeResult(dict):
         self.grad_norm = []
         self.diff = []
         self.time = []
+        self.objv_val = []
         self.x = None
 
+    @property
+    def fun(self):
+        return self.objv_val[-1]
+
     def __getattr__(self, name):
+        if name == "fun":
+            return self["objv_val"][-1]
         if name in self:
             return self[name]
         raise AttributeError("No such attribute: " + name)
@@ -103,6 +113,7 @@ def mmmg(
     tol: float = 1e-4,
     max_iter: int = 500,
     callback: Callable[[OptimizeResult], None] = None,
+    calc_fun: bool = False,
 ) -> OptimizeResult:
     r"""The Majorize-Minimize Memory Gradient (`3mg`) algorithm.
 
@@ -122,8 +133,12 @@ def mmmg(
         is inferior to `init.size * tol`.
     max_iter : int, optional
         The maximum number of iterations.
-    callback : callable
-        A function that receive the `OptimizeResult` at the end of each iteration.
+    callback : callable, optional
+        A function that receive the `OptimizeResult` at the end of each
+        iteration.
+    calc_fun: boolean, optional
+        If True, objective function will be computed at each iteration at low
+        overhead. False by default. Not used by the algorithm.
 
     Returns
     -------
@@ -137,6 +152,10 @@ def mmmg(
        10.1109/TIP.2010.2103083.
     """
     res = OptimizeResult()
+    for objv in objv_list:
+        previous_flag = objv.calc_fun
+        objv.calc_fun = calc_fun
+
     res["x"] = init.copy().reshape((-1, 1))
 
     # The first previous moves are initialized with 0 array. Consequently, the
@@ -154,6 +173,8 @@ def mmmg(
         # Vectorized gradient
         grad = _gradient(objv_list, res["x"], init.shape)
         res["grad_norm"].append(la.norm(grad))
+        res["jac"] = grad
+        res["objv_val"].append(_lastv(objv_list))
 
         # Stopping test
         if res["grad_norm"][-1] < init.size * tol:
@@ -197,6 +218,9 @@ def mmmg(
     res["nit"] = iteration + 1
     res["time"] = list(np.asarray(res.time) - res.time[0])
 
+    for objv, flag in zip(objv_list, previous_flag):
+        objv.calc_fun = flag
+
     return res
 
 
@@ -207,6 +231,7 @@ def mmcg(
     tol: float = 1e-4,
     max_iter: int = 500,
     callback: Callable[[OptimizeResult], None] = None,
+    calc_fun: bool = False,
 ) -> OptimizeResult:
     """The Majorize-Minimize Conjugate Gradient (MM-CG) algorithm.
 
@@ -229,8 +254,12 @@ def mmcg(
         is inferior to `init.size * tol`.
     max_iter : int, optional
         The maximum number of iterations.
-    callback : callable
-        A function that receive the `OptimizeResult` at the end of each iteration.
+    callback : callable, optional
+        A function that receive the `OptimizeResult` at the end of each
+        iteration.
+    calc_fun: boolean, optional
+        If True, objective function will be computed at each iteration at low
+        overhead. False by default. Not used by the algorithm.
 
     Returns
     -------
@@ -244,6 +273,9 @@ def mmcg(
     if precond is None:
         precond = lambda x: x
     res = OptimizeResult()
+    for objv in objv_list:
+        previous_flag = objv.calc_fun
+        objv.calc_fun = calc_fun
 
     res["x"] = init.copy().reshape((-1, 1))
 
@@ -278,6 +310,8 @@ def mmcg(
 
         # Gradient
         residual = -_gradient(objv_list, res["x"], init.shape)
+        res["jac"] = -residual
+        res["objv_val"].append(_lastv(objv_list))
 
         # Conjugate direction. No reset is done, see Shewchuck.
         delta_old = delta
@@ -303,6 +337,9 @@ def mmcg(
     res["nit"] = iteration + 1
     res["time"] = list(np.asarray(res.time) - res.time[0])
 
+    for objv, flag in zip(objv_list, previous_flag):
+        objv.calc_fun = flag
+
     return res
 
 
@@ -313,6 +350,7 @@ def lcg(
     tol: float = 1e-4,
     max_iter: int = 500,
     callback: Callable[[OptimizeResult], None] = None,
+    calc_fun: bool = False,
 ) -> OptimizeResult:
     """Linear Conjugate Gradient (CG) algorithm.
 
@@ -333,17 +371,25 @@ def lcg(
         is inferior to `init.size * tol`.
     max_iter : int, optional
         The maximum number of iterations.
-    callback : callable
-        A function that receive the `OptimizeResult` at the end of each iteration.
+    callback : callable, optional
+        A function that receive the `OptimizeResult` at the end of each
+        iteration.
+    calc_fun: boolean, optional
+        If True, objective function will be computed at each iteration at low
+        overhead. False by default. Not used by the algorithm.
 
     Returns
     -------
     result : OptimizeResult
+
     """
 
     if precond is None:
         precond = lambda x: x
     res = OptimizeResult()
+    for objv in objv_list:
+        previous_flag = objv.calc_fun
+        objv.calc_fun = calc_fun
 
     res["x"] = init.copy().reshape((-1, 1))
 
@@ -373,6 +419,8 @@ def lcg(
             residual = second_term - hessian(res["x"])
         else:
             residual -= step * hess_dir
+        res["jac"] = -residual
+        res["objv_val"].append(_lastv(objv_list))
 
         # Conjugate direction with preconditionner
         secant = _vect(precond, residual, init.shape)
@@ -403,6 +451,9 @@ def lcg(
     res["grad_norm"] = list(np.sqrt(res.grad_norm))
     res["time"] = list(np.asarray(res.time) - res.time[0])
 
+    for objv, flag in zip(objv_list, previous_flag):
+        objv.calc_fun = flag
+
     return res
 
 
@@ -421,6 +472,11 @@ def _gradient(
     return reduce(iadd, (_vect(c.gradient, point, shape) for c in objv_list))
 
 
+def _lastv(objv_list: Sequence["BaseObjective"]):
+    """Return the value of objective computed after gradient evaluation"""
+    return sum(getattr(objv, "lastv") for objv in objv_list)
+
+
 class BaseObjective(abc.ABC):
     r"""An abstract base class for objective function
 
@@ -429,6 +485,20 @@ class BaseObjective(abc.ABC):
 
     with :math:`\Psi(u) = \sum_i \phi(u_i)`.
     """
+
+    def __init__(self, calc_fun: bool = False):
+        self._lastv = -1
+        self.calc_fun = calc_fun
+
+    @property
+    def lastv(self):
+        """Return the value of objective after gradient computation."""
+        return self._lastv
+
+    @lastv.setter
+    def lastv(self, val):
+        """Return the value of objective after gradient computation."""
+        self._lastv = val
 
     @abc.abstractmethod
     def operator(self, point: array) -> array:
@@ -517,6 +587,7 @@ class Objective(BaseObjective):
         This is not efficient but flexible. Users are encouraged to do the
         vectorization themselves and not use the list of array feature.
         """
+        super().__init__()
         self._operator = operator
         self._adjoint = adjoint
 
@@ -529,7 +600,6 @@ class Objective(BaseObjective):
 
         self.hyper = hyper
         self.loss = loss
-        self.lastv = 0
 
     @staticmethod
     def _list2vec(arr_list: Sequence[array]) -> array:  #  pylint: disable=no-self-use
@@ -568,7 +638,8 @@ class Objective(BaseObjective):
         Return μ Vᵗ·φ'(V·x - ω)
         """
         residual = self.operator(point) - self.data
-        self.lastv = self.hyper * np.sum(self.loss(residual))
+        if self.calc_fun:
+            self.lastv = self.hyper * np.sum(self.loss(residual))
         return self.hyper * self.adjoint(self.loss.gradient(residual))
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
@@ -652,10 +723,10 @@ class QuadObjective(Objective):
 
         if data is None:
             self.data_t = 0
-            self.constant = 0  # c = ωᵗ·B·ω
+            self.constant = 0  # c = μ ωᵗ·B·ω
         else:
             self.data_t = hyper * self._metricp(adjoint(data))
-            self.constant = hyper * np.sum(data * self._metricp(data))  # c = ωᵗ·B·ω
+            self.constant = hyper * np.sum(data * self._metricp(data))  # c = μ ωᵗ·B·ω
 
     def _metricp(self, arr: array) -> array:
         if self._metric is None:
@@ -685,7 +756,8 @@ class QuadObjective(Objective):
         J(x) = ½ (xᵗ·∇ - xᵗ·b + μ ωᵗ·B·ω)
         """
         Qx = self.hessp(point)
-        self.lastv = self._value_hessp(point, Qx)
+        if self.calc_fun:
+            self.lastv = self._value_hessp(point, Qx)
         return self.hessp(point) - self.data_t
 
     def _value_hessp(self, point, hessp):
@@ -693,8 +765,12 @@ class QuadObjective(Objective):
 
         thanks to relation
 
-        J(x) =  ½ (xᵗ·q + xᵗ·b + μ ωᵗ·B·ω)"""
-        return (np.sum(point * hessp) + np.sum(point * self.data_t) + self.constant) / 2
+        J(x) =  ½ (xᵗ·q - 2 xᵗ·b + μ ωᵗ·B·ω)"""
+        return (
+            # np.sum(point * hessp) - 2 * np.sum(point * self.data_t) + self.constant
+            np.sum(point * (hessp - 2 * self.data_t))
+            + self.constant
+        ) / 2
 
     def value_residual(self, point, residual):
         """Return J(x) value given x and r = b - Qx
@@ -740,9 +816,9 @@ class Vmin(BaseObjective):
         hyper : float
             The hyperparameter value μ.
         """
+        super().__init__()
         self.vmin = vmin
         self.hyper = hyper
-        self.lastv = 0
 
     def operator(self, point):
         return point[point <= self.vmin]
@@ -753,7 +829,8 @@ class Vmin(BaseObjective):
 
     def gradient(self, point: array) -> array:
         idx = point <= self.vmin
-        self.lastv = self.hyper * np.sum((point[idx] - self.vmin) ** 2) / 2
+        if self.calc_fun:
+            self.lastv = self.hyper * np.sum((point[idx] - self.vmin) ** 2) / 2
         return self.hyper * np.where(idx, point - self.vmin, 0)
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
@@ -785,6 +862,7 @@ class Vmax(BaseObjective):
         hyper : float
             The hyperparameter value μ.
         """
+        super().__init__()
         self.vmax = vmax
         self.hyper = hyper
 
@@ -797,7 +875,8 @@ class Vmax(BaseObjective):
 
     def gradient(self, point: array) -> array:
         idx = point >= self.vmax
-        self.lastv = self.hyper * np.sum((point[idx] - self.vmax) ** 2) / 2
+        if self.calc_fun:
+            self.lastv = self.hyper * np.sum((point[idx] - self.vmax) ** 2) / 2
         return self.hyper * np.where(idx, point - self.vmax, 0)
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
