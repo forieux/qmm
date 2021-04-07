@@ -152,8 +152,9 @@ def mmmg(
        10.1109/TIP.2010.2103083.
     """
     res = OptimizeResult()
+    previous_flag = []
     for objv in objv_list:
-        previous_flag = objv.calc_fun
+        previous_flag.append(objv.calc_fun)
         objv.calc_fun = calc_fun
 
     res["x"] = init.copy().reshape((-1, 1))
@@ -273,8 +274,9 @@ def mmcg(
     if precond is None:
         precond = lambda x: x
     res = OptimizeResult()
+    previous_flag = []
     for objv in objv_list:
-        previous_flag = objv.calc_fun
+        previous_flag.append(objv.calc_fun)
         objv.calc_fun = calc_fun
 
     res["x"] = init.copy().reshape((-1, 1))
@@ -387,8 +389,9 @@ def lcg(
     if precond is None:
         precond = lambda x: x
     res = OptimizeResult()
+    previous_flag = []
     for objv in objv_list:
-        previous_flag = objv.calc_fun
+        previous_flag.append(objv.calc_fun)
         objv.calc_fun = calc_fun
 
     res["x"] = init.copy().reshape((-1, 1))

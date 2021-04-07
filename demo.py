@@ -26,12 +26,12 @@ init = obs.adjoint(data)
 #%% Regularization
 diffr = operators.Diff(axis=0)
 diffc = operators.Diff(axis=1)
-pot = qmm.Huber(delta=10)
+loss = qmm.Huber(delta=10)
 
 #%% Objectives definition
 data_adeq = qmm.QuadObjective(obs.forward, obs.adjoint, obs.fwback, data=data)
-priorr_adeq = qmm.Objective(diffr.forward, diffr.adjoint, pot, hyper=0.01)
-priorc_adeq = qmm.Objective(diffc.forward, diffc.adjoint, pot, hyper=0.01)
+priorr_adeq = qmm.Objective(diffr.forward, diffr.adjoint, loss, hyper=0.01)
+priorc_adeq = qmm.Objective(diffc.forward, diffc.adjoint, loss, hyper=0.01)
 
 #%% Optimization algorithm
 res = qmm.mmmg([data_adeq, priorr_adeq, priorc_adeq], init, max_iter=300, tol=5e-5)
