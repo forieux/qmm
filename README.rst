@@ -159,8 +159,9 @@ Changelog
 ---------
 
 - v0.3.2
-  - rename ``Criterion`` to ``Objective``.
-  - rename ``Potential`` to ``Loss``.
-  - add ``lastv`` attribut to ``BaseObjv`` that equals to the objective value
+
+  * rename ``Criterion`` to ``Objective``.
+  * rename ``Potential`` to ``Loss``.
+  * add ``lastv`` attribut to ``BaseObjv`` that equals to the objective value
     after last gradient evaluation.
-  - add ``calc_fun`` flag to compute criterion value with low overhead.
+  * add ``calc_fun`` flag to compute criterion value with low overhead.
