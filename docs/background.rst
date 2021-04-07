@@ -2,7 +2,7 @@
  Background
 ============
 
-MM-Q is Python toolbox to optimise criterion or loss function like
+MM-Q is Python toolbox to optimise objective function like
 
 .. math::
 
@@ -18,8 +18,8 @@ differentiable, even, coercive, :math:`\phi(\sqrt{\cdot})` concave, and :math:`0
 The optimization is done thanks to quadratic surrogate function. In particular,
 **no linesearch** is necessary and **close form formula for the step** are used
 with guaranteed convergence. The explicit step formula allows fast convergence
-of the algorithm to a minimiser of the criterion without tuning parameters. On
-the contrary, the criterion must meet the conditions above.
+of the algorithm to a minimizer of the objective function without tuning
+parameters. On the contrary, the objective must meet the conditions above.
 
 The losses implemented in the toolbox, in addition to the square function, are
 illustrated below. The Geman & Mc Clure and the truncated square approximation
@@ -71,7 +71,7 @@ minimization of
 
 where :math:`H` is a low-pass forward model, :math:`V` a regularization operator
 that approximate object gradient (kind of high-pass filter) and :math:`\Psi` an
-edge preserving function like Huber. The above criterion is obtained with
+edge preserving function like Huber. The above objective is obtained with
 :math:`k \in \{1, 2\}`, :math:`\Psi_1(\cdot) = \|\cdot\|_2^2`, :math:`V_1 = H`,
 :math:`\omega_1 = y`, and :math:`\omega_2 = 0`.
 

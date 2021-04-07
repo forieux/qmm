@@ -14,7 +14,7 @@
  Q-MM's documentation
 ======================
 
-Q-MM is a small Python toolbox to optimize differentiable criterion
+Q-MM is a small Python toolbox to optimize differentiable objective function
 
 .. math::
 
@@ -24,7 +24,7 @@ by Majorization-Minimization with quadratic surrogate function. In particular,
 **no linesearch** is necessary and **close form formula for the step** are used
 with guaranteed convergence. The explicit step formula allows fast convergence
 of the algorithm to a minimizer with minimal tuning parameters. However, the
-criterion must meet the conditions, see :doc:`Background <background>`.
+objective function must meet the conditions, see :doc:`Background <background>`.
 
 Features
 ========
@@ -37,7 +37,7 @@ Features
   formula.
 - Generic and flexible: there is no restriction on the number of regularizer,
   their type, .., as well as for data adequacy.
-- Provided base class for criterion allowing easier and fast implementation.
+- Provided base class for objective allowing easier and fast implementation.
 - Comes with examples of implemented linear operator.
 
 Contribute

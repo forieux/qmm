@@ -12,7 +12,7 @@ essentially three part:
 .. math::
    J(x) = \sum_k \mu_k \Psi_k(V_k x - \omega_k)
 
-- the ``Criterion`` class that implements
+- the ``Objective`` class that implements
 
 .. math::
    \mu \Psi(V x - \omega)\quad \text{ with }\quad \Psi(u) = \sum_i \phi(u_i)
@@ -69,27 +69,27 @@ instance
 
 .. code-block:: python
 
-   from qmm.qmm import Huber, Criterion, QuadCriterion, mmmg
+   from qmm.qmm import Huber, Objective, QuadObjective, mmmg
    phi = Huber(delta=10)
 
 Several losses are implemented, see :doc:`Background <background>` and the
 :doc:`qmm <qmm>` module.
 
-Criterions
+Objectives
 ==========
 
-Then, a :class:`Criterion` :math:`\mu \Psi(Vx)` named ``prior`` can be instanced
+Then, a :class:`Objective` :math:`\mu \Psi(Vx)` named ``prior`` can be instanced
 
 .. code-block:: python
 
-   prior = Criterion(forward, adjoint, phi, hyper=0.01)
+   prior = Objective(forward, adjoint, phi, hyper=0.01)
 
-If a quadratic criterion like :math:`\|y - H x\|_2^2` is needed, the specific
-class :class:`QuadCriterion` can be used
+If a quadratic objective like :math:`\|y - H x\|_2^2` is needed, the specific
+class :class:`QuadObjective` can be used
 
 .. code-block:: python
 
-   data_adeq = QuadCriterion(H, Ht, data=data)
+   data_adeq = QuadObjective(H, Ht, data=data)
 
 .. note::
 
@@ -106,8 +106,8 @@ Then you can run the algorithm, :func:`mmmg` for instance,
 
    result = mmmg([data_adeq, prior], init, max_iter=200)
 
-where the list :code:`[data_adeq, prior]` means that the two criteria are
-summed. The output `result` is an instance of :class:`OptimizeResult`.
+where the list :code:`[data_adeq, prior]` means that the two objective function
+are summed. The output `result` is an instance of :class:`OptimizeResult`.
 
 Two algorithms are proposed :
 

@@ -12,7 +12,7 @@ Two algorithms are implemented.
 1. :func:`mmcg` that use the Majorize-Minimize Conjugate Gradient (MM-CG) and
 2. :func:`mmmg` that use the Majorize Minimize Memory Gradient (3MG).
 3. :func:`lcg` that use the Linear Conjugate Gradient (CG) for quadratic
-   criterion, with explicit and optimal step and conjugacy parameters.
+   objective, with explicit and optimal step and conjugacy parameters.
 
 The 3MG algorithm is usually faster but use more memory. The MM-CG can be faster
 and use less memory.
@@ -38,69 +38,70 @@ implemented to avoid dependency to scipy.
    :exclude-members: __init__
 
 
-Criterion classes
+Objective classes
 =================
 
-Criterion are defined from the abstract class :class:`BaseCrit` that have three
-abstract methods that must be implemented by the subclass. If users want to
-implements it's own criterion, he is encouraged to subclass :class:`BaseCrit`.
+Objective functions are defined from the abstract class :class:`BaseObjective`
+that have three abstract methods that must be implemented by the subclass. If
+users want to implements it's own objective, he is encouraged to subclass
+:class:`BaseObjective`.
 
-Two generic concrete classes of :class:`BaseCrit` can be used. The
-:class:`Criterion` class is the more general and :class:`QuadCriterion` is a
+Two generic concrete classes of :class:`BaseObjective` can be used. The
+:class:`Objective` class is the more general and :class:`QuadObjective` is a
 specialized subclass that allows simplification and slightly faster computation.
 
-.. autoclass:: BaseCrit
+.. autoclass:: BaseObjective
    :members:
 
 
-Main criterion class
+Main objective class
 --------------------
 
-.. autoclass:: Criterion
+.. autoclass:: Objective
    :members:
 
 
-Quadratic criterion
+Quadratic objective
 -------------------
 
 This class implements specific properties or methods associated to quadratic
-criterion.
+objective function.
 
-.. autoclass:: QuadCriterion
+.. autoclass:: QuadObjective
    :members:
 
 
 .. note::
 
-   The :class:`Criterion` class implements ``__call__`` interface allowing
-   objects to behave like callable (function), returning the criterion value
+   The :class:`Objective` class implements ``__call__`` interface allowing
+   objects to behave like callable (function), returning the objective value
 
    .. code-block:: python
 
       identity = lambda x: x
 
-      crit = qmm.Criterion(identity, identity, qmm.Square())
+      objv = qmm.Objective(identity, identity, qmm.Square())
       x = np.random.standard_normal((100, ))
-      crit(x) == crit.value(x)
+      objv(x) == objv.value(x)
 
 
 .. note::
 
-   The ``operator`` argument for :class:`Criterion` and :class:`QuadCriterion`
+   The ``operator`` argument for :class:`Objective` and :class:`QuadObjective`
    must be a callable that accept an ``array`` as input and return an array as
    output. However, the operator **can also return** a ``list`` of array (for
    data fusion for instance). In that case, all these arrays are internally
    vectorized and the data are therefore memory copied.
 
    If operator returns a list of array, the ``adjoint`` **must** accept a list of
-   array also. Again, everything is vectorized and the `Criterion` and
-   `QuadCriterion` rebuild the list of array internally.
+   array also. Again, everything is vectorized and the `Objective` and
+   `QuadObjective` rebuild the list of array internally.
 
-   If given, the ``normal`` argument for :class:`QuadCriterion` must accept an
+   If given, the ``normal`` argument for :class:`QuadObjective` must accept an
    array and returns an array.
 
 
-Specific criterion classes
+Specific objective classes
 --------------------------
 
 .. autoclass:: Vmin
