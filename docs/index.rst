@@ -14,7 +14,7 @@
  Q-MM's documentation
 ======================
 
-Q-MM is a small Python toolbox to optimize differentiable objective function
+Q-MM is a small Python toolbox to optimize differentiable objective functions
 
 .. math::
 
@@ -22,9 +22,10 @@ Q-MM is a small Python toolbox to optimize differentiable objective function
 
 by Majorization-Minimization with quadratic surrogate function. In particular,
 **no linesearch** is necessary and **close form formula for the step** are used
-with guaranteed convergence. The explicit step formula allows fast convergence
-of the algorithm to a minimizer with minimal tuning parameters. However, the
-objective function must meet the conditions, see :doc:`Background <background>`.
+with guaranteed convergence without sub-iteration. The explicit step formula
+allows fast convergence of the algorithm to a minimizer with minimal tuning
+parameters. However, the objective function must meet the conditions, see
+:doc:`Background <background>`.
 
 Features
 ========
@@ -54,14 +55,14 @@ If you are having issues, please let us know
 
 orieux AT l2s.centralesupelec.fr
 
-More information about me `here <https://pro.orieux.fr>`_. F. Orieux and R.
-Abirizk are affiliated to the Signal and Systems Laboratory `L2S
+F. Orieux (`academic pages <https://pro.orieux.fr>`_) and R. Abirizk are
+affiliated to the Signal and Systems Laboratory `L2S
 <https://l2s.centralesupelec.fr/>`_.
 
 Acknowledgement
 ===============
 
-Author would like to thanks `Jérôme Idier
+Authors would like to thanks `Jérôme Idier
 <https://pagespersowp.ls2n.fr/jeromeidier/en/jerome-idier-3/>`_, `Saïd Moussaoui
 <https://scholar.google.fr/citations?user=Vkr8yxkAAAAJ&hl=fr>`_ and `Émilie
 Chouzenoux <http://www-syscom.univ-mlv.fr/~chouzeno/>`_. E. Chouzenoux has also

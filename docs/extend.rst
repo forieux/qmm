@@ -2,7 +2,7 @@
  How to extend Q-MM
 ====================
 
-To extend Q-MM you must subclass :class:`qmm.BaseObjective` and
+To extend Q-MM you must subclass :class:`qmm.BaseObjective` or
 :class:`qmm.Loss`. Then :func:`qmm.mmmg` and :func:`qmm.mmcg` should work as
 expected.
 

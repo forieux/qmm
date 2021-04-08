@@ -46,9 +46,17 @@ that have three abstract methods that must be implemented by the subclass. If
 users want to implements it's own objective, he is encouraged to subclass
 :class:`BaseObjective`.
 
-Two generic concrete classes of :class:`BaseObjective` can be used. The
-:class:`Objective` class is the more general and :class:`QuadObjective` is a
-specialized subclass that allows simplification and slightly faster computation.
+Four generic concrete classes of :class:`BaseObjective` can be used. The
+:class:`Objective` class is the more general and prefered way, and
+:class:`QuadObjective` is a specialized subclass that allows simplification and
+slightly faster computation. :class:`Vmax` and :class:`Vmin` are for bound
+penalties.
+
+.. note::
+
+   The property ``lastv`` is used by algorithms to compute the objective
+   function value at each iteration with low overhead, if the flag ``calc_objv``
+   is set to ``True``. It is not required by the algorithms.
 
 .. autoclass:: BaseObjective
    :members:
@@ -59,17 +67,6 @@ Main objective class
 
 .. autoclass:: Objective
    :members:
-
-
-Quadratic objective
--------------------
-
-This class implements specific properties or methods associated to quadratic
-objective function.
-
-.. autoclass:: QuadObjective
-   :members:
-
 
 .. note::
 
@@ -84,6 +81,15 @@ objective function.
       x = np.random.standard_normal((100, ))
       objv(x) == objv.value(x)
 
+
+Quadratic objective
+-------------------
+
+This class implements specific properties or methods associated to quadratic
+objective function.
+
+.. autoclass:: QuadObjective
+   :members:
 
 .. note::
 
@@ -115,11 +121,9 @@ Specific objective classes
 Losses classes
 ==============
 
-The class :class:`Loss` is an abstract base class that can't be instanced and
-serve as parent class for all losses.
-
-At that time, the provided concrete loss functions are :class:`Square`,
-:class:`Huber`, :class:`Hyperbolic`, :class:`HebertLeahy`,
+The class :class:`Loss` is an abstract base class and serve as parent class for
+all losses. At that time, the provided concrete loss functions are
+:class:`Square`, :class:`Huber`, :class:`Hyperbolic`, :class:`HebertLeahy`,
 :class:`GemanMcClure`, and :class:`TruncSquareApprox`.
 
 .. note::

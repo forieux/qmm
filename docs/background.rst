@@ -2,7 +2,7 @@
  Background
 ============
 
-MM-Q is Python toolbox to optimise objective function like
+MM-Q is Python toolbox to optimise objective functions like
 
 .. math::
 
@@ -80,7 +80,7 @@ References
 
 The toolbox is funded on following papers. The papers [a]_, [b]_, and [c]_ are
 historical foundations. The implemented algorithms in the toolbox come from [d]_
-and [e]_. If you use this toolbox please cite_these last two papers and this
+and [e]_. If you use this toolbox please cite these last two papers and this
 toolbox as
 
 ::

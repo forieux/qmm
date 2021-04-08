@@ -29,12 +29,12 @@ ArrOrList = Union[array, List[array]]
 
 
 def dft2(obj: array) -> array:
-    """Return the orthogonal real 2D fft
+    """Return the orthogonal real 2D fft.
 
     Parameters
     ----------
     obj : array-like
-        The array on which to perform the 2D DFT
+        The array on which to perform the 2D DFT.
 
     Returns
     -------
@@ -42,23 +42,23 @@ def dft2(obj: array) -> array:
 
     Notes
     -----
-
-    This function is a wrapper of numpy.fft.rfft2. FFT is made on 2 last axis.
+    This function is a wrapper of numpy.fft.rfft2. The DFT is made on the two
+    last axis.
 
     """
     return np.fft.rfft2(obj, norm="ortho")
 
 
 def idft2(obj: array, shape: Tuple[int]) -> array:
-    """Return the orthogonal real 2D ifft
+    """Return the orthogonal real 2D ifft.
 
     Parameters
     ----------
     obj : array-like
-        The array on which to perform the inverse 2D DFT
+        The array on which to perform the inverse 2D DFT.
 
     shape: tuple
-        The output shape
+        The output shape.
 
     Returns
     -------
@@ -66,44 +66,43 @@ def idft2(obj: array, shape: Tuple[int]) -> array:
 
     Notes
     -----
-
-    This function is a wrapper of numpy.fft.irfft2. FFT is made on 2 last axis.
+    This function is a wrapper of numpy.fft.irfft2. The DFT is made on the two
+    last axis.
 
     """
     return np.fft.irfft2(obj, norm="ortho", s=shape)
 
 
 class Operator(abc.ABC):
-    """An abstract base class for linear operators"""
+    """An abstract base class for linear operators."""
 
     @abc.abstractmethod
     def forward(self, point: array) -> ArrOrList:
-        """Return H·x"""
+        """Return `H·x`"""
         return NotImplemented
 
     @abc.abstractmethod
     def adjoint(self, point: ArrOrList) -> array:
-        """Return Hᵗ·e"""
+        """Return `Hᵀ·e`"""
         return NotImplemented
 
     def fwback(self, point: array) -> array:
-        """Return HᵗH·x"""
+        """Return `HᵀH·x`"""
         return self.adjoint(self.forward(point))
 
     def T(self, point: ArrOrList) -> array:
-        """Return Hᵗ·e"""
+        """Return `Hᵀ·e`"""
         return self.adjoint(point)
 
     def __call__(self, point: array) -> ArrOrList:
-        """Return H·x"""
+        """Return `H·x`"""
         return self.forward(point)
 
 
 class Conv2(Operator):
-    """The 2D convolution on image
+    """2D convolution on image.
 
-    Does not suppose periodic or circular condition. Has the following
-    attributes
+    Does not suppose periodic or circular condition.
 
     Attributes
     ----------
@@ -116,19 +115,19 @@ class Conv2(Operator):
 
     Notes
     -----
-    Use the fft internally for fast computation.
+    Use fft internally for fast computation.
 
     """
 
     def __init__(self, ir: array, shape: Tuple[int]):
-        """The 2D convolution on image
+        """2D convolution on image.
 
         Parameters
         ----------
         ir : array
-            The impulse response
+            The impulse response.
         shape : tuple of int
-            The of the input image
+            The of the input image.
 
         """
 
@@ -155,14 +154,14 @@ class Conv2(Operator):
 
 
 class Diff(Operator):
-    """The difference operator
+    """Difference operator.
 
     Compute the first-order differences along an axis.
 
     Attributes
     ----------
-    axis : int
-        The axis along which the differences is performed
+    axis: int
+        The axis along which the differences is performed.
 
     Notes
     -----
@@ -171,22 +170,22 @@ class Diff(Operator):
     """
 
     def __init__(self, axis):
-        """The first-order differences operator
+        """First-order differences operator.
 
         Parameters
         ----------
         axis: int
-            the axis along which to perform the diff"""
+            the axis along which to perform the diff."""
         self.axis = axis
 
     def response(self, ndim):
         """Return the equivalent impulse response.
 
-        The result of `forward` method is equivalent with the 'valid'
-        convolution with this response.
+        The result of `forward` method is equivalent with 'valid'
+        convolution with this impulse response.
 
-        The adjoint operator corresponds the 'full' convolution with flipped
-        response.
+        The adjoint operator corresponds the 'full' convolution with the flipped
+        impulse response.
 
         """
         imp_resp = np.zeros(ndim * [2])
@@ -249,7 +248,7 @@ def ir2fr(
     - The output is returned as C-contiguous array.
 
     - For convolution, the result have to be used with unitary discrete Fourier
-      transform for the signal (norm="ortho" of fft).
+      transform for the signal (`norm="ortho"` of fft).
 
     - DFT are always performed on last axis for efficiency (C-order array).
 

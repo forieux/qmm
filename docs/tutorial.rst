@@ -5,21 +5,21 @@
 .. py:currentmodule:: qmm
 
 The toolbox is just one file, the ``qmm.py`` module. The module contains
-essentially three part:
+essentially three part.
 
-- the optimization algorithms, implemented as functions, that minimize
+- The optimization algorithms, implemented as functions, that minimize
 
 .. math::
-   J(x) = \sum_k \mu_k \Psi_k(V_k x - \omega_k)
+   J(x) = \sum_k \mu_k \Psi_k(V_k x - \omega_k).
 
-- the ``Objective`` class that implements
+- The ``Objective`` class that implements
 
 .. math::
    \mu \Psi(V x - \omega)\quad \text{ with }\quad \Psi(u) = \sum_i \phi(u_i)
 
 where :math:`u` is a vector and :math:`\phi` a scalar function.
 
-- the ``Loss`` class that implement :math:`\phi`.
+- The ``Loss`` class that implement :math:`\phi`.
 
 
 Operators
@@ -106,7 +106,7 @@ Then you can run the algorithm, :func:`mmmg` for instance,
 
    result = mmmg([data_adeq, prior], init, max_iter=200)
 
-where the list :code:`[data_adeq, prior]` means that the two objective function
+where the list :code:`[data_adeq, prior]` means that the two objective functions
 are summed. The output `result` is an instance of :class:`OptimizeResult`.
 
 Two algorithms are proposed :
@@ -115,8 +115,10 @@ Two algorithms are proposed :
 - :func:`mmmg` that implements a subspace by Memory-Gradient with 2D step (that,
   therefore, include the conjugacy parameter).
 
-In addition a Linear Conjugate Gradient :func:`lcg` is implemented for quadratic
-objective.
-
 Both algorithms have close form formula for the 1D or 2D step by
 Majorization-Minimization Quadratic.
+
+.. note::
+
+   In addition a Linear Conjugate Gradient :func:`lcg` is implemented for
+   quadratic objective.
