@@ -592,7 +592,7 @@ class Objective(BaseObjective):
         In that case, however, and for algorithm purpose, everything is
         internally stacked as a column vector and values are therefore copied.
         This is not efficient but flexible. Users are encouraged to do the
-        vectorization themselves and not use the list of array feature.
+        vectorization themselves and not use the "list of array" feature.
         """
         super().__init__()
         self._operator = operator

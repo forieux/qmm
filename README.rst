@@ -70,6 +70,8 @@ Features
   their type, .., as well as for data adequacy.
 - Provided base class for objectives and losses allowing easy and fast
   implementation.
+- Just one file if you like quick and dirty installation, but available with
+  ``pip``.
 - Comes with examples of implemented linear operator.
 
 Installation and documentation

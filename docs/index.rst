@@ -39,6 +39,8 @@ Features
 - Generic and flexible: there is no restriction on the number of regularizer,
   their type, .., as well as for data adequacy.
 - Provided base class for objective allowing easier and fast implementation.
+- Just one file if you like quick and dirty installation, but available with
+  ``pip``.
 - Comes with examples of implemented linear operator.
 
 Contribute

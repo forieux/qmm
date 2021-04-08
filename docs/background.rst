@@ -11,9 +11,9 @@ MM-Q is Python toolbox to optimise objective functions like
 where :math:`x` is the unknown of size :math:`N`, :math:`V_k` a matrix or linear
 operator of size :math:`M_k \times N`, :math:`\omega_k` a data fixed vector of
 size :math:`M_k`, :math:`\mu_k` a scalar hyperparameter, and :math:`\Psi_k(u) =
-\sum_i \phi_k(u_i)`. MM-Q suppose that the scalar functions :math:`\phi` are
-differentiable, even, coercive, :math:`\phi(\sqrt{\cdot})` concave, and :math:`0
-< \dot{\phi}(u) / u < +\infty`.
+\sum_i \varphi_k(u_i)`. MM-Q suppose that the scalar functions :math:`\varphi`
+are differentiable, even, coercive, :math:`\varphi(\sqrt{\cdot})` concave, and
+:math:`0 < \dot{\varphi}(u) / u < +\infty`.
 
 The optimization is done thanks to quadratic surrogate function. In particular,
 **no linesearch** is necessary and **close form formula for the step** are used
