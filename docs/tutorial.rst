@@ -15,18 +15,18 @@ essentially three part.
 - The ``Objective`` class that implements
 
 .. math::
-   \mu \Psi(V x - \omega)\quad \text{ with }\quad \Psi(u) = \sum_i \phi(u_i)
+   \mu \Psi(V x - \omega)\quad \text{ with }\quad \Psi(u) = \sum_i \varphi(u_i)
 
-where :math:`u` is a vector and :math:`\phi` a scalar function.
+where :math:`u` is a vector and :math:`\varphi` a scalar function.
 
-- The ``Loss`` class that implement :math:`\phi`.
+- The ``Loss`` class that implements :math:`\varphi`.
 
 
 Operators
 =========
 
 The first thing to do is to implement the forward operator :math:`V` and adjoint
-:math:`V^t`. User is in charge of it. They are callable that could be Python
+:math:`V^T`. User is in charge of it. They are callable that could be Python
 functions or methods of objects.
 
 .. code-block:: python
@@ -64,8 +64,8 @@ list of ``ndarray`` and returns a unique ``ndarray``, of any shape, as output.
 Losses
 ======
 
-The second step is to instantiate loss function :math:`\phi`, :class:`Huber` for
-instance
+The second step is to instantiate loss function :math:`\varphi`, :class:`Huber`
+for instance
 
 .. code-block:: python
 

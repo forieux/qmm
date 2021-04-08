@@ -103,8 +103,8 @@ objective function.
    array also. Again, everything is vectorized and the `Objective` and
    `QuadObjective` rebuild the list of array internally.
 
-   If given, the ``normal`` argument for :class:`QuadObjective` must accept an
-   array and returns an array.
+   If given, the ``hessp`` callable argument for :class:`QuadObjective` must
+   accept an array and returns an array.
 
 
 Specific objective classes
