@@ -24,11 +24,12 @@ This module implements Quadratic Majorize-Minimize optimization algorithms.
 # pylint: disable=bad-continuation
 
 import abc
+import collections.abc
 import itertools as it
 import time
 from functools import reduce
 from operator import iadd
-from typing import Callable, List, Sequence, Tuple, Union
+from typing import Callable, List, MutableSequence, Sequence, Tuple, Union
 
 import numpy as np  # type: ignore
 import numpy.linalg as la  # type: ignore
@@ -476,7 +477,7 @@ def _gradient(
 ) -> array:
     """Compute sum of gradient with vectorized parameters and return"""
     # The use of reduce and iadd do an more efficient numpy inplace sum
-    return reduce(iadd, (_vect(c.gradient, point, shape) for c in objv_list))
+    return reduce(iadd, (_vect(o.gradient, point, shape) for o in objv_list))
 
 
 def _lastv(objv_list: Sequence["BaseObjective"]):
@@ -513,6 +514,11 @@ class BaseObjective(abc.ABC):
         return NotImplemented
 
     @abc.abstractmethod
+    def value(self, point: array) -> float:
+        """Compute the value at current point."""
+        return NotImplemented
+
+    @abc.abstractmethod
     def gradient(self, point: array) -> array:
         """Compute the gradient at current point."""
         return NotImplemented
@@ -539,6 +545,86 @@ class BaseObjective(abc.ABC):
             The normal matrix
         """
         return NotImplemented
+
+    def __add__(self, objv: "BaseObjective"):
+        return MixedObjective([self, objv])
+
+
+class MixedObjective(collections.abc.MutableSequence):
+    r"""Represents a mixed objective function
+
+    .. math::
+        J(x) = \sum_k \mu_k \Psi_k \left(V_k x - \omega_k \right)
+
+    This is a `Sequence` (or `list`) like and instance of this class can be used
+    in optimization algorithms.
+    """
+
+    def __init__(self, objv_list: MutableSequence[BaseObjective]):
+        r"""Represents a mixed objective function
+
+        .. math::
+        J(x) = \sum_k \mu_k \Psi_k \left(V_k x - \omega_k \right)
+
+        This is a `Sequence` (or `list`) like and instance of this class can be used
+        in optimization algorithms.
+
+        """
+        self._objv_list = objv_list
+
+    def __getitem__(self, key):
+        return self._objv_list.__getitem__(key)
+
+    def __setitem__(self, key, value):
+        return self._objv_list.__setitem__(key, value)
+
+    def __delitem__(self, key):
+        return self._objv_list.__delitem__(key)
+
+    def __len__(self):
+        return len(self._objv_list)
+
+    def insert(self, index, value):
+        return self._objv_list.insert(index, value)
+
+    def value(self, point: array) -> float:
+        """Return the value of J(x)"""
+        return reduce(iadd, (o.value(point) for o in self._objv_list))
+
+    def gradient(self, point: array) -> array:
+        """Return the gradient of J(x)"""
+        return reduce(iadd, (o.gradient(point) for o in self._objv_list))
+
+    def __call__(self, point: array) -> float:
+        return self.value(point)
+
+    def __add__(self, objv: Union["BaseObjective", "MixedObjective"]):
+        if isinstance(objv, BaseObjective):
+            self._objv_list.append(objv)
+        elif isinstance(objv, MixedObjective):
+            print("here")
+            self._objv_list.extend(objv._objv_list)
+        else:
+            raise TypeError(
+                "unsupported operand type(s) for +: 'MixedObjective' and {}".format(
+                    type(objv)
+                )
+            )
+        return self
+
+    # def __iadd__(self, objv: Union["BaseObjective", "MixedObjective"]):
+    #     return self.__add__(objv)
+
+    def __radd__(self, objv: "BaseObjective"):
+        if isinstance(objv, BaseObjective):
+            self._objv_list.append(objv)
+        else:
+            raise TypeError(
+                "unsupported operand type(s) for +: 'MixedObjective' and {}".format(
+                    type(objv)
+                )
+            )
+        return self
 
 
 class Objective(BaseObjective):
