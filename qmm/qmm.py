@@ -118,7 +118,7 @@ def mmmg(
     tol: float = 1e-4,
     max_iter: int = 500,
     callback: Callable[[OptimizeResult], None] = None,
-    calc_objv: bool = False,
+    calc_fun: bool = False,
 ) -> OptimizeResult:
     r"""The Majorize-Minimize Memory Gradient (`3mg`) algorithm.
 
@@ -141,7 +141,7 @@ def mmmg(
     callback : callable, optional
         A function that receive the `OptimizeResult` at the end of each
         iteration.
-    calc_objv: boolean, optional
+    calc_fun: boolean, optional
         If True, objective function is computed at each iteration with low
         overhead. False by default. Not used by the algorithm.
 
@@ -159,8 +159,8 @@ def mmmg(
     res = OptimizeResult()
     previous_flag = []
     for objv in objv_list:
-        previous_flag.append(objv.calc_objv)
-        objv.calc_objv = calc_objv
+        previous_flag.append(objv.calc_fun)
+        objv.calc_fun = calc_fun
 
     res["x"] = init.copy().reshape((-1, 1))
 
@@ -225,7 +225,7 @@ def mmmg(
     res["time"] = list(np.asarray(res.time) - res.time[0])
 
     for objv, flag in zip(objv_list, previous_flag):
-        objv.calc_objv = flag
+        objv.calc_fun = flag
 
     return res
 
@@ -237,7 +237,7 @@ def mmcg(
     tol: float = 1e-4,
     max_iter: int = 500,
     callback: Callable[[OptimizeResult], None] = None,
-    calc_objv: bool = False,
+    calc_fun: bool = False,
 ) -> OptimizeResult:
     """The Majorize-Minimize Conjugate Gradient (MM-CG) algorithm.
 
@@ -263,7 +263,7 @@ def mmcg(
     callback : callable, optional
         A function that receive the `OptimizeResult` at the end of each
         iteration.
-    calc_objv: boolean, optional
+    calc_fun: boolean, optional
         If True, objective function is computed at each iteration with low
         overhead. False by default. Not used by the algorithm.
 
@@ -281,8 +281,8 @@ def mmcg(
     res = OptimizeResult()
     previous_flag = []
     for objv in objv_list:
-        previous_flag.append(objv.calc_objv)
-        objv.calc_objv = calc_objv
+        previous_flag.append(objv.calc_fun)
+        objv.calc_fun = calc_fun
 
     res["x"] = init.copy().reshape((-1, 1))
 
@@ -345,7 +345,7 @@ def mmcg(
     res["time"] = list(np.asarray(res.time) - res.time[0])
 
     for objv, flag in zip(objv_list, previous_flag):
-        objv.calc_objv = flag
+        objv.calc_fun = flag
 
     return res
 
@@ -357,7 +357,7 @@ def lcg(
     tol: float = 1e-4,
     max_iter: int = 500,
     callback: Callable[[OptimizeResult], None] = None,
-    calc_objv: bool = False,
+    calc_fun: bool = False,
 ) -> OptimizeResult:
     """Linear Conjugate Gradient (CG) algorithm.
 
@@ -381,7 +381,7 @@ def lcg(
     callback : callable, optional
         A function that receive the `OptimizeResult` at the end of each
         iteration.
-    calc_objv: boolean, optional
+    calc_fun: boolean, optional
         If True, objective function is computed at each iteration with low
         overhead. False by default. Not used by the algorithm.
 
@@ -396,8 +396,8 @@ def lcg(
     res = OptimizeResult()
     previous_flag = []
     for objv in objv_list:
-        previous_flag.append(objv.calc_objv)
-        objv.calc_objv = calc_objv
+        previous_flag.append(objv.calc_fun)
+        objv.calc_fun = calc_fun
 
     res["x"] = init.copy().reshape((-1, 1))
 
@@ -460,7 +460,7 @@ def lcg(
     res["time"] = list(np.asarray(res.time) - res.time[0])
 
     for objv, flag in zip(objv_list, previous_flag):
-        objv.calc_objv = flag
+        objv.calc_fun = flag
 
     return res
 
@@ -492,12 +492,20 @@ class BaseObjective(abc.ABC):
         J(x) = \mu \Psi \left(V x - \omega \right)
 
     with :math:`\Psi(u) = \sum_i \varphi(u_i)`.
+
+    Attributes
+    ----------
+    calc_fun: boolean
+        If true, compute the objective value when gradient is computed and store
+        in `lastgv` attribute.
+    name: str
+        The name of the objective.
     """
 
     def __init__(self, name=""):
         self._lastgv = -1
         self._lastv = 0
-        self.calc_objv = False
+        self.calc_fun = False
         self.name = name
 
     @property
@@ -584,6 +592,11 @@ class MixedObjective(collections.abc.MutableSequence):
         """
         self._objv_list = objv_list
 
+    @property
+    def lastv(self):
+        """Return the value of objective after gradient computation."""
+        return sum(o.lastv for o in self._objv_list)
+
     def __getitem__(self, key):
         return self._objv_list.__getitem__(key)
 
@@ -601,8 +614,7 @@ class MixedObjective(collections.abc.MutableSequence):
 
     def value(self, point: array) -> float:
         """Return the value of J(x)"""
-        self.lastv = reduce(iadd, (o.value(point) for o in self._objv_list))
-        return self.lastv
+        return reduce(iadd, (o.value(point) for o in self._objv_list))
 
     def gradient(self, point: array) -> array:
         """Return the gradient of J(x)"""
@@ -624,9 +636,6 @@ class MixedObjective(collections.abc.MutableSequence):
                 )
             )
         return self
-
-    # def __iadd__(self, objv: Union["BaseObjective", "MixedObjective"]):
-    #     return self.__add__(objv)
 
     def __radd__(self, objv: "BaseObjective"):
         if isinstance(objv, BaseObjective):
@@ -664,6 +673,7 @@ class Objective(BaseObjective):
         loss: "Loss",
         data: ArrOrSeq = None,
         hyper: float = 1,
+        name: str = "",
     ):
         """A objective function `μ ψ(V·x - ω)`.
 
@@ -679,6 +689,8 @@ class Objective(BaseObjective):
             The data vector `ω`.
         hyper: float, optional
             The hyperparameter `μ`.
+        name: str
+            The name of the objective.
 
         Notes
         -----
@@ -693,7 +705,7 @@ class Objective(BaseObjective):
         This is not efficient but flexible. Users are encouraged to do the
         vectorization themselves and not use the "list of array" feature.
         """
-        super().__init__()
+        super().__init__(name=name)
         self._operator = operator
         self._adjoint = adjoint
 
@@ -745,7 +757,7 @@ class Objective(BaseObjective):
         Return `μ Vᵀ·φ'(V·x - ω)`.
         """
         residual = self.operator(point) - self.data
-        if self.calc_objv:
+        if self.calc_fun:
             self.lastgv = self.hyper * np.sum(self.loss(residual))
         return self.hyper * self.adjoint(self.loss.gradient(residual))
 
@@ -761,8 +773,20 @@ class Objective(BaseObjective):
         obj = self.operator(point) - self.data
         return self.loss.gr_coeffs(obj)
 
+    # def quad(self, point):
+    #     Q = QuadObjective(
+    #         self._operator,
+    #         self._adjoint,
+    #         data=self._data,
+    #         hyper=self.hyper,
+    #         metric=self.gr_coeffs(point),
+    #     )
+
     def __call__(self, point: array) -> float:
         return self.value(point)
+
+    def __repr__(self):
+        return f"{self.name} ({type(self).__name__}, loss: {type(self.loss).__name__}), hyper {self.hyper}, last eval {self.lastv}"
 
 
 class QuadObjective(Objective):
@@ -792,6 +816,7 @@ class QuadObjective(Objective):
         data: array = None,
         hyper: float = 1,
         metric: array = None,
+        name: str = "",
     ):
         """A quadratic objective `½ μ ||V·x - ω||²_B`
 
@@ -810,6 +835,8 @@ class QuadObjective(Objective):
         metric: array, optional
             The **diagonal** of the metric matrix `B`. Equivalent to Identity if
             not provided.
+        name: str
+            The name of the objective.
 
         Notes
         -----
@@ -820,7 +847,7 @@ class QuadObjective(Objective):
         The variable `b = B·Vᵀ·ω` is computed at object creation.
 
         """
-        super().__init__(operator, adjoint, Square(), data=data, hyper=hyper)
+        super().__init__(operator, adjoint, Square(), data=data, hyper=hyper, name=name)
         self._metric = metric
 
         if hessp is not None:
@@ -864,7 +891,7 @@ class QuadObjective(Objective):
         `J(x) = ½ (xᵀ·∇ - xᵀ·b + μ ωᵀ·B·ω)`
         """
         Qx = self.hessp(point)
-        if self.calc_objv:
+        if self.calc_fun:
             self.lastgv = self._value_hessp(point, Qx)
         return self.hessp(point) - self.data_t
 
@@ -912,7 +939,7 @@ class Vmin(BaseObjective):
         The hyperparameter value `μ`.
     """
 
-    def __init__(self, vmin: float, hyper: float):
+    def __init__(self, vmin: float, hyper: float, name: str = ""):
         """A minimum value objective function
 
         `J(x) = ½ μ ||P_[m, +∞[(x) - m||²`.
@@ -923,8 +950,10 @@ class Vmin(BaseObjective):
             The minimum value `m`.
         hyper : float
             The hyperparameter value `μ`.
+        name: str
+            The name of the objective.
         """
-        super().__init__()
+        super().__init__(name=name)
         self.vmin = vmin
         self.hyper = hyper
 
@@ -937,7 +966,7 @@ class Vmin(BaseObjective):
 
     def gradient(self, point: array) -> array:
         idx = point <= self.vmin
-        if self.calc_objv:
+        if self.calc_fun:
             self.lastgv = self.hyper * np.sum((point[idx] - self.vmin) ** 2) / 2
         return self.hyper * np.where(idx, point - self.vmin, 0)
 
@@ -969,8 +998,10 @@ class Vmax(BaseObjective):
             The maximum value `M`.
         hyper : float
             The hyperparameter value `μ`.
+        name: str
+            The name of the objective.
         """
-        super().__init__()
+        super().__init__(name=name)
         self.vmax = vmax
         self.hyper = hyper
 
@@ -983,7 +1014,7 @@ class Vmax(BaseObjective):
 
     def gradient(self, point: array) -> array:
         idx = point >= self.vmax
-        if self.calc_objv:
+        if self.calc_fun:
             self.lastgv = self.hyper * np.sum((point[idx] - self.vmax) ** 2) / 2
         return self.hyper * np.where(idx, point - self.vmax, 0)
 
