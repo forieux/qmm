@@ -180,7 +180,7 @@ def mmmg(
         grad = _gradient(objv_list, res["x"], init.shape)
         res["grad_norm"].append(la.norm(grad))
         res["jac"] = grad.reshape(init.shape)
-        res["objv_val"].append(_lastv(objv_list))
+        res["objv_val"].append(_lastgv(objv_list))
 
         # Stopping test
         if res["grad_norm"][-1] < init.size * tol:
@@ -318,7 +318,7 @@ def mmcg(
         # Gradient
         residual = -_gradient(objv_list, res["x"], init.shape)
         res["jac"] = -residual.reshape(init.shape)
-        res["objv_val"].append(_lastv(objv_list))
+        res["objv_val"].append(_lastgv(objv_list))
 
         # Conjugate direction. No reset is done, see Shewchuck.
         delta_old = delta
@@ -428,7 +428,7 @@ def lcg(
         else:
             residual -= step * hess_dir
         res["jac"] = -residual.reshape(init.shape)
-        res["objv_val"].append(_lastv(objv_list))
+        res["objv_val"].append(_lastgv(objv_list))
 
         # Conjugate direction with preconditionner
         secant = _vect(precond, residual, init.shape)
@@ -480,9 +480,9 @@ def _gradient(
     return reduce(iadd, (_vect(o.gradient, point, shape) for o in objv_list))
 
 
-def _lastv(objv_list: Sequence["BaseObjective"]):
+def _lastgv(objv_list: Sequence["BaseObjective"]):
     """Return the value of objective computed after gradient evaluation"""
-    return sum(getattr(objv, "lastv") for objv in objv_list)
+    return sum(getattr(objv, "lastgv") for objv in objv_list)
 
 
 class BaseObjective(abc.ABC):
@@ -494,9 +494,11 @@ class BaseObjective(abc.ABC):
     with :math:`\Psi(u) = \sum_i \varphi(u_i)`.
     """
 
-    def __init__(self):
-        self._lastv = -1
+    def __init__(self, name=""):
+        self._lastgv = -1
+        self._lastv = 0
         self.calc_objv = False
+        self.name = name
 
     @property
     def lastv(self):
@@ -507,6 +509,16 @@ class BaseObjective(abc.ABC):
     def lastv(self, val):
         """Return the value of objective after gradient computation."""
         self._lastv = val
+
+    @property
+    def lastgv(self):
+        """Return the value of objective after gradient computation."""
+        return self._lastgv
+
+    @lastgv.setter
+    def lastgv(self, val):
+        """Return the value of objective after gradient computation."""
+        self._lastgv = val
 
     @abc.abstractmethod
     def operator(self, point: array) -> array:
@@ -589,7 +601,8 @@ class MixedObjective(collections.abc.MutableSequence):
 
     def value(self, point: array) -> float:
         """Return the value of J(x)"""
-        return reduce(iadd, (o.value(point) for o in self._objv_list))
+        self.lastv = reduce(iadd, (o.value(point) for o in self._objv_list))
+        return self.lastv
 
     def gradient(self, point: array) -> array:
         """Return the gradient of J(x)"""
@@ -723,7 +736,8 @@ class Objective(BaseObjective):
 
         Return `μ ψ(V·x - ω)`.
         """
-        return self.hyper * np.sum(self.loss(self.operator(point) - self.data))
+        self.lastv = self.hyper * np.sum(self.loss(self.operator(point) - self.data))
+        return self.lastv
 
     def gradient(self, point: array) -> array:
         """The gradient and value at given point
@@ -732,7 +746,7 @@ class Objective(BaseObjective):
         """
         residual = self.operator(point) - self.data
         if self.calc_objv:
-            self.lastv = self.hyper * np.sum(self.loss(residual))
+            self.lastgv = self.hyper * np.sum(self.loss(residual))
         return self.hyper * self.adjoint(self.loss.gradient(residual))
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
@@ -831,11 +845,12 @@ class QuadObjective(Objective):
 
         Return `½ μ ||V·x - ω||²_B`.
         """
-        return (
+        self.lastv = (
             self.hyper
             * np.sum(self._metricp((self.operator(point) - self.data) ** 2))
             / 2
         )
+        return self.lastv
 
     def gradient(self, point: array) -> array:
         """The gradient and value at given point
@@ -850,7 +865,7 @@ class QuadObjective(Objective):
         """
         Qx = self.hessp(point)
         if self.calc_objv:
-            self.lastv = self._value_hessp(point, Qx)
+            self.lastgv = self._value_hessp(point, Qx)
         return self.hessp(point) - self.data_t
 
     def _value_hessp(self, point, hessp):
@@ -923,7 +938,7 @@ class Vmin(BaseObjective):
     def gradient(self, point: array) -> array:
         idx = point <= self.vmin
         if self.calc_objv:
-            self.lastv = self.hyper * np.sum((point[idx] - self.vmin) ** 2) / 2
+            self.lastgv = self.hyper * np.sum((point[idx] - self.vmin) ** 2) / 2
         return self.hyper * np.where(idx, point - self.vmin, 0)
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
@@ -969,7 +984,7 @@ class Vmax(BaseObjective):
     def gradient(self, point: array) -> array:
         idx = point >= self.vmax
         if self.calc_objv:
-            self.lastv = self.hyper * np.sum((point[idx] - self.vmax) ** 2) / 2
+            self.lastgv = self.hyper * np.sum((point[idx] - self.vmax) ** 2) / 2
         return self.hyper * np.where(idx, point - self.vmax, 0)
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
