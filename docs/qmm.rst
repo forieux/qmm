@@ -4,6 +4,8 @@
 
 .. py:currentmodule:: qmm
 
+.. _label-opt-alg:
+
 Optimization algorithms
 =======================
 
@@ -115,6 +117,35 @@ Specific objective classes
 
 
 .. autoclass:: Vmax
+    :members:
+
+Sum of objectives
+-----------------
+
+The :class:`MixedObjective` is a convenient (not required) list-like class that
+represent the sum of :class:`BaseObjective`. Moreoever, :class:`BaseObjective`
+and :class:`MixedObjective` support the "+" operator and returns a
+:class:`MixedObjective` instance, or update the instance, respectively. Since
+:class:`MixedObjective` is a list, it can be used with :ref:`optimization
+algorithms<label-opt-alg>`.
+
+.. code-block:: python
+
+   likelihood = QuadObjective(...)
+   prior1 = Objective(...)
+   prior2 = Objective(...)
+
+   # Equivalent to objective = MixedObjective([likelihood, prior1])
+   objective = likelihood + prior1
+
+   # Equivalent to objective.append(prior2)
+   objective = objective + prior2
+
+   # Equivalent to res = mmmg([likelihood, prior1, prior2], ...)
+   res = mmmg(objective, ...)
+
+
+.. autoclass:: MixedObjective
     :members:
 
 

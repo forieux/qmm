@@ -576,25 +576,26 @@ class MixedObjective(collections.abc.MutableSequence):
     .. math::
         J(x) = \sum_k \mu_k \Psi_k \left(V_k x - \omega_k \right)
 
-    This is a `Sequence` (or `list`) like and instance of this class can be used
+    This is a `Sequence` (or list-like) and instance of this class can be used
     in optimization algorithms.
+
     """
 
     def __init__(self, objv_list: MutableSequence[BaseObjective]):
-        r"""Represents a mixed objective function
+        r"""A mixed objective function
 
-        .. math::
-        J(x) = \sum_k \mu_k \Psi_k \left(V_k x - \omega_k \right)
+        `J(x) = ∑ₖ μₖ ψₖ(Vₖ·x - ωₖ)`.
 
-        This is a `Sequence` (or `list`) like and instance of this class can be used
-        in optimization algorithms.
+        Parameters
+        ----------
+        objv_list: list of `BaseObjective`
 
         """
         self._objv_list = objv_list
 
     @property
     def lastv(self):
-        """Return the value of objective after gradient computation."""
+        """Return the value of objectives obtained during gradient computation."""
         return sum(o.lastv for o in self._objv_list)
 
     def __getitem__(self, key):
@@ -613,11 +614,11 @@ class MixedObjective(collections.abc.MutableSequence):
         return self._objv_list.insert(index, value)
 
     def value(self, point: array) -> float:
-        """Return the value of J(x)"""
+        """The value J(x)"""
         return reduce(iadd, (o.value(point) for o in self._objv_list))
 
     def gradient(self, point: array) -> array:
-        """Return the gradient of J(x)"""
+        """The gradient ∇J(x)"""
         return reduce(iadd, (o.gradient(point) for o in self._objv_list))
 
     def __call__(self, point: array) -> float:
@@ -774,7 +775,7 @@ class Objective(BaseObjective):
         return self.loss.gr_coeffs(obj)
 
     # def quad(self, point):
-    #     Q = QuadObjective(
+    #     Q = HalfQuadObjective(
     #         self._operator,
     #         self._adjoint,
     #         data=self._data,
@@ -901,11 +902,7 @@ class QuadObjective(Objective):
         thanks to relation
 
         `J(x) =  ½ (xᵀ·q - 2 xᵀ·b + μ ωᵀ·B·ω)`"""
-        return (
-            # np.sum(point * hessp) - 2 * np.sum(point * self.data_t) + self.constant
-            np.sum(point * (hessp - 2 * self.data_t))
-            + self.constant
-        ) / 2
+        return (np.sum(point * (hessp - 2 * self.data_t)) + self.constant) / 2
 
     def value_residual(self, point, residual):
         """Return `J(x)` value given `x` and `r = b - Qx`
@@ -924,6 +921,31 @@ class QuadObjective(Objective):
 
     def __call__(self, point: array) -> float:
         return self.value(point)
+
+
+class HalfQuadObjective(QuadObjective):
+    def __init__(self, objective: Objective, point: array):
+        super().__init__(
+            operator=objective.operator,
+            adjoint=objective._adjoint,
+            data=objective.data,
+            hyper=objective.hyper,
+            metric=objective.gr_coeffs(point),
+        )
+        self.objective = objective
+
+    def gradient(self, point: array) -> array:
+        """The gradient and value at given point
+
+        Return `∇ = μ (Q·x - b) = μ Vᵀ·B·(V·x - ω)`.
+        """
+        Vx = self.operator(point)
+        if self.calc_fun:
+            self.lastgv = self.hyper * np.sum(
+                self.objective.loss(Vx - self.objective.data)
+            )
+        Qx = self.hyper * self.adjoint(self._metricp(Vx))
+        return self.hessp(point) - self.data_t
 
 
 class Vmin(BaseObjective):
@@ -1090,6 +1112,12 @@ class Square(Loss):
 
     def gradient(self, point: array) -> array:
         return point
+
+    def xigr(self, point: array) -> array:
+        return point ** 2 / 2
+
+    def xigy(self, point: array) -> array:
+        return point ** 2 / 2
 
     def __repr__(self):
         return """φ(u) = ½ u²
