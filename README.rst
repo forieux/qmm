@@ -155,14 +155,3 @@ TODO
 ----
 
 - Add preconditionner to mmmg.
-
-Changelog
----------
-
-- v0.4.0
-
-  * rename ``Criterion`` to ``Objective``.
-  * rename ``Potential`` to ``Loss``.
-  * add ``lastv`` attribut to ``BaseObjv`` that equals to the objective value
-    after last gradient evaluation.
-  * add ``calc_fun`` flag to compute criterion value with low overhead.
