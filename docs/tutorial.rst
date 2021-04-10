@@ -109,6 +109,17 @@ Then you can run the algorithm, :func:`mmmg` for instance,
 where the list :code:`[data_adeq, prior]` means that the two objective functions
 are summed. The output `result` is an instance of :class:`OptimizeResult`.
 
+.. note::
+
+   :class:`BaseObjective` can be summed returning a :class:`MixedObjective` that
+   behave like a list with additional functionalities. The above is equivalent
+   to
+
+   .. code-block:: python
+
+      fun = data_adeq + prior
+      result = mmmg(fun, init, max_iter=200)
+
 Two algorithms are proposed :
 
 - :func:`mmcg` that implements a Polak-Ribière Conjugate Gradient.
@@ -118,7 +129,5 @@ Two algorithms are proposed :
 Both algorithms have close form formula for the 1D or 2D step by
 Majorization-Minimization Quadratic.
 
-.. note::
-
-   In addition a Linear Conjugate Gradient :func:`lcg` is implemented for
-   quadratic objective.
+In addition a Linear Conjugate Gradient :func:`lcg` is implemented for quadratic
+objective.

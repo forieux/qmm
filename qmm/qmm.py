@@ -42,7 +42,7 @@ class OptimizeResult(dict):
     """Represents the optimization result.
 
     x: array
-        The solution of the optimization, with same shape than `init`.
+        The solution of the optimization, with same shape than `x0`.
     success: bool
         Whether or not the optimizer exited successfully.
     status: int
@@ -114,7 +114,7 @@ class OptimizeResult(dict):
 
 def mmmg(
     objv_list: Sequence["BaseObjective"],
-    init: array,
+    x0: array,
     tol: float = 1e-4,
     max_iter: int = 500,
     callback: Callable[[OptimizeResult], None] = None,
@@ -131,11 +131,11 @@ def mmmg(
     objv_list : list of `BaseObjective`
         A list of :class:`BaseObjective` objects that each represent a `μ ψ(V·x - ω)`.
         The objectives are implicitly summed.
-    init : array
+    x0 : array
         The initial point.
     tol : float, optional
         The stopping tolerance. The algorithm is stopped when the gradient norm
-        is inferior to `init.size * tol`.
+        is inferior to `x0.size * tol`.
     max_iter : int, optional
         The maximum number of iterations.
     callback : callable, optional
@@ -162,14 +162,14 @@ def mmmg(
         previous_flag.append(objv.calc_fun)
         objv.calc_fun = calc_fun
 
-    res["x"] = init.copy().reshape((-1, 1))
+    res["x"] = x0.copy().reshape((-1, 1))
 
     # The first previous moves are initialized with 0 array. Consequently, the
     # first iterations implementation can be improved, at the cost of if
     # statement.
     move = np.zeros_like(res["x"])
     op_directions = [
-        np.tile(_vect(objv.operator, move, init.shape), 2) for objv in objv_list
+        np.tile(_vect(objv.operator, move, x0.shape), 2) for objv in objv_list
     ]
     step = np.ones((2, 1))
 
@@ -177,13 +177,13 @@ def mmmg(
 
     for iteration in range(max_iter):
         # Vectorized gradient
-        grad = _gradient(objv_list, res["x"], init.shape)
+        grad = _gradient(objv_list, res["x"], x0.shape)
         res["grad_norm"].append(la.norm(grad))
-        res["jac"] = grad.reshape(init.shape)
+        res["jac"] = grad.reshape(x0.shape)
         res["objv_val"].append(_lastgv(objv_list))
 
         # Stopping test
-        if res["grad_norm"][-1] < init.size * tol:
+        if res["grad_norm"][-1] < x0.size * tol:
             res["success"] = True
             res["status"] = 0
             break
@@ -193,12 +193,12 @@ def mmmg(
 
         # Step by Majorize-Minimize
         op_directions = [
-            np.c_[_vect(objv.operator, grad, init.shape), i_op_dir @ step]
+            np.c_[_vect(objv.operator, grad, x0.shape), i_op_dir @ step]
             for objv, i_op_dir in zip(objv_list, op_directions)
         ]
         step = -la.pinv(
             sum(
-                objv.norm_mat_major(i_op_dir, res["x"].reshape(init.shape))
+                objv.norm_mat_major(i_op_dir, res["x"].reshape(x0.shape))
                 for objv, i_op_dir in zip(objv_list, op_directions)
             )
         ) @ (directions.T @ grad)
@@ -219,7 +219,7 @@ def mmmg(
         res["success"] = False
         res["status"] = 1
         res["message"] = "Maximum number of iteration reached"
-    res["x"] = res["x"].reshape(init.shape)
+    res["x"] = res["x"].reshape(x0.shape)
     res["njev"] = iteration + 1
     res["nit"] = iteration + 1
     res["time"] = list(np.asarray(res.time) - res.time[0])
@@ -232,7 +232,7 @@ def mmmg(
 
 def mmcg(
     objv_list: Sequence["BaseObjective"],
-    init: array,
+    x0: array,
     precond: Callable[[array], array] = None,
     tol: float = 1e-4,
     max_iter: int = 500,
@@ -250,14 +250,14 @@ def mmcg(
     objv_list : list of `BaseObjective`
         A list of :class:`BaseObjective` objects that each represent a `μ ψ(V·x - ω)`.
         The objectives are implicitly summed.
-    init : ndarray
+    x0 : ndarray
         The initial point.
     precond : callable, optional
         A callable that must implement a preconditioner, that is `M⁻¹·x`. Must
         be a callable with a unique input parameter `x` and unique output.
     tol : float, optional
         The stopping tolerance. The algorithm is stopped when the gradient norm
-        is inferior to `init.size * tol`.
+        is inferior to `x0.size * tol`.
     max_iter : int, optional
         The maximum number of iterations.
     callback : callable, optional
@@ -284,10 +284,10 @@ def mmcg(
         previous_flag.append(objv.calc_fun)
         objv.calc_fun = calc_fun
 
-    res["x"] = init.copy().reshape((-1, 1))
+    res["x"] = x0.copy().reshape((-1, 1))
 
-    residual = -_gradient(objv_list, res["x"], init.shape)
-    sec = _vect(precond, residual, init.shape)
+    residual = -_gradient(objv_list, res["x"], x0.shape)
+    sec = _vect(precond, residual, x0.shape)
     direction = sec
     delta = residual.T @ direction
 
@@ -296,17 +296,15 @@ def mmcg(
     for iteration in range(max_iter):
         # Stop test
         res["grad_norm"].append(la.norm(residual))
-        if res["grad_norm"][-1] < init.size * tol:
+        if res["grad_norm"][-1] < x0.size * tol:
             break
 
         # update
-        op_direction = [
-            _vect(objv.operator, direction, init.shape) for objv in objv_list
-        ]
+        op_direction = [_vect(objv.operator, direction, x0.shape) for objv in objv_list]
 
         step = direction.T @ residual
         step = step / sum(
-            objv.norm_mat_major(i_op_dir, res["x"].reshape(init.shape))
+            objv.norm_mat_major(i_op_dir, res["x"].reshape(x0.shape))
             for objv, i_op_dir in zip(objv_list, op_direction)
         )
 
@@ -316,14 +314,14 @@ def mmcg(
         res["time"].append(time.time())
 
         # Gradient
-        residual = -_gradient(objv_list, res["x"], init.shape)
-        res["jac"] = -residual.reshape(init.shape)
+        residual = -_gradient(objv_list, res["x"], x0.shape)
+        res["jac"] = -residual.reshape(x0.shape)
         res["objv_val"].append(_lastgv(objv_list))
 
         # Conjugate direction. No reset is done, see Shewchuck.
         delta_old = delta
         delta_mid = residual.T @ sec
-        sec = _vect(precond, residual, init.shape)
+        sec = _vect(precond, residual, x0.shape)
         delta = residual.T @ sec
         if (delta - delta_mid) / delta_old >= 0:
             direction = sec + (delta - delta_mid) / delta_old * direction
@@ -339,7 +337,7 @@ def mmcg(
         res["success"] = False
         res["status"] = 1
         res["message"] = "Maximum number of iteration reached"
-    res["x"] = res["x"].reshape(init.shape)
+    res["x"] = res["x"].reshape(x0.shape)
     res["njev"] = iteration + 1
     res["nit"] = iteration + 1
     res["time"] = list(np.asarray(res.time) - res.time[0])
@@ -352,7 +350,7 @@ def mmcg(
 
 def lcg(
     objv_list: Sequence["QuadObjective"],
-    init: array,
+    x0: array,
     precond: Callable[[array], array] = None,
     tol: float = 1e-4,
     max_iter: int = 500,
@@ -368,14 +366,14 @@ def lcg(
     objv_list : list of `QuadObjective`
         A list of :class:`QuadObjective` objects that each represent a `½ μ
         ||V·x - ω||²`. The objectives are implicitly summed.
-    init : ndarray
+    x0 : ndarray
         The initial point.
     precond : callable, optional
         A callable that must implement a preconditioner, that is `M⁻¹·x`. Must
         be a callable with a unique input parameter `x` and unique output.
     tol : float, optional
         The stopping tolerance. The algorithm is stopped when the gradient norm
-        is inferior to `init.size * tol`.
+        is inferior to `x0.size * tol`.
     max_iter : int, optional
         The maximum number of iterations.
     callback : callable, optional
@@ -399,16 +397,16 @@ def lcg(
         previous_flag.append(objv.calc_fun)
         objv.calc_fun = calc_fun
 
-    res["x"] = init.copy().reshape((-1, 1))
+    res["x"] = x0.copy().reshape((-1, 1))
 
     second_term = np.reshape(reduce(iadd, (c.data_t for c in objv_list)), (-1, 1))
 
     def hessian(arr):
-        return reduce(iadd, (_vect(c.hessp, arr, init.shape) for c in objv_list))
+        return reduce(iadd, (_vect(c.hessp, arr, x0.shape) for c in objv_list))
 
-    # Gradient at current init
+    # Gradient at current x0
     residual = second_term - hessian(res["x"])
-    direction = _vect(precond, residual, init.shape)
+    direction = _vect(precond, residual, x0.shape)
 
     res["grad_norm"].append(np.sum(np.real(np.conj(residual) * direction)))
     res["time"].append(time.time())
@@ -427,11 +425,11 @@ def lcg(
             residual = second_term - hessian(res["x"])
         else:
             residual -= step * hess_dir
-        res["jac"] = -residual.reshape(init.shape)
+        res["jac"] = -residual.reshape(x0.shape)
         res["objv_val"].append(_lastgv(objv_list))
 
         # Conjugate direction with preconditionner
-        secant = _vect(precond, residual, init.shape)
+        secant = _vect(precond, residual, x0.shape)
         res["grad_norm"].append(np.sum(np.real(np.conj(residual) * secant)))
         direction = secant + (res["grad_norm"][-1] / res["grad_norm"][-2]) * direction
 
@@ -439,7 +437,7 @@ def lcg(
         res["time"].append(time.time())
 
         # Stopping condition
-        if np.sqrt(res.grad_norm[-1]) < init.size * tol:
+        if np.sqrt(res.grad_norm[-1]) < x0.size * tol:
             res["success"] = True
             res["status"] = 0
             break
@@ -453,7 +451,7 @@ def lcg(
         res["success"] = False
         res["status"] = 1
         res["message"] = "Maximum number of iteration reached"
-    res["x"] = res.x.reshape(init.shape)
+    res["x"] = res.x.reshape(x0.shape)
     res["njev"] = iteration + 1
     res["nit"] = iteration + 1
     res["grad_norm"] = list(np.sqrt(res.grad_norm))
