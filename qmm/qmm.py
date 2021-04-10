@@ -756,15 +756,6 @@ class Objective(BaseObjective):
         obj = self.operator(point) - self.data
         return self.loss.gr_coeffs(obj)
 
-    # def quad(self, point):
-    #     Q = HalfQuadObjective(
-    #         self._operator,
-    #         self._adjoint,
-    #         data=self._data,
-    #         hyper=self.hyper,
-    #         metric=self.gr_coeffs(point),
-    #     )
-
     def __call__(self, point: array) -> float:
         return self.value(point)
 
@@ -905,7 +896,7 @@ class QuadObjective(Objective):
         return self.value(point)
 
 
-class HalfQuadObjective(QuadObjective):
+class GRQuadObjective(QuadObjective):
     def __init__(self, objective: Objective, point: array):
         super().__init__(
             operator=objective.operator,
