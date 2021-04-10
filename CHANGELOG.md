@@ -1,0 +1,33 @@
+# Changelog
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+- Add *MixedObjective* class, a list-like object that represent the sum of
+  objectives. Support "+" operartor.
+- *Objective* support "+" operator and returns a *MixedObjective*.
+- *BaseObjective* have *lastv* attribute that return the last computed objective
+  value.
+- *BaseObjective* have a *name* string attribute.
+- Add a CHANGELOG.md file.
+
+### Changed 
+- rename *lastv* to *lastgv*.
+- rename *calc_objv* to *calc_fun* 
+- rename *init* to *x0* like in scipy.
+
+## [0.4.0] - 2017-06-20
+
+### Added
+- add *lastv* attribut to *BaseObjv* that equals to the objective value after
+  last gradient evaluation.
+- add *calc_objv* flag to compute criterion value with low overhead.
+- add a *callback* function to optimization algorithms.
+
+### Changed 
+- rename *Criterion* to *Objective*.
+- rename *Potential* to *Loss*.
