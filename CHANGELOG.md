@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2021-04-10
+
 ### Added
 - Add *MixedObjective* class, a list-like object that represent the sum of
   objectives. Support "+" operartor.
@@ -20,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - rename *calc_objv* to *calc_fun* 
 - rename *init* to *x0* like in scipy.
 
-## [0.4.0] - 2017-06-20
+## [0.4.0] - 2021-04-07
 
 ### Added
 - add *lastv* attribut to *BaseObjv* that equals to the objective value after
