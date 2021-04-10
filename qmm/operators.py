@@ -109,13 +109,15 @@ class Conv2(Operator):
     imp_resp : array
         The impulse response.
     shape : tuple of int
-        The of the input image.
+        The shape of the input image.
     freq_resp : array
         The frequency response of shape `shape`.
 
     Notes
     -----
-    Use fft internally for fast computation.
+    Use fft internally for fast computation. The ``forward`` methods is
+    equivalent to convolve2d with "valid" boudary condition and ``adjoint`` is
+    equivalent to convolve2d with "full" boundary condition with zero filling.
 
     """
 
@@ -181,11 +183,9 @@ class Diff(Operator):
     def response(self, ndim):
         """Return the equivalent impulse response.
 
-        The result of `forward` method is equivalent with 'valid'
-        convolution with this impulse response.
-
-        The adjoint operator corresponds the 'full' convolution with the flipped
-        impulse response.
+        The result of `forward` method is equivalent with "valid" convolution
+        with this impulse response. The adjoint operator corresponds the "full"
+        convolution with the flipped impulse response.
 
         """
         imp_resp = np.zeros(ndim * [2])

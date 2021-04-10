@@ -57,8 +57,8 @@ list of ``ndarray`` and returns a unique ``ndarray``, of any shape, as output.
    The list of array allows mixed operators, like combination of forward models
    of different instruments, or multiple regularization.
 
-   Everything is internally vectorized. Therefore, the use of list of array implies
-   memory copies of arrays, however.
+   Everything is internally vectorized. Therefore, the use of list of array
+   implies memory copies of arrays.
 
 
 Losses

@@ -67,7 +67,7 @@ class OptimizeResult(dict):
 
     Notes
     -----
-    :class:`OptimizeResult` mime `OptimizeResult` of scipy for compatibility.
+    :class:`OptimizeResult` mimes `OptimizeResult` of scipy for compatibility.
 
     """
 
@@ -480,7 +480,7 @@ def _gradient(
 
 def _lastgv(objv_list: Sequence["BaseObjective"]):
     """Return the value of objective computed after gradient evaluation"""
-    return sum(getattr(objv, "lastgv") for objv in objv_list)
+    return sum(objv.lastgv for objv in objv_list)
 
 
 class BaseObjective(abc.ABC):
@@ -495,36 +495,20 @@ class BaseObjective(abc.ABC):
     ----------
     calc_fun: boolean
         If true, compute the objective value when gradient is computed and store
-        in `lastgv` attribute.
+        in `lastgv` attribute (False by default).
     name: str
         The name of the objective.
+    lastv: float
+        The last evaluated value of the objective (0 by default).
+    lastgv: float
+        The value of objective obtained during gradient computation (0 by default).
     """
 
     def __init__(self, name=""):
-        self._lastgv = -1
-        self._lastv = 0
+        self.lastgv = 0
+        self.lastv = 0
         self.calc_fun = False
         self.name = name
-
-    @property
-    def lastv(self):
-        """Return the value of objective after gradient computation."""
-        return self._lastv
-
-    @lastv.setter
-    def lastv(self, val):
-        """Return the value of objective after gradient computation."""
-        self._lastv = val
-
-    @property
-    def lastgv(self):
-        """Return the value of objective after gradient computation."""
-        return self._lastgv
-
-    @lastgv.setter
-    def lastgv(self, val):
-        """Return the value of objective after gradient computation."""
-        self._lastgv = val
 
     @abc.abstractmethod
     def operator(self, point: array) -> array:
@@ -1110,12 +1094,6 @@ class Square(Loss):
 
     def gradient(self, point: array) -> array:
         return point
-
-    def xigr(self, point: array) -> array:
-        return point ** 2 / 2
-
-    def xigy(self, point: array) -> array:
-        return point ** 2 / 2
 
     def __repr__(self):
         return """φ(u) = ½ u²
