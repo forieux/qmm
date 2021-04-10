@@ -129,8 +129,8 @@ def mmmg(
     Parameters
     ----------
     objv_list : list of `BaseObjective`
-        A list of :class:`BaseObjective` objects that each represent a `μ ψ(V·x - ω)`.
-        The objectives are implicitly summed.
+        A list of :class:`BaseObjective` objects that each represents
+        a `μ ψ(V·x - ω)`. The objectives are summed.
     x0 : array
         The initial point.
     tol : float, optional
@@ -248,8 +248,8 @@ def mmcg(
     Parameters
     ----------
     objv_list : list of `BaseObjective`
-        A list of :class:`BaseObjective` objects that each represent a `μ ψ(V·x - ω)`.
-        The objectives are implicitly summed.
+        A list of :class:`BaseObjective` objects that each represents
+        a `μ ψ(V·x - ω)`. The objectives are summed.
     x0 : ndarray
         The initial point.
     precond : callable, optional
@@ -364,8 +364,8 @@ def lcg(
     Parameters
     ----------
     objv_list : list of `QuadObjective`
-        A list of :class:`QuadObjective` objects that each represent a `½ μ
-        ||V·x - ω||²`. The objectives are implicitly summed.
+        A list of :class:`QuadObjective` objects that each represents
+        a `½ μ ||V·x - ω||²`. The objectives are summed.
     x0 : ndarray
         The initial point.
     precond : callable, optional
