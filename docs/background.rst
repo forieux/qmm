@@ -2,7 +2,7 @@
  Background
 ============
 
-MM-Q is Python toolbox to optimise objective functions like
+Q-MM is Python toolbox to optimise objective functions like
 
 .. math::
 
@@ -11,7 +11,7 @@ MM-Q is Python toolbox to optimise objective functions like
 where :math:`x` is the unknown of size :math:`N`, :math:`V_k` a matrix or linear
 operator of size :math:`M_k \times N`, :math:`\omega_k` a data fixed vector of
 size :math:`M_k`, :math:`\mu_k` a scalar hyperparameter, and :math:`\Psi_k(u) =
-\sum_i \varphi_k(u_i)`. MM-Q suppose that the scalar functions :math:`\varphi`
+\sum_i \varphi_k(u_i)`. Q-MM suppose that the scalar functions :math:`\varphi`
 are differentiable, even, coercive, :math:`\varphi(\sqrt{\cdot})` concave, and
 :math:`0 < \dot{\varphi}(u) / u < +\infty`.
 
