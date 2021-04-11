@@ -1,6 +1,5 @@
-============
- Background
-============
+Background
+==========
 
 Q-MM is Python toolbox to optimise objective functions like
 
@@ -61,7 +60,7 @@ are not coercive.
 
 
 Example
-=======
+-------
 
 A classical example is the resolution of an inverse problem with the
 minimization of
@@ -76,7 +75,7 @@ edge preserving function like Huber. The above objective is obtained with
 :math:`\omega_1 = y`, and :math:`\omega_2 = 0`.
 
 References
-==========
+----------
 
 The toolbox is funded on following papers. The papers [a]_, [b]_, and [c]_ are
 historical foundations. The implemented algorithms in the toolbox come from [d]_

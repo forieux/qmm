@@ -1,6 +1,5 @@
-==========
- Tutorial
-==========
+Tutorial
+========
 
 .. py:currentmodule:: qmm
 
@@ -23,7 +22,7 @@ where :math:`u` is a vector and :math:`\varphi` a scalar function.
 
 
 Operators
-=========
+---------
 
 The first thing to do is to implement the forward operator :math:`V` and adjoint
 :math:`V^T`. User is in charge of it. They are callable that could be Python
@@ -62,7 +61,7 @@ list of ``ndarray`` and returns a unique ``ndarray``, of any shape, as output.
 
 
 Losses
-======
+------
 
 The second step is to instantiate loss function :math:`\varphi`, :class:`Huber`
 for instance
@@ -76,7 +75,7 @@ Several losses are implemented, see :doc:`Background <background>` and the
 :doc:`qmm <qmm>` module.
 
 Objectives
-==========
+----------
 
 Then, a :class:`Objective` :math:`\mu \Psi(Vx)` named ``prior`` can be instanced
 
@@ -98,7 +97,7 @@ class :class:`QuadObjective` can be used
    default and the hyperparameter is set to 0.01.
 
 Optimization algorithms
-=======================
+-----------------------
 
 Then you can run the algorithm, :func:`mmmg` for instance,
 

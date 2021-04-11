@@ -1,6 +1,5 @@
-======================
- ``operators`` module
-======================
+``operators`` module
+=====================
 
 .. py:currentmodule:: qmm
 

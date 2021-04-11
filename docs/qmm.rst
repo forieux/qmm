@@ -1,13 +1,12 @@
-================
- ``qmm`` module
-================
+``qmm`` module
+==============
 
 .. py:currentmodule:: qmm
 
 .. _label-opt-alg:
 
 Optimization algorithms
-=======================
+-----------------------
 
 Three algorithms are implemented.
 
@@ -27,7 +26,7 @@ and use less memory.
 
 
 Optimization results
-====================
+--------------------
 
 The output are instance of :class:`OptimizeResult` that behave like
 `OptimizeResult
@@ -38,7 +37,7 @@ implemented to avoid dependency to scipy.
 .. autoclass:: OptimizeResult
 
 Objective classes
-=================
+-----------------
 
 Objective functions are defined from the abstract class :class:`BaseObjective`
 that have three abstract methods that must be implemented by the subclass. If
@@ -83,7 +82,7 @@ Main objective class
 
 
 Quadratic objective
--------------------
+~~~~~~~~~~~~~~~~~~~
 
 This class implements specific properties or methods associated to quadratic
 objective function.
@@ -108,7 +107,7 @@ objective function.
 
 
 Specific objective classes
---------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: Vmin
     :members:
@@ -118,7 +117,7 @@ Specific objective classes
     :members:
 
 Sum of objectives
------------------
+~~~~~~~~~~~~~~~~~
 
 The :class:`MixedObjective` is a convenient (not required) list-like class that
 represent the sum of :class:`BaseObjective`. Moreoever, :class:`BaseObjective`
@@ -148,7 +147,7 @@ algorithms<label-opt-alg>`.
 
 
 Losses classes
-==============
+--------------
 
 The class :class:`Loss` is an abstract base class and serve as parent class for
 all losses. At that time, the provided concrete loss functions are
@@ -172,42 +171,42 @@ all losses. At that time, the provided concrete loss functions are
 
 
 Square
-------
+~~~~~~
 
 .. autoclass:: Square
    :members:
 
 
 Huber
------
+~~~~~
 
 .. autoclass:: Huber
    :members:
 
 
 Hyperbolic or Pseudo-Huber
---------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: Hyperbolic
    :members:
 
 
 Hebert & Leahy
---------------
+~~~~~~~~~~~~~~
 
 .. autoclass:: HebertLeahy
    :members:
 
 
 Geman & Mc Clure
-----------------
+~~~~~~~~~~~~~~~~
 
 .. autoclass:: GemanMcClure
    :members:
 
 
 Truncated Square approximation
-------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: TruncSquareApprox
    :members:
