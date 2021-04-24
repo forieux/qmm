@@ -103,7 +103,7 @@ implement ``φ`` and ``Objective`` object that implements ``μ ψ(V·x - ω)``
 
 .. code:: python
 
-   from qmm import qmm
+   import qmm
    phi = qmm.Huber(delta=10)  # φ
 
    data_adeq = qmm.QuadObjective(H, Ht, HtH, data=data)  # ||y - H·x||²

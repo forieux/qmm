@@ -35,7 +35,38 @@ import numpy as np  # type: ignore
 import numpy.linalg as la  # type: ignore
 from numpy import ndarray as array
 
+__author__ = "François Orieux"
+__copyright__ = "2021, François Orieux <francois.orieux@universite-paris-saclay.fr>"
+__credits__ = ["François Orieux"]
+__license__ = "GPL-3.0-or-later"
+__version__ = "0.5.0"
+__maintainer__ = "François Orieux"
+__email__ = "francois.orieux@universite-paris-saclay.fr"
+__status__ = "beta"
+__url__ = "https://github.com/forieux/qmm/"
+
+
 ArrOrSeq = Union[array, Sequence[array]]
+
+__all__ = [
+    "OptimizeeResult",
+    "mmmg",
+    "mmcg",
+    "lcg",
+    "BaseObjective",
+    "MixedObjective",
+    "Objective",
+    "QuadObjective",
+    "Vmin",
+    "Vmax",
+    "Loss",
+    "Square",
+    "Huber",
+    "Hyperbolic",
+    "HebertLeahy",
+    "GemanMcClure",
+    "TruncSquareApprox",
+]
 
 
 class OptimizeResult(dict):
@@ -769,10 +800,12 @@ class QuadObjective(Objective):
     .. math::
         :nowrap:
 
+        \begin{equation}
         \begin{aligned}
         J(x) & = \frac{1}{2} \mu \|V x - \omega\|_B^2 \\
-             & = \frac{1}{2} \mu (V x - \omega)^tB(V x - \omega) \\
+             & = \frac{1}{2} \mu (V x - \omega)^tB(V x - \omega)
         \end{aligned}
+        \end{equation}
 
     data : array
         The `data` array, or the vectorized list of array given at init.

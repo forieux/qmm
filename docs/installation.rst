@@ -23,13 +23,7 @@ or user's home
 Finally, since the toolbox is essentially just one file, and if ``numpy`` is
 installed, you can also just copy the ``qmm`` directory from `Github realease
 <https://github.com/forieux/qmm/releases>`_ (or by cloning) where your code can
-find it and do
-
-.. code-block:: python
-
-   from qmm import qmm
-
-or copy the ``qmm.py`` file and do
+find it, or copy the ``qmm.py`` file and do, and do in both case
 
 .. code-block:: python
 

@@ -1,10 +1,9 @@
 Background
-==========
+----------
 
 Q-MM is Python toolbox to optimise objective functions like
 
 .. math::
-
    J(x) = \sum_k \mu_k \Psi_k(V_k x - \omega_k)
 
 where :math:`x` is the unknown of size :math:`N`, :math:`V_k` a matrix or linear
@@ -35,7 +34,7 @@ are not coercive.
        import numpy as np
        import matplotlib.pyplot as plt
 
-       from qmm import qmm
+       import qmm
 
        u = np.linspace(-10, 10, 1000)
 

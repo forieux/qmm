@@ -1,15 +1,3 @@
-.. toctree::
-   :maxdepth: 2
-   :caption: Table of contents
-   :hidden:
-
-   background
-   installation
-   tutorial
-   qmm
-   operators
-   extend
-
 ======================
  Q-MM's documentation
 ======================
@@ -74,6 +62,8 @@ a Matlab package that implements 3MG for image deconvolution on here `webpage
 License
 =======
 
+.. rubric:: License
+
 The project is licensed under the GPLv3 license. If you use the library, please
 cite it
 
@@ -86,3 +76,15 @@ cite it
     }
 
 and associated publications, see :doc:`Background <background>`.
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Table of contents
+   :hidden:
+
+   background
+   installation
+   tutorial
+   qmm
+   operators
+   extend

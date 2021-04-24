@@ -133,6 +133,11 @@ htmlhelp_basename = "Q-MMdoc"
 
 
 # -- Options for LaTeX output ------------------------------------------------
+latex_theme = "manual"
+
+# latex_toplevel_sectioning = "section"
+
+latex_logo = "qmm.png"
 
 latex_engine = "xelatex"
 

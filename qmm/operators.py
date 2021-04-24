@@ -129,7 +129,7 @@ class Conv2(Operator):
         ir : array
             The impulse response.
         shape : tuple of int
-            The of the input image.
+            The shape of the input image.
 
         """
 

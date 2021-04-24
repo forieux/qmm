@@ -68,7 +68,7 @@ for instance
 
 .. code-block:: python
 
-   from qmm.qmm import Huber, Objective, QuadObjective, mmmg
+   from qmm import Huber, Objective, QuadObjective, mmmg
    phi = Huber(delta=10)
 
 Several losses are implemented, see :doc:`Background <background>` and the
