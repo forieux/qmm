@@ -29,7 +29,8 @@ import itertools as it
 import time
 from functools import reduce
 from operator import iadd
-from typing import Callable, List, MutableSequence, Sequence, Tuple, Union
+from typing import (Callable, List, MutableSequence, Optional, Sequence, Tuple,
+                    Union)
 
 import numpy as np  # type: ignore
 import numpy.linalg as la  # type: ignore
@@ -148,7 +149,7 @@ def mmmg(
     x0: array,
     tol: float = 1e-4,
     max_iter: int = 500,
-    callback: Callable[[OptimizeResult], None] = None,
+    callback: Optional[Callable[[OptimizeResult], None]] = None,
     calc_fun: bool = False,
 ) -> OptimizeResult:
     r"""The Majorize-Minimize Memory Gradient (`3mg`) algorithm.
@@ -267,7 +268,7 @@ def mmcg(
     precond: Callable[[array], array] = None,
     tol: float = 1e-4,
     max_iter: int = 500,
-    callback: Callable[[OptimizeResult], None] = None,
+    callback: Optional[Callable[[OptimizeResult], None]] = None,
     calc_fun: bool = False,
 ) -> OptimizeResult:
     """The Majorize-Minimize Conjugate Gradient (MM-CG) algorithm.
@@ -863,10 +864,10 @@ class QuadObjective(Objective):
             self.hessp = lambda x: hyper * adjoint(self._metricp(operator(x)))
 
         if data is None:
-            self.data_t = 0
+            self.hdata_t = 0
             self.constant = 0  # c = μ ωᵀ·B·ω
         else:
-            self.data_t = hyper * self._metricp(adjoint(data))
+            self.hdata_t = hyper * self._metricp(adjoint(data))
             self.constant = hyper * np.sum(data * self._metricp(data))  # c = μ ωᵀ·B·ω
 
     def _metricp(self, arr: array) -> array:
@@ -900,7 +901,7 @@ class QuadObjective(Objective):
         Qx = self.hessp(point)
         if self.calc_fun:
             self.lastgv = self._value_hessp(point, Qx)
-        return self.hessp(point) - self.data_t
+        return self.hessp(point) - self.hdata_t
 
     def _value_hessp(self, point, hessp):
         """Return `J(x)` value given `q = Qx`
@@ -908,7 +909,7 @@ class QuadObjective(Objective):
         thanks to relation
 
         `J(x) =  ½ (xᵀ·q - 2 xᵀ·b + μ ωᵀ·B·ω)`"""
-        return (np.sum(point * (hessp - 2 * self.data_t)) + self.constant) / 2
+        return (np.sum(point * (hessp - 2 * self.hdata_t)) + self.constant) / 2
 
     def value_residual(self, point, residual):
         """Return `J(x)` value given `x` and `r = b - Qx`
@@ -916,7 +917,7 @@ class QuadObjective(Objective):
         thanks to relation
 
         `J(x) =  ½ (xᵀ·(-b - r) + μ ωᵀ·B·ω)`"""
-        return (np.sum(point * (-self.data_t - residual)) + self.constant) / 2
+        return (np.sum(point * (-self.hdata_t - residual)) + self.constant) / 2
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
         return vecs.T @ vecs
@@ -927,31 +928,6 @@ class QuadObjective(Objective):
 
     def __call__(self, point: array) -> float:
         return self.value(point)
-
-
-class GRQuadObjective(QuadObjective):
-    def __init__(self, objective: Objective, point: array):
-        super().__init__(
-            operator=objective.operator,
-            adjoint=objective._adjoint,
-            data=objective.data,
-            hyper=objective.hyper,
-            metric=objective.gr_coeffs(point),
-        )
-        self.objective = objective
-
-    def gradient(self, point: array) -> array:
-        """The gradient and value at given point
-
-        Return `∇ = μ (Q·x - b) = μ Vᵀ·B·(V·x - ω)`.
-        """
-        Vx = self.operator(point)
-        if self.calc_fun:
-            self.lastgv = self.hyper * np.sum(
-                self.objective.loss(Vx - self.objective.data)
-            )
-        Qx = self.hyper * self.adjoint(self._metricp(Vx))
-        return self.hessp(point) - self.data_t
 
 
 class Vmin(BaseObjective):
