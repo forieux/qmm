@@ -99,7 +99,7 @@ Example
 -------
 
 The ``demo.py`` presents an example on image deconvolution. The first step is to
-implement the operators ``V`` and the adjoint ``Vᵗ`` as callable (function or
+implement the operators ``V`` and the adjoint ``Vᵀ`` as callable (function or
 methods). The user is in charge of these operators and these callable must
 accept a unique Numpy array ``x`` and a unique return value (`partial
 <https://docs.python.org/fr/3.9/library/functools.html#functools.partial>`_ in
