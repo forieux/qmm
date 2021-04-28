@@ -6,17 +6,19 @@ Q-MM: A Python toolbox for Quadratic Majorization-Minimization
 Q-MM is a Python implementation of Majorize-Minimize Quadratic optimization
 algorithms. Algorithms provided here come from
 
-.. [1] C. Labat and J. Idier, “Convergence of Conjugate Gradient Methods with a
-   Closed-Form Stepsize Formula,” J Optim Theory Appl, p. 18, 2008.
+[1] C. Labat and J. Idier, “Convergence of Conjugate Gradient Methods with a
+Closed-Form Stepsize Formula,” J Optim Theory Appl, p. 18, 2008.
 
-.. [2] E. Chouzenoux, J. Idier, and S. Moussaoui, “A Majorize–Minimize Strategy
-   for Subspace Optimization Applied to Image Restoration,” IEEE Trans. on
-   Image Process., vol. 20, no. 6, pp. 1517–1528, Jun. 2011, doi:
-   10.1109/TIP.2010.2103083.
+and
+
+[2] E. Chouzenoux, J. Idier, and S. Moussaoui, “A Majorize–Minimize Strategy for
+Subspace Optimization Applied to Image Restoration,” IEEE Trans. on Image
+Process., vol. 20, no. 6, pp. 1517–1528, Jun. 2011, doi:
+10.1109/TIP.2010.2103083.
 
 See `documentation <https://qmm.readthedocs.io/en/stable/index.html>`_ for more
-background. If you use this code, please cite the references above. A citation
-of this toolbox will also be appreciated.
+background. If you use this code, please cite the references above and a
+citation of this toolbox will also be appreciated.
 
 ::
 
@@ -67,7 +69,7 @@ Features
   subspace nature of the algorithms. The ``mmcg`` algorithm use a Polak-Ribière
   formula.
 - Generic and flexible: there is no restriction on the number of regularizer,
-  their type, .., as well as for data adequacy.
+  their type, …, as well as for data adequacy.
 - Provided base class for objectives and losses allowing easy and fast
   implementation.
 - Just one file if you like quick and dirty installation, but available with
@@ -95,7 +97,9 @@ Example
 The ``demo.py`` presents an example on image deconvolution. The first step is to
 implement the operators ``V`` and the adjoint ``Vᵗ`` as callable (function or
 methods). The user is in charge of these operators and these callable must
-accept a unique parameter ``x`` and a unique return value. There is no
+accept a unique Numpy array ``x`` and a unique return value (`partial
+<https://docs.python.org/fr/3.9/library/functools.html#functools.partial>`_ in
+the ``functools`` module in the standard library is usefull here). There is no
 constraints on the shape, everything is vectorized internally.
 
 After import of ``qmm``, user must instantiate ``Potential`` objects that

@@ -43,22 +43,25 @@ functions or methods of objects.
        return array
 
 The forward parameter must accept a ``numpy.ndarray`` :math:`x`, of any shape,
-as unique parameter . The output of the forward operator must be
+as unique parameter. I recommend using `partial
+<https://docs.python.org/fr/3.9/library/functools.html#functools.partial>`_ in
+the ``functools`` of the standard library, or using object oriented programming.
+The output of the forward operator must be
 
 * a ``ndarray`` of any shape,
 * or a list of ``ndarray`` (of any shape also).
 
-Consequently, the adjoint operator must accept as parameter a ``ndarray`` or a
-list of ``ndarray`` and returns a unique ``ndarray``, of any shape, as output.
+Consequently, the adjoint operator must accept a ``ndarray`` or a list of
+``ndarray`` as parameter, and returns a unique ``ndarray``, of any shape, as
+output.
 
 .. note::
 
-   The list of array allows mixed operators, like combination of forward models
-   of different instruments, or multiple regularization.
+   The list of array allows mixed operators, like combination of data
+   observation models, or multiple regularization.
 
    Everything is internally vectorized. Therefore, the use of list of array
    implies memory copies of arrays.
-
 
 Losses
 ------

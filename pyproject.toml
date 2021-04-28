@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "qmm"
 version = "0.5.0"
-description = "The Quadratic Majorize-Minimize toolbox"
+description = "Quadratic Majorize-Minimize Python toolbox"
 authors = ["François Orieux <francois.orieux@universite-paris-saclay.fr>", "Ralph Abirizk  <ralph.abirizk@universite-paris-saclay.fr>"]
 maintainers = ["François Orieux <francois.orieux@universite-paris-saclay.fr>"]
 readme = "README.rst"
@@ -9,7 +9,7 @@ license = "GPL-3.0-or-later"
 homepage = "https://qmm.readthedocs.io/en/stable/"
 documentation = "https://qmm.readthedocs.io/en/stable/"
 repository = "https://github.com/forieux/qmm/"
-keywords = ["optimization", "MM", "surogate", "criterion"]
+keywords = ["optimization", "MM", "surogate", "criterion", "objective", "learning"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Topic :: Scientific/Engineering",
