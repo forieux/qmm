@@ -50,7 +50,7 @@ __url__ = "https://github.com/forieux/qmm/"
 ArrOrSeq = Union[array, Sequence[array]]
 
 __all__ = [
-    "OptimizeeResult",
+    "OptimizeResult",
     "mmmg",
     "mmcg",
     "lcg",
@@ -149,6 +149,7 @@ def mmmg(
     x0: array,
     tol: float = 1e-4,
     max_iter: int = 500,
+    precond: Optional[Callable[[array], array]] = None,
     callback: Optional[Callable[[OptimizeResult], None]] = None,
     calc_fun: bool = False,
 ) -> OptimizeResult:
@@ -170,6 +171,9 @@ def mmmg(
         is inferior to `x0.size * tol`.
     max_iter : int, optional
         The maximum number of iterations.
+    precond : callable, optional
+        A callable that must implement a preconditioner, that is `P·x`. Must
+        be a callable with a unique input parameter `x` and unique output.
     callback : callable, optional
         A function that receive the `OptimizeResult` at the end of each
         iteration.
@@ -188,6 +192,8 @@ def mmmg(
        Trans. on Image Process., vol. 20, no. 6, pp. 1517–1528, Jun. 2011, doi:
        10.1109/TIP.2010.2103083.
     """
+    if precond is None:
+        precond = lambda x: x
     res = OptimizeResult()
     previous_flag = []
     for objv in objv_list:
@@ -221,11 +227,12 @@ def mmmg(
             break
 
         # Memory gradient directions
-        directions = np.c_[-grad, move]
+        new_dir = _vect(precond, grad, x0.shape)
+        directions = np.c_[-new_dir, move]
 
         # Step by Majorize-Minimize
         op_directions = [
-            np.c_[_vect(objv.operator, grad, x0.shape), i_op_dir @ step]
+            np.c_[_vect(objv.operator, new_dir, x0.shape), i_op_dir @ step]
             for objv, i_op_dir in zip(objv_list, op_directions)
         ]
         step = -la.pinv(
@@ -265,9 +272,9 @@ def mmmg(
 def mmcg(
     objv_list: Sequence["BaseObjective"],
     x0: array,
-    precond: Callable[[array], array] = None,
     tol: float = 1e-4,
     max_iter: int = 500,
+    precond: Optional[Callable[[array], array]] = None,
     callback: Optional[Callable[[OptimizeResult], None]] = None,
     calc_fun: bool = False,
 ) -> OptimizeResult:
@@ -284,14 +291,14 @@ def mmcg(
         a `μ ψ(V·x - ω)`. The objectives are summed.
     x0 : ndarray
         The initial point.
-    precond : callable, optional
-        A callable that must implement a preconditioner, that is `M⁻¹·x`. Must
-        be a callable with a unique input parameter `x` and unique output.
     tol : float, optional
         The stopping tolerance. The algorithm is stopped when the gradient norm
         is inferior to `x0.size * tol`.
     max_iter : int, optional
         The maximum number of iterations.
+    precond : callable, optional
+        A callable that must implement a preconditioner, that is `P·x`. Must
+        be a callable with a unique input parameter `x` and unique output.
     callback : callable, optional
         A function that receive the `OptimizeResult` at the end of each
         iteration.
@@ -383,10 +390,10 @@ def mmcg(
 def lcg(
     objv_list: Sequence["QuadObjective"],
     x0: array,
-    precond: Callable[[array], array] = None,
     tol: float = 1e-4,
     max_iter: int = 500,
-    callback: Callable[[OptimizeResult], None] = None,
+    precond: Optional[Callable[[array], array]] = None,
+    callback: Optional[Callable[[OptimizeResult], None]] = None,
     calc_fun: bool = False,
 ) -> OptimizeResult:
     """Linear Conjugate Gradient (CG) algorithm.
@@ -401,7 +408,7 @@ def lcg(
     x0 : ndarray
         The initial point.
     precond : callable, optional
-        A callable that must implement a preconditioner, that is `M⁻¹·x`. Must
+        A callable that must implement a preconditioner, that is `P·x`. Must
         be a callable with a unique input parameter `x` and unique output.
     tol : float, optional
         The stopping tolerance. The algorithm is stopped when the gradient norm
@@ -431,7 +438,7 @@ def lcg(
 
     res["x"] = x0.copy().reshape((-1, 1))
 
-    second_term = np.reshape(reduce(iadd, (c.data_t for c in objv_list)), (-1, 1))
+    second_term = np.reshape(reduce(iadd, (c.hdata_t for c in objv_list)), (-1, 1))
 
     def hessian(arr):
         return reduce(iadd, (_vect(c.hessp, arr, x0.shape) for c in objv_list))
@@ -991,7 +998,7 @@ class Vmax(BaseObjective):
         The hyperparameter value `μ`.
     """
 
-    def __init__(self, vmax: float, hyper: float):
+    def __init__(self, vmax: float, hyper: float, name: str = ""):
         """A maximum value objective function
 
         Return `J(x) = ½ μ ||P_[M, +∞[(x) - M||²`.

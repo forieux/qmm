@@ -107,7 +107,7 @@ the ``functools`` module in the standard library is usefull here). There is no
 constraints on the shape, everything is vectorized internally.
 
 After import of ``qmm``, user must instantiate ``Potential`` objects that
-implement ``φ`` and ``Objective`` object that implements ``μ ψ(V·x - ω)``
+implement ``φ`` and ``Objective`` objects that implement ``μ ψ(V·x - ω)``
 
 .. code:: python
 
@@ -158,8 +158,3 @@ License
 -------
 
 The project is licensed under the GPLv3 license.
-
-TODO
-----
-
-- Add preconditionner to mmmg.
