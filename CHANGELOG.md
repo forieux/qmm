@@ -7,8 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- Update demo and image illustration
-- Fix pyproject.toml for pylint
+- Refactor 'metric' array to 'invcov' as callable.
+- Update demo and image illustration.
+- Fix pyproject.toml for pylint.
 
 ## [0.7.0] - 2021-04-29
 

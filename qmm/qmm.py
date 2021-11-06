@@ -827,7 +827,7 @@ class QuadObjective(Objective):
         hessp: Callable[[array], array] = None,
         data: array = None,
         hyper: float = 1,
-        metric: array = None,
+        invcovp: Callable[[array], array] = None,
         name: str = "",
     ):
         """A quadratic objective `½ μ ||V·x - ω||²_B`
@@ -844,9 +844,9 @@ class QuadObjective(Objective):
             The data vector `ω`.
         hyper: float, optional
             The hyperparameter `μ`.
-        metric: array, optional
-            The **diagonal** of the metric matrix `B`. Equivalent to Identity if
-            not provided.
+        invcovp: callable, optional
+            A callable that apply the inverse covariance, or metric, `B`.
+            Equivalent to Identity if not provided.
         name: str
             The name of the objective.
 
@@ -860,24 +860,23 @@ class QuadObjective(Objective):
 
         """
         super().__init__(operator, adjoint, Square(), data=data, hyper=hyper, name=name)
-        self._metric = metric
+
+        if invcovp is None:
+            self.invcovp = lambda x: x
+        else:
+            self.invcovp = invcovp
 
         if hessp is not None:
             self.hessp = lambda x: hyper * hessp(x)
         else:
-            self.hessp = lambda x: hyper * adjoint(self._metricp(operator(x)))
+            self.hessp = lambda x: hyper * adjoint(self.invcovp(operator(x)))
 
         if data is None:
             self.hdata_t = 0
             self.constant = 0  # c = μ ωᵀ·B·ω
         else:
-            self.hdata_t = hyper * self._metricp(adjoint(data))
-            self.constant = hyper * np.sum(data * self._metricp(data))  # c = μ ωᵀ·B·ω
-
-    def _metricp(self, arr: array) -> array:
-        if self._metric is None:
-            return arr
-        return self._metric * arr
+            self.hdata_t = hyper * self.invcovp(adjoint(data))
+            self.constant = hyper * np.sum(data * self.invcovp(data))  # c = μ ωᵀ·B·ω
 
     def value(self, point: array) -> float:
         """The value of the objective function at given point
@@ -886,7 +885,7 @@ class QuadObjective(Objective):
         """
         self.lastv = (
             self.hyper
-            * np.sum(self._metricp((self.operator(point) - self.data) ** 2))
+            * np.sum(self.invcovp((self.operator(point) - self.data) ** 2))
             / 2
         )
         return self.lastv
