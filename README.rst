@@ -22,7 +22,8 @@ and
 
 See `documentation <https://qmm.readthedocs.io/en/stable/index.html>`_ for more
 background. If you use this code, please cite the references above and a
-citation of this toolbox will also be appreciated.
+citation of this toolbox will also be appreciated. You can also click ⭐ on the
+repo.
 
 ::
 

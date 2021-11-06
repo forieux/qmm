@@ -18,8 +18,8 @@ classifiers = [
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: Implementation :: CPython",
-    "Typing :: Typed",
-]
+    "Typing :: Typed", ]
+include = ["LICENSE"]
 
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/forieux/qmm/issues"
@@ -47,3 +47,9 @@ scipy = "^1.6.3"
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pylint.'MESSAGES CONTROL']
+max-parents = 10
+disable = [
+  "bad-continuation",
+  "line-too-long", ]

@@ -6,7 +6,9 @@ import time
 
 import matplotlib.pyplot as plt  # type: ignore
 import numpy as np  # type: ignore
+import numpy.linalg as la
 import scipy.misc  # type: ignore
+import scipy.optimize
 from scipy.signal import convolve2d
 
 from qmm import operators, qmm  # type: ignore
@@ -26,15 +28,45 @@ init = obs.adjoint(data)
 #%% Regularization
 diffr = operators.Diff(axis=0)
 diffc = operators.Diff(axis=1)
-loss = qmm.Huber(delta=10)
+loss = qmm.HebertLeahy(delta=10)
 
 #%% Objectives definition
 data_adeq = qmm.QuadObjective(obs.forward, obs.adjoint, obs.fwback, data=data)
-priorr_adeq = qmm.Objective(diffr.forward, diffr.adjoint, loss, hyper=0.01)
-priorc_adeq = qmm.Objective(diffc.forward, diffc.adjoint, loss, hyper=0.01)
+priorr_adeq = qmm.Objective(diffr.forward, diffr.adjoint, loss, hyper=0.5)
+priorc_adeq = qmm.Objective(diffc.forward, diffc.adjoint, loss, hyper=0.5)
 
-#%% Optimization algorithm
-res = qmm.mmmg([data_adeq, priorr_adeq, priorc_adeq], init, max_iter=300, tol=5e-5)
+#%% Optimization
+crit = data_adeq + priorr_adeq + priorc_adeq
+res = qmm.mmmg(crit, init, max_iter=300, tol=1e-7)
+
+#%% Scipy
+critv = qmm.vectorize(init.shape)(crit)
+jacv = qmm.vectorize(init.shape)(crit.gradient)
+
+# def critv(arr):
+#     return np.reshape(crit(arr.reshape(init.shape)), (-1,))
+#
+# def jacv(arr):
+#     return np.reshape(crit.gradient(arr.reshape(init.shape)), (-1,))
+
+
+def callback(xk):
+    scipy_res_norm.append(la.norm(jacv(xk)))
+    scipy_time.append(time.time())
+
+
+scipy_res_norm = [la.norm(jacv(init))]
+scipy_time = [time.time()]
+scipy_res = scipy.optimize.minimize(
+    critv,
+    x0=init,
+    method="CG",
+    jac=jacv,
+    options={"maxiter": 300, "gtol": 5e-5},
+    callback=callback,
+)
+
+scipy_time = np.asarray(scipy_time) - scipy_time[0]
 
 #%% Plot
 plt.figure(1)
@@ -44,20 +76,21 @@ plt.imshow(imag, vmin=imag.min(), vmax=imag.max())
 plt.axis([50, 250, 450, 250])
 plt.axis("off")
 plt.title("Original")
-plt.colorbar()
 plt.subplot(2, 2, 2)
 plt.imshow(data, vmin=imag.min(), vmax=imag.max())
 plt.axis([50, 250, 450, 250])
 plt.axis("off")
 plt.title("Data")
-plt.colorbar()
 plt.subplot(2, 2, 3)
 plt.imshow(res.x, vmin=imag.min(), vmax=imag.max())
 plt.axis([50, 250, 450, 250])
 plt.axis("off")
-plt.colorbar()
-plt.title("Restored")
+plt.title("Restored (Hebert & Leahy)")
 plt.subplot(2, 2, 4)
-plt.plot(res.grad_norm, ".-")
-plt.xlabel("Iteration")
-plt.title(f"Gradient norm (total time {res.time[-1]:.2f} sec., {res.nit} it.)")
+plt.semilogy(res.time, res.grad_norm, ".-", label="QMM")
+plt.semilogy(scipy_time, scipy_res_norm, ".-", label="Scipy 'CG'")
+plt.grid("on")
+plt.xlabel("Time [s]")
+plt.title(f"Gradient norm")
+plt.legend()
+plt.tight_layout()

@@ -21,11 +21,8 @@ This module implements Quadratic Majorize-Minimize optimization algorithms.
 
 """
 
-# pylint: disable=bad-continuation
-
 import abc
 import collections.abc
-import itertools as it
 import time
 from functools import reduce
 from operator import iadd
