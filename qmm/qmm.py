@@ -24,7 +24,7 @@ This module implements Quadratic Majorize-Minimize optimization algorithms.
 import abc
 import collections.abc
 import time
-from functools import reduce
+from functools import reduce, wraps
 from operator import iadd
 from typing import (Callable, List, MutableSequence, Optional, Sequence, Tuple,
                     Union)
@@ -64,6 +64,7 @@ __all__ = [
     "HebertLeahy",
     "GemanMcClure",
     "TruncSquareApprox",
+    "vectorize",
 ]
 
 
@@ -204,7 +205,7 @@ def mmmg(
     # statement.
     move = np.zeros_like(res["x"])
     op_directions = [
-        np.tile(_vect(objv.operator, move, x0.shape), 2) for objv in objv_list
+        np.tile(vect(objv.operator, move, x0.shape), 2) for objv in objv_list
     ]
     step = np.ones((2, 1))
 
@@ -224,12 +225,12 @@ def mmmg(
             break
 
         # Memory gradient directions
-        new_dir = _vect(precond, grad, x0.shape)
+        new_dir = vect(precond, grad, x0.shape)
         directions = np.c_[-new_dir, move]
 
         # Step by Majorize-Minimize
         op_directions = [
-            np.c_[_vect(objv.operator, new_dir, x0.shape), i_op_dir @ step]
+            np.c_[vect(objv.operator, new_dir, x0.shape), i_op_dir @ step]
             for objv, i_op_dir in zip(objv_list, op_directions)
         ]
         step = -la.pinv(
@@ -255,6 +256,7 @@ def mmmg(
         res["success"] = False
         res["status"] = 1
         res["message"] = "Maximum number of iteration reached"
+        del res["time"][-1]
     res["x"] = res["x"].reshape(x0.shape)
     res["njev"] = iteration + 1
     res["nit"] = iteration + 1
@@ -323,7 +325,7 @@ def mmcg(
     res["x"] = x0.copy().reshape((-1, 1))
 
     residual = -_gradient(objv_list, res["x"], x0.shape)
-    sec = _vect(precond, residual, x0.shape)
+    sec = vect(precond, residual, x0.shape)
     direction = sec
     delta = residual.T @ direction
 
@@ -336,7 +338,7 @@ def mmcg(
             break
 
         # update
-        op_direction = [_vect(objv.operator, direction, x0.shape) for objv in objv_list]
+        op_direction = [vect(objv.operator, direction, x0.shape) for objv in objv_list]
 
         step = direction.T @ residual
         step = step / sum(
@@ -357,7 +359,7 @@ def mmcg(
         # Conjugate direction. No reset is done, see Shewchuck.
         delta_old = delta
         delta_mid = residual.T @ sec
-        sec = _vect(precond, residual, x0.shape)
+        sec = vect(precond, residual, x0.shape)
         delta = residual.T @ sec
         if (delta - delta_mid) / delta_old >= 0:
             direction = sec + (delta - delta_mid) / delta_old * direction
@@ -438,11 +440,11 @@ def lcg(
     second_term = np.reshape(reduce(iadd, (c.hdata_t for c in objv_list)), (-1, 1))
 
     def hessian(arr):
-        return reduce(iadd, (_vect(c.hessp, arr, x0.shape) for c in objv_list))
+        return reduce(iadd, (vect(c.hessp, arr, x0.shape) for c in objv_list))
 
     # Gradient at current x0
     residual = second_term - hessian(res["x"])
-    direction = _vect(precond, residual, x0.shape)
+    direction = vect(precond, residual, x0.shape)
 
     res["grad_norm"].append(np.sum(np.real(np.conj(residual) * direction)))
     res["time"].append(time.time())
@@ -465,7 +467,7 @@ def lcg(
         res["objv_val"].append(_lastgv(objv_list))
 
         # Conjugate direction with preconditionner
-        secant = _vect(precond, residual, x0.shape)
+        secant = vect(precond, residual, x0.shape)
         res["grad_norm"].append(np.sum(np.real(np.conj(residual) * secant)))
         direction = secant + (res["grad_norm"][-1] / res["grad_norm"][-2]) * direction
 
@@ -500,9 +502,24 @@ def lcg(
 
 
 # Vectorized call
-def _vect(func: Callable[[array], array], point: array, shape: Tuple) -> array:
+def vect(func: Callable[[array], array], point: array, shape: Tuple) -> array:
     """Call func with point reshaped as shape and return vectorized output"""
     return np.reshape(func(np.reshape(point, shape)), (-1, 1))
+
+
+def vectorize(shape: Tuple) -> Callable:
+    """Return a decorator to vectorize input and output given `shape`"""
+
+    def decorator(func: Callable[[array], array]) -> Callable[[array], array]:
+        """A decorator to vectorize input and output"""
+
+        @wraps(func)
+        def wrapper(arr: array) -> array:
+            return np.reshape(func(np.reshape(arr, shape)), (-1,))
+
+        return wrapper
+
+    return decorator
 
 
 # Vectorized gradient
@@ -511,7 +528,7 @@ def _gradient(
 ) -> array:
     """Compute sum of gradient with vectorized parameters and return"""
     # The use of reduce and iadd do an more efficient numpy inplace sum
-    return reduce(iadd, (_vect(o.gradient, point, shape) for o in objv_list))
+    return reduce(iadd, (vect(o.gradient, point, shape) for o in objv_list))
 
 
 def _lastgv(objv_list: Sequence["BaseObjective"]):

@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Refactor '_vect' as 'vect' and add 'vectorize' decorator.
 - Refactor 'metric' array to 'invcov' as callable.
 - Update demo and image illustration.
 - Fix pyproject.toml for pylint.
