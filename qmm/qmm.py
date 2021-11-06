@@ -82,18 +82,18 @@ class OptimizeResult(dict):
         Description of the cause of the termination.
     nit: int
         Number of iterations performed by the optimizer.
-    grad_norm: list of float
-        The gradient norm at each iteration
     diff: list of float
         The value of ||x^(k+1) - x^(k)||² at each iteration
     time: list of float
         The time at each iteration, starting at 0, in seconds.
     fun: float
         The value of the objective function.
-    jac: array
-        The gradient of the objective function.
     objv_val: list of float
         The objective value at each iteration
+    jac: array
+        The gradient of the objective function.
+    grad_norm: list of float
+        The gradient norm at each iteration
 
     Notes
     -----
@@ -103,27 +103,26 @@ class OptimizeResult(dict):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.maxcv = 0
-        self.nfev = 0
-        self.nhev = 0
         self.jac = None
-        self.jav = None
-        self.hess = None
-        self.hess_inv = None
         self.success = False
         self.status = 99
-        self.message = "Not applicable"
+        self.message = "NA"
         self.njev = 0
         self.nit = 0
         self.grad_norm = []
         self.diff = []
         self.time = []
         self.objv_val = []
-        self.x = None
+        self.x = None  # pylint: disable=invalid-name
 
     @property
     def fun(self):
+        """Last objective value"""
         return self.objv_val[-1]
+
+    @fun.setter
+    def fun(self, value):
+        self.objv_val.append(value)
 
     def __getattr__(self, name):
         if name == "fun":
@@ -140,6 +139,17 @@ class OptimizeResult(dict):
             del self[name]
         else:
             raise AttributeError("No such attribute: " + name)
+
+    def __repr__(self):
+        if self.keys():
+            m = max(map(len, list(self.keys()))) + 1
+            return "\n".join(
+                [k.rjust(m) + ": " + str(v) for k, v in sorted(self.items())]
+            )
+        return self.__class__.__name__ + "()"
+
+    def __dir__(self):
+        return list(self.keys())
 
 
 def mmmg(
@@ -198,30 +208,30 @@ def mmmg(
         previous_flag.append(objv.calc_fun)
         objv.calc_fun = calc_fun
 
-    res["x"] = x0.copy().reshape((-1, 1))
+    res.x = x0.copy().reshape((-1, 1))
 
     # The first previous moves are initialized with 0 array. Consequently, the
     # first iterations implementation can be improved, at the cost of if
     # statement.
-    move = np.zeros_like(res["x"])
+    move = np.zeros_like(res.x)
     op_directions = [
         np.tile(vect(objv.operator, move, x0.shape), 2) for objv in objv_list
     ]
     step = np.ones((2, 1))
 
-    res["time"].append(time.time())
+    res.time.append(time.time())
 
     for iteration in range(max_iter):
         # Vectorized gradient
-        grad = _gradient(objv_list, res["x"], x0.shape)
-        res["grad_norm"].append(la.norm(grad))
-        res["jac"] = grad.reshape(x0.shape)
-        res["objv_val"].append(_lastgv(objv_list))
+        grad = _gradient(objv_list, res.x, x0.shape)
+        res.grad_norm.append(la.norm(grad))
+        res.jac = grad.reshape(x0.shape)
+        res.fun = lastgv(objv_list)
 
         # Stopping test
-        if res["grad_norm"][-1] < x0.size * tol:
-            res["success"] = True
-            res["status"] = 0
+        if res.grad_norm[-1] < x0.size * tol:
+            res.success = True
+            res.status = 0
             break
 
         # Memory gradient directions
@@ -235,32 +245,32 @@ def mmmg(
         ]
         step = -la.pinv(
             sum(
-                objv.norm_mat_major(i_op_dir, res["x"].reshape(x0.shape))
+                objv.norm_mat_major(i_op_dir, res.x.reshape(x0.shape))
                 for objv, i_op_dir in zip(objv_list, op_directions)
             )
         ) @ (directions.T @ grad)
         move = directions @ step
 
         # update
-        res["x"] += move
+        res.x += move
 
-        res["diff"].append(np.sum(move) ** 2)
-        res["time"].append(time.time())
+        res.diff.append(np.sum(move) ** 2)
+        res.time.append(time.time())
 
         if callback is not None:
             callback(res)
 
     if res.status == 0:
-        res["message"] = "Stopping conditions reached"
+        res.message = "Stopping conditions reached."
     else:
-        res["success"] = False
-        res["status"] = 1
-        res["message"] = "Maximum number of iteration reached"
-        del res["time"][-1]
-    res["x"] = res["x"].reshape(x0.shape)
-    res["njev"] = iteration + 1
-    res["nit"] = iteration + 1
-    res["time"] = list(np.asarray(res.time) - res.time[0])
+        res.success = False
+        res.status = 1
+        res.message = "Maximum number of iterations has been exceeded."
+        del res.time[-1]
+    res.x = np.reshape(res.x, x0.shape)
+    res.njev = iteration + 1
+    res.nit = iteration + 1
+    res.time = list(np.asarray(res.time) - res.time[0])
 
     for objv, flag in zip(objv_list, previous_flag):
         objv.calc_fun = flag
@@ -322,19 +332,19 @@ def mmcg(
         previous_flag.append(objv.calc_fun)
         objv.calc_fun = calc_fun
 
-    res["x"] = x0.copy().reshape((-1, 1))
+    res.x = x0.copy().reshape((-1, 1))
 
-    residual = -_gradient(objv_list, res["x"], x0.shape)
+    residual = -_gradient(objv_list, res.x, x0.shape)
     sec = vect(precond, residual, x0.shape)
     direction = sec
     delta = residual.T @ direction
 
-    res["time"].append(time.time())
+    res.time.append(time.time())
 
     for iteration in range(max_iter):
         # Stop test
-        res["grad_norm"].append(la.norm(residual))
-        if res["grad_norm"][-1] < x0.size * tol:
+        res.grad_norm.append(la.norm(residual))
+        if res.grad_norm[-1] < x0.size * tol:
             break
 
         # update
@@ -342,19 +352,19 @@ def mmcg(
 
         step = direction.T @ residual
         step = step / sum(
-            objv.norm_mat_major(i_op_dir, res["x"].reshape(x0.shape))
+            objv.norm_mat_major(i_op_dir, res.x.reshape(x0.shape))
             for objv, i_op_dir in zip(objv_list, op_direction)
         )
 
-        res["x"] += step * direction
+        res.x += step * direction
 
-        res["diff"].append(np.sum(step * direction) ** 2)
-        res["time"].append(time.time())
+        res.diff.append(np.sum(step * direction) ** 2)
+        res.time.append(time.time())
 
         # Gradient
-        residual = -_gradient(objv_list, res["x"], x0.shape)
-        res["jac"] = -residual.reshape(x0.shape)
-        res["objv_val"].append(_lastgv(objv_list))
+        residual = -_gradient(objv_list, res.x, x0.shape)
+        res.jac = -residual.reshape(x0.shape)
+        res.fun = lastgv(objv_list)
 
         # Conjugate direction. No reset is done, see Shewchuck.
         delta_old = delta
@@ -370,15 +380,15 @@ def mmcg(
             callback(res)
 
     if res.status == 0:
-        res["message"] = "Stopping conditions reached"
+        res.message = "Stopping conditions reached."
     else:
-        res["success"] = False
-        res["status"] = 1
-        res["message"] = "Maximum number of iteration reached"
-    res["x"] = res["x"].reshape(x0.shape)
-    res["njev"] = iteration + 1
-    res["nit"] = iteration + 1
-    res["time"] = list(np.asarray(res.time) - res.time[0])
+        res.success = False
+        res.status = 1
+        res.message = "Maximum number of iterations has been exceeded."
+    res.x = np.reshape(res.x, x0.shape)
+    res.njev = iteration + 1
+    res.nit = iteration + 1
+    res.time = list(np.asarray(res.time) - res.time[0])
 
     for objv, flag in zip(objv_list, previous_flag):
         objv.calc_fun = flag
@@ -435,7 +445,7 @@ def lcg(
         previous_flag.append(objv.calc_fun)
         objv.calc_fun = calc_fun
 
-    res["x"] = x0.copy().reshape((-1, 1))
+    res.x = x0.copy().reshape((-1, 1))
 
     second_term = np.reshape(reduce(iadd, (c.hdata_t for c in objv_list)), (-1, 1))
 
@@ -443,11 +453,11 @@ def lcg(
         return reduce(iadd, (vect(c.hessp, arr, x0.shape) for c in objv_list))
 
     # Gradient at current x0
-    residual = second_term - hessian(res["x"])
+    residual = second_term - hessian(res.x)
     direction = vect(precond, residual, x0.shape)
 
-    res["grad_norm"].append(np.sum(np.real(np.conj(residual) * direction)))
-    res["time"].append(time.time())
+    res.grad_norm.append(np.sum(np.real(np.conj(residual) * direction)))
+    res.time.append(time.time())
 
     for iteration in range(max_iter):
         hess_dir = hessian(direction)
@@ -456,44 +466,44 @@ def lcg(
         step = res.grad_norm[-1] / np.sum(np.real(np.conj(direction) * hess_dir))
 
         # Descent x^(i+1) = x^(i) + s*d
-        res["x"] += step * direction
+        res.x += step * direction
 
         # r^(i+1) = r^(i) - s * A·d
         if iteration % 50 == 0:
-            residual = second_term - hessian(res["x"])
+            residual = second_term - hessian(res.x)
         else:
             residual -= step * hess_dir
-        res["jac"] = -residual.reshape(x0.shape)
-        res["objv_val"].append(_lastgv(objv_list))
+        res.jac = -residual.reshape(x0.shape)
+        res.fun = lastgv(objv_list)
 
         # Conjugate direction with preconditionner
         secant = vect(precond, residual, x0.shape)
-        res["grad_norm"].append(np.sum(np.real(np.conj(residual) * secant)))
-        direction = secant + (res["grad_norm"][-1] / res["grad_norm"][-2]) * direction
+        res.grad_norm.append(np.sum(np.real(np.conj(residual) * secant)))
+        direction = secant + (res.grad_norm[-1] / res.grad_norm[-2]) * direction
 
-        res["diff"].append(np.sum(step * direction) ** 2)
-        res["time"].append(time.time())
+        res.diff.append(np.sum(step * direction) ** 2)
+        res.time.append(time.time())
 
         # Stopping condition
         if np.sqrt(res.grad_norm[-1]) < x0.size * tol:
-            res["success"] = True
-            res["status"] = 0
+            res.success = True
+            res.status = 0
             break
 
         if callback is not None:
             callback(res)
 
     if res.status == 0:
-        res["message"] = "Stopping conditions reached"
+        res.message = "Stopping conditions reached."
     else:
-        res["success"] = False
-        res["status"] = 1
-        res["message"] = "Maximum number of iteration reached"
-    res["x"] = res.x.reshape(x0.shape)
-    res["njev"] = iteration + 1
-    res["nit"] = iteration + 1
-    res["grad_norm"] = list(np.sqrt(res.grad_norm))
-    res["time"] = list(np.asarray(res.time) - res.time[0])
+        res.success = False
+        res.status = 1
+        res.message = "Maximum number of iterations has been exceeded."
+    res.x = np.reshape(res.x, x0.shape)
+    res.njev = iteration + 1
+    res.nit = iteration + 1
+    res.grad_norm = list(np.sqrt(res.grad_norm))
+    res.time = list(np.asarray(res.time) - res.time[0])
 
     for objv, flag in zip(objv_list, previous_flag):
         objv.calc_fun = flag
@@ -531,7 +541,7 @@ def _gradient(
     return reduce(iadd, (vect(o.gradient, point, shape) for o in objv_list))
 
 
-def _lastgv(objv_list: Sequence["BaseObjective"]):
+def lastgv(objv_list: Sequence["BaseObjective"]):
     """Return the value of objective computed after gradient evaluation"""
     return sum(objv.lastgv for objv in objv_list)
 
