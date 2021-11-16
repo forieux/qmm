@@ -808,7 +808,9 @@ class Objective(BaseObjective):
         return self.hyper * self.adjoint(self.loss.gradient(residual))
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
-        matrix = vecs.T @ (self.gr_coeffs(point).reshape((-1, 1)) * vecs)
+        matrix = np.real(
+            np.conj(vecs.T) @ (self.gr_coeffs(point).reshape((-1, 1)) * vecs)
+        )
         return float(matrix) if matrix.size == 1 else matrix
 
     def gr_coeffs(self, point: array) -> array:
@@ -950,7 +952,7 @@ class QuadObjective(Objective):
         return (np.sum(point * (-self.hdata_t - residual)) + self.constant) / 2
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
-        return vecs.T @ vecs
+        return np.real(np.conj(vecs.T) @ vecs)
 
     def gr_coeffs(self, point: array) -> array:
         """Return 1."""
@@ -1005,7 +1007,7 @@ class Vmin(BaseObjective):
         return self.hyper * np.where(idx, point - self.vmin, 0)
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
-        return vecs.T @ vecs
+        return np.real(np.conj(vecs.T) @ vecs)
 
 
 class Vmax(BaseObjective):
@@ -1053,7 +1055,7 @@ class Vmax(BaseObjective):
         return self.hyper * np.where(idx, point - self.vmax, 0)
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
-        return vecs.T @ vecs
+        return np.real(np.conj(vecs.T) @ vecs)
 
 
 class Loss(abc.ABC):
