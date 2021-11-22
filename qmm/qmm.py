@@ -914,7 +914,7 @@ class QuadObjective(Objective):
         """
         self.lastv = (
             self.hyper
-            * np.sum(self.invcovp((self.operator(point) - self.data) ** 2))
+            * np.sum(self.invcovp(np.abs(self.operator(point) - self.data) ** 2))
             / 2
         )
         return self.lastv
