@@ -62,7 +62,7 @@ penalties.
 
 
 Main objective class
---------------------
+~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: Objective
    :members:
