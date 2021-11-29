@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Clean OptimizeResult to remove unused fields
+- Fix step for real to complex operators 
+- Use abs() before square to avoid complex casting
+- Fix sectioning in documentation
+
 ## [0.8.0] - 2021-11-06
 
 ### Changed
