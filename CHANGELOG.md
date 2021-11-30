@@ -6,7 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2021-11-30
+
 ### Changed
+- Fix `fun` calc in linear CG (lcg)
+- Fix `fun` attr in OptimizeResult
 - Clean OptimizeResult to remove unused fields
 - Fix step for real to complex operators 
 - Use abs() before square to avoid complex casting
