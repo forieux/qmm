@@ -118,7 +118,10 @@ class OptimizeResult(dict):
     @property
     def fun(self):
         """Last objective value"""
-        return self.objv_val[-1]
+        if len(self.objv_val) != 0:
+            return self.objv_val[-1]
+        else:
+            return None
 
     @fun.setter
     def fun(self, value):
@@ -132,6 +135,8 @@ class OptimizeResult(dict):
         raise AttributeError("No such attribute: " + name)
 
     def __setattr__(self, name, value):
+        if name == "fun":
+            return self["objv_val"].append(value)
         self[name] = value
 
     def __delattr__(self, name):
