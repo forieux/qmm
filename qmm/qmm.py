@@ -445,17 +445,17 @@ def lcg(
     if precond is None:
         precond = lambda x: x
     res = OptimizeResult()
-    previous_flag = []
-    for objv in objv_list:
-        previous_flag.append(objv.calc_fun)
-        objv.calc_fun = calc_fun
 
     res.x = x0.copy().reshape((-1, 1))
 
     second_term = np.reshape(reduce(iadd, (c.hdata_t for c in objv_list)), (-1, 1))
+    constant = reduce(iadd, (c.constant for c in objv_list))
 
     def hessian(arr):
         return reduce(iadd, (vect(c.hessp, arr, x0.shape) for c in objv_list))
+
+    def value_residual(arr, residual):
+        return (np.sum(arr * (-second_term - residual)) + constant) / 2
 
     # Gradient at current x0
     residual = second_term - hessian(res.x)
@@ -465,10 +465,13 @@ def lcg(
     res.time.append(time.time())
 
     for iteration in range(max_iter):
-        hess_dir = hessian(direction)
+        hessp = hessian(direction)
+        if calc_fun:
+            res.fun = value_residual(res.x, residual)
+
         # s = rᵀr / dᵀAd
         # Optimal step
-        step = res.grad_norm[-1] / np.sum(np.real(np.conj(direction) * hess_dir))
+        step = res.grad_norm[-1] / np.sum(np.real(np.conj(direction) * hessp))
 
         # Descent x^(i+1) = x^(i) + s*d
         res.x += step * direction
@@ -477,9 +480,8 @@ def lcg(
         if iteration % 50 == 0:
             residual = second_term - hessian(res.x)
         else:
-            residual -= step * hess_dir
+            residual -= step * hessp
         res.jac = -residual.reshape(x0.shape)
-        res.fun = lastgv(objv_list)
 
         # Conjugate direction with preconditionner
         secant = vect(precond, residual, x0.shape)
@@ -509,9 +511,6 @@ def lcg(
     res.nit = iteration + 1
     res.grad_norm = list(np.sqrt(res.grad_norm))
     res.time = list(np.asarray(res.time) - res.time[0])
-
-    for objv, flag in zip(objv_list, previous_flag):
-        objv.calc_fun = flag
 
     return res
 
@@ -917,11 +916,8 @@ class QuadObjective(Objective):
 
         Return `½ μ ||V·x - ω||²_B`.
         """
-        self.lastv = (
-            self.hyper
-            * np.sum(self.invcovp(np.abs(self.operator(point) - self.data) ** 2))
-            / 2
-        )
+        diff = self.operator(point) - self.data
+        self.lastv = self.hyper * np.sum(diff * self.invcovp(diff)) / 2
         return self.lastv
 
     def gradient(self, point: array) -> array:
@@ -936,20 +932,23 @@ class QuadObjective(Objective):
         `J(x) = ½ (xᵀ·∇ - xᵀ·b + μ ωᵀ·B·ω)`
         """
         Qx = self.hessp(point)
-        if self.calc_fun:
-            self.lastgv = self._value_hessp(point, Qx)
+        self.lastgv = self.value_hessp(point, Qx)
         return self.hessp(point) - self.hdata_t
 
-    def _value_hessp(self, point, hessp):
-        """Return `J(x)` value given `q = Qx`
+    def value_hessp(self, point, hessp):
+        """Return `J(x)` value at low cost given `x` and `q = Qx`
 
         thanks to relation
 
         `J(x) =  ½ (xᵀ·q - 2 xᵀ·b + μ ωᵀ·B·ω)`"""
-        return (np.sum(point * (hessp - 2 * self.hdata_t)) + self.constant) / 2
+        return (
+            np.sum(np.reshape(point, (-1)) * np.reshape(hessp, (-1)))
+            - 2 * np.sum(np.reshape(point, (-1)) * np.reshape(self.hdata_t, (-1)))
+            + self.constant
+        ) / 2
 
     def value_residual(self, point, residual):
-        """Return `J(x)` value given `x` and `r = b - Qx`
+        """Return `J(x)` value at low cost given `x` and `r = b - Qx`
 
         thanks to relation
 
