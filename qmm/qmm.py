@@ -770,7 +770,7 @@ class Objective(BaseObjective):
         self.loss = loss
 
     @staticmethod
-    def _list2vec(arr_list: Sequence[array]) -> array:  #  pylint: disable=no-self-use
+    def _list2vec(arr_list: Sequence[array]) -> array:
         """Vectorize a list of array."""
         return np.vstack([arr.reshape((-1, 1)) for arr in arr_list])
 
@@ -845,12 +845,12 @@ class QuadObjective(Objective):
         \end{aligned}
         \end{equation}
 
-    data : array
-        The `data` array, or the vectorized list of array given at init.
     hyper : float
         The hyperparameter value `μ`.
-    data_t : array
-        The retroprojected data `B·Vᵀ·ω`.
+    ht_data : array
+        The retroprojected data `μ B·Vᵀ·ω`.
+    constant : float
+        The constant value `μ ωᵀ·B·ω`.
     """
 
     def __init__(  # pylint: disable=too-many-arguments
@@ -872,7 +872,7 @@ class QuadObjective(Objective):
         adjoint: callable
             A callable that compute `Vᵀ·e`.
         hessp: callable, optional
-            A callable that compute `Q·x` as `Q·x = VᵀV·x`
+            A callable that compute `Q·x` as `Q·x = Vᵀ·B·V·x`
         data: array or list of array, optional
             The data vector `ω`.
         hyper: float, optional
@@ -889,7 +889,7 @@ class QuadObjective(Objective):
         (Q·x - b)` where `b = B·Vᵀ·ω` instead of `∇ = μ Vᵀ·B·(V·x - ω)`. This is
         optional and in some case this is more efficient.
 
-        The variable `b = B·Vᵀ·ω` is computed at object creation.
+        The variable `b = B·Vᵀ·ω` is computed at object initialisation.
 
         """
         super().__init__(operator, adjoint, Square(), data=data, hyper=hyper, name=name)
@@ -899,16 +899,18 @@ class QuadObjective(Objective):
         else:
             self.invcovp = invcovp
 
+        self.hyper = hyper
+
         if hessp is not None:
             self.hessp = lambda x: hyper * hessp(x)
         else:
             self.hessp = lambda x: hyper * adjoint(self.invcovp(operator(x)))
 
         if data is None:
-            self.hdata_t = 0
+            self.ht_data = 0
             self.constant = 0  # c = μ ωᵀ·B·ω
         else:
-            self.hdata_t = hyper * self.invcovp(adjoint(data))
+            self.ht_data = hyper * self.invcovp(adjoint(data))
             self.constant = hyper * np.sum(data * self.invcovp(data))  # c = μ ωᵀ·B·ω
 
     def value(self, point: array) -> float:
@@ -933,27 +935,27 @@ class QuadObjective(Objective):
         """
         Qx = self.hessp(point)
         self.lastgv = self.value_hessp(point, Qx)
-        return self.hessp(point) - self.hdata_t
+        return self.hessp(point) - self.ht_data
 
     def value_hessp(self, point, hessp):
-        """Return `J(x)` value at low cost given `x` and `q = Qx`
+        """Return `J(x)` value at low cost given `x` and `q = Q·x`
 
         thanks to relation
 
         `J(x) =  ½ (xᵀ·q - 2 xᵀ·b + μ ωᵀ·B·ω)`"""
         return (
             np.sum(np.reshape(point, (-1)) * np.reshape(hessp, (-1)))
-            - 2 * np.sum(np.reshape(point, (-1)) * np.reshape(self.hdata_t, (-1)))
+            - 2 * np.sum(np.reshape(point, (-1)) * np.reshape(self.ht_data, (-1)))
             + self.constant
         ) / 2
 
     def value_residual(self, point, residual):
-        """Return `J(x)` value at low cost given `x` and `r = b - Qx`
+        """Return `J(x)` value at low cost given `x` and `r = b - Q·x`
 
         thanks to relation
 
         `J(x) =  ½ (xᵀ·(-b - r) + μ ωᵀ·B·ω)`"""
-        return (np.sum(point * (-self.hdata_t - residual)) + self.constant) / 2
+        return (np.sum(point * (-self.ht_data - residual)) + self.constant) / 2
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
         return np.real(np.conj(vecs.T) @ vecs)

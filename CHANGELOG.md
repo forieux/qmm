@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Docstring corrections.
+
 ## [0.9.0] - 2021-11-30
 
 ### Changed
