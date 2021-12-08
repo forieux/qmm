@@ -908,11 +908,19 @@ class QuadObjective(Objective):
             self.hessp = lambda x: hyper * adjoint(self.invcovp(operator(x)))
 
         if data is None:
-            self.ht_data = 0
-            self.constant = 0  # c = μ ωᵀ·B·ω
+            self.ht_data = 0  # μ
+            self.constant = 0
         else:
-            self.ht_data = hyper * self.invcovp(adjoint(data))
-            self.constant = hyper * np.sum(data * self.invcovp(data))  # c = μ ωᵀ·B·ω
+            # second term b = μ Vᵀ·B·ω
+            self.ht_data = hyper * adjoint(self.invcovp(data))
+            if isinstance(data, list):
+                # constant c = μ ωᵀ·B·ω
+                self.constant = hyper * sum(
+                    np.real(np.sum(d * Bd)) for d, Bd in zip(data, self.invcovp(data))
+                )
+            else:
+                # constant c = μ ωᵀ·B·ω
+                self.constant = hyper * np.real(np.sum(data * self.invcovp(data)))
 
     def value(self, point: array) -> float:
         """The value of the objective function at given point
