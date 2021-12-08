@@ -848,7 +848,7 @@ class QuadObjective(Objective):
     hyper : float
         The hyperparameter value `μ`.
     ht_data : array
-        The retroprojected data `μ B·Vᵀ·ω`.
+        The retroprojected data `μ Vᵀ·B·ω`.
     constant : float
         The constant value `μ ωᵀ·B·ω`.
     """
@@ -872,7 +872,7 @@ class QuadObjective(Objective):
         adjoint: callable
             A callable that compute `Vᵀ·e`.
         hessp: callable, optional
-            A callable that compute `Q·x` as `Q·x = Vᵀ·B·V·x`
+            A callable that compute `Q·x` as `Q·x = Vᵀ·B·V·x`.
         data: array or list of array, optional
             The data vector `ω`.
         hyper: float, optional
@@ -886,15 +886,16 @@ class QuadObjective(Objective):
         Notes
         -----
         The `hessp` (`Q`) callable is used for gradient computation as `∇ = μ
-        (Q·x - b)` where `b = B·Vᵀ·ω` instead of `∇ = μ Vᵀ·B·(V·x - ω)`. This is
+        (Q·x - b)` where `b = Vᵀ·B·ω` instead of `∇ = μ Vᵀ·B·(V·x - ω)`. This is
         optional and in some case this is more efficient.
 
-        The variable `b = B·Vᵀ·ω` is computed at object initialisation.
+        The variable `b = Vᵀ·B·ω` is computed at object initialisation.
 
         """
         super().__init__(operator, adjoint, Square(), data=data, hyper=hyper, name=name)
 
         if invcovp is None:
+            # Identity
             self.invcovp = lambda x: x
         else:
             self.invcovp = invcovp
