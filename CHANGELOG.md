@@ -6,7 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
 - Docstring corrections.
+- Inverse covariance fix.
+- Constant computation fix in QuadObjective.
 
 ## [0.9.0] - 2021-11-30
 
