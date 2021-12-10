@@ -18,9 +18,19 @@ Three algorithms are implemented.
 The 3MG algorithm is usually faster but use more memory. The MM-CG can be faster
 and use less memory.
 
+Majorize-Minimize Conjugate Gradient
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. autofunction:: mmcg
 
+Majorize-Minimize Memory Gradient
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. autofunction:: mmmg
+
+
+Linear Conjugate Gradient
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: lcg
 
