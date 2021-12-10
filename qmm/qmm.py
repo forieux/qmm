@@ -158,7 +158,7 @@ class OptimizeResult(dict):
 
 def mmmg(
     objv_list: Sequence["BaseObjective"],
-    x0: array,
+    x0: array,  # pylint: disable=invalid-name
     tol: float = 1e-4,
     max_iter: int = 500,
     precond: Optional[Callable[[array], array]] = None,
@@ -284,7 +284,7 @@ def mmmg(
 
 def mmcg(
     objv_list: Sequence["BaseObjective"],
-    x0: array,
+    x0: array,  # pylint: disable=invalid-name
     tol: float = 1e-4,
     max_iter: int = 500,
     precond: Optional[Callable[[array], array]] = None,
@@ -402,7 +402,7 @@ def mmcg(
 
 def lcg(
     objv_list: Sequence["QuadObjective"],
-    x0: array,
+    x0: array,  # pylint: disable=invalid-name
     tol: float = 1e-4,
     max_iter: int = 500,
     precond: Optional[Callable[[array], array]] = None,
