@@ -559,6 +559,43 @@ def lastgv(objv_list: Sequence["BaseObjective"]) -> float:
     return sum(objv.lastgv for objv in objv_list)
 
 
+# TODO: to complete
+class DataList:
+    """A wrapper for list of array feature."""
+
+    def __init__(
+        self,
+        operator: Callable[[array], Sequence[array]],
+        adjoint: Callable[[Sequence[array]], array],
+        data: List[array],
+    ):
+        self._operator = operator
+        self._adjoint = adjoint
+        self.shape = [arr.shape for arr in data]
+        self.idx = np.cumsum([0] + [arr.size for arr in data])
+        self.data = self.list2vec(data)
+
+    @staticmethod
+    def list2vec(arr_list: Sequence[array]) -> array:
+        """Vectorize a list of array."""
+        return np.vstack([arr.reshape((-1, 1)) for arr in arr_list])
+
+    def vec2list(self, arr: array) -> List[array]:
+        """De-vectorize to a list of array."""
+        return [
+            np.reshape(arr[self.idx[i] : self.idx[i + 1]], shape)
+            for i, shape in enumerate(self.shape)
+        ]
+
+    def operator(self, point: array) -> array:
+        """Return `Vx` as array."""
+        return self.list2vec(self._operator(point))
+
+    def adjoint(self, point: array) -> array:
+        """Return `Vᵀx` from array."""
+        return self._adjoint(self.vec2list(point))
+
+
 #%% \
 # Objectives
 
