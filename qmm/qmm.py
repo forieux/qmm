@@ -120,8 +120,7 @@ class OptimizeResult(dict):
         """Last objective value"""
         if len(self.objv_val) != 0:
             return self.objv_val[-1]
-        else:
-            return None
+        return None
 
     @fun.setter
     def fun(self, value):
@@ -136,7 +135,7 @@ class OptimizeResult(dict):
 
     def __setattr__(self, name, value):
         if name == "fun":
-            return self["objv_val"].append(value)
+            self["objv_val"].append(value)
         self[name] = value
 
     def __delattr__(self, name):
@@ -147,9 +146,9 @@ class OptimizeResult(dict):
 
     def __repr__(self):
         if self.keys():
-            m = max(map(len, list(self.keys()))) + 1
+            rjust = max(map(len, list(self.keys()))) + 1
             return "\n".join(
-                [k.rjust(m) + ": " + str(v) for k, v in sorted(self.items())]
+                [k.rjust(rjust) + ": " + str(v) for k, v in sorted(self.items())]
             )
         return self.__class__.__name__ + "()"
 
