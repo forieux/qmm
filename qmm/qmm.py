@@ -221,7 +221,7 @@ def mmmg(
     # statement.
     move = np.zeros_like(res.x)
     op_directions = [
-        np.tile(vect(objv.operator, move, x0.shape), 2) for objv in objv_list
+        np.tile(vect_call(objv.operator, move, x0.shape), 2) for objv in objv_list
     ]
     step = np.ones((2, 1))
 
@@ -241,12 +241,12 @@ def mmmg(
             break
 
         # Memory gradient directions
-        new_dir = vect(precond, grad, x0.shape)
+        new_dir = vect_call(precond, grad, x0.shape)
         directions = np.c_[-new_dir, move]
 
         # Step by Majorize-Minimize
         op_directions = [
-            np.c_[vect(objv.operator, new_dir, x0.shape), i_op_dir @ step]
+            np.c_[vect_call(objv.operator, new_dir, x0.shape), i_op_dir @ step]
             for objv, i_op_dir in zip(objv_list, op_directions)
         ]
         step = -la.pinv(
@@ -342,7 +342,7 @@ def mmcg(
     res.x = x0.copy().reshape((-1, 1))
 
     residual = -vectgradient(objv_list, res.x, x0.shape)
-    sec = vect(precond, residual, x0.shape)
+    sec = vect_call(precond, residual, x0.shape)
     direction = sec
     delta = residual.T @ direction
 
@@ -355,7 +355,9 @@ def mmcg(
             break
 
         # update
-        op_direction = [vect(objv.operator, direction, x0.shape) for objv in objv_list]
+        op_direction = [
+            vect_call(objv.operator, direction, x0.shape) for objv in objv_list
+        ]
 
         step = direction.T @ residual
         step = step / sum(
@@ -376,7 +378,7 @@ def mmcg(
         # Conjugate direction. No reset is done, see Shewchuck.
         delta_old = delta
         delta_mid = residual.T @ sec
-        sec = vect(precond, residual, x0.shape)
+        sec = vect_call(precond, residual, x0.shape)
         delta = residual.T @ sec
         if (delta - delta_mid) / delta_old >= 0:
             direction = sec + (delta - delta_mid) / delta_old * direction
@@ -455,14 +457,14 @@ def lcg(
     constant = reduce(iadd, (c.constant for c in objv_list))
 
     def hessian(arr):
-        return reduce(iadd, (vect(c.hessp, arr, x0.shape) for c in objv_list))
+        return reduce(iadd, (vect_call(c.hessp, arr, x0.shape) for c in objv_list))
 
     def value_residual(arr, residual):
         return (np.sum(arr * (-second_term - residual)) + constant) / 2
 
     # Gradient at current x0
     residual = second_term - hessian(res.x)
-    direction = vect(precond, residual, x0.shape)
+    direction = vect_call(precond, residual, x0.shape)
 
     res.grad_norm.append(np.sum(np.real(np.conj(residual) * direction)))
     res.time.append(time.time())
@@ -487,7 +489,7 @@ def lcg(
         res.jac = -residual.reshape(x0.shape)
 
         # Conjugate direction with preconditionner
-        secant = vect(precond, residual, x0.shape)
+        secant = vect_call(precond, residual, x0.shape)
         res.grad_norm.append(np.sum(np.real(np.conj(residual) * secant)))
         direction = secant + (res.grad_norm[-1] / res.grad_norm[-2]) * direction
 
@@ -518,12 +520,16 @@ def lcg(
     return res
 
 
+#%% \
+# Utilities
+
 # Vectorized call
-def vect(func: Callable[[array], array], point: array, shape: Tuple) -> array:
+def vect_call(func: Callable[[array], array], point: array, shape: Tuple) -> array:
     """Call func with point reshaped as shape and return vectorized output"""
     return np.reshape(func(np.reshape(point, shape)), (-1, 1))
 
 
+# Not used in the module, only provided for user convenience
 def vectorize(shape: Tuple) -> Callable:
     """Return a decorator to vectorize input and output given `shape`"""
 
@@ -543,14 +549,18 @@ def vectorize(shape: Tuple) -> Callable:
 def vectgradient(
     objv_list: Sequence["BaseObjective"], point: array, shape: Tuple
 ) -> array:
-    """Compute sum of gradient with vectorized parameters and return"""
-    # The use of reduce and iadd do an more efficient numpy inplace sum
-    return reduce(iadd, (vect(o.gradient, point, shape) for o in objv_list))
+    """Compute sum of gradient with vectorized parameters and return."""
+    # The use of reduce and iadd do a more efficient numpy inplace sum
+    return reduce(iadd, (vect_call(o.gradient, point, shape) for o in objv_list))
 
 
-def lastgv(objv_list: Sequence["BaseObjective"]):
+def lastgv(objv_list: Sequence["BaseObjective"]) -> float:
     """Return the value of objective computed after gradient evaluation"""
     return sum(objv.lastgv for objv in objv_list)
+
+
+#%% \
+# Objectives
 
 
 class BaseObjective(abc.ABC):
@@ -1082,6 +1092,10 @@ class Vmax(BaseObjective):
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
         return np.real(np.conj(vecs.T) @ vecs)
+
+
+#%% \
+# Objectives
 
 
 class Loss(abc.ABC):
