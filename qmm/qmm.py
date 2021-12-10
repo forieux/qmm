@@ -824,6 +824,14 @@ class Objective(BaseObjective):
         obj = self.operator(point) - self.data
         return self.loss.gr_coeffs(obj)
 
+    def gy_coeffs(self, point: array) -> array:
+        """The Geman & Yang coefficients at given point
+
+        Given `x` return `Vx - φ'(Vx - ω)`.
+        """
+        aux = self.operator(point)
+        return aux - self.loss.gradient(aux - self.data)
+
     def __call__(self, point: array) -> float:
         return self.value(point)
 
