@@ -165,9 +165,9 @@ def mmmg(
     callback: Optional[Callable[[OptimizeResult], None]] = None,
     calc_fun: bool = False,
 ) -> OptimizeResult:
-    r"""The Majorize-Minimize Memory Gradient (`3mg`) algorithm.
+    r"""The Majorize-Minimize Memory Gradient (`3MG`) algorithm.
 
-    The `mmmg` (`3mg`) algorithm is a subspace memory-gradient optimization
+    The `mmmg` (`3MG`) algorithm is a subspace memory-gradient optimization
     algorithm with an explicit step formula based on Majorize-Minimize Quadratic
     approach [2]_.
 
@@ -303,7 +303,7 @@ def mmcg(
     ----------
     objv_list : list of `BaseObjective`
         A list of :class:`BaseObjective` objects that each represents
-        a `μ ψ(V·x - ω)`. The objectives are summed.
+        a `μ ψ(Vx - ω)`. The objectives are summed.
     x0 : ndarray
         The initial point.
     tol : float, optional
@@ -312,8 +312,8 @@ def mmcg(
     max_iter : int, optional
         The maximum number of iterations.
     precond : callable, optional
-        A callable that must implement a preconditioner, that is `P·x`. Must
-        be a callable with a unique input parameter `x` and unique output.
+        A callable that must implement a preconditioner, that is `Px`. Must be a
+        callable with a unique input parameter `x` and unique output like `x`.
     callback : callable, optional
         A function that receive the `OptimizeResult` at the end of each
         iteration.
@@ -424,8 +424,8 @@ def lcg(
     x0 : ndarray
         The initial point.
     precond : callable, optional
-        A callable that must implement a preconditioner, that is `P·x`. Must
-        be a callable with a unique input parameter `x` and unique output.
+        A callable that must implement a preconditioner, that is `Px`. Must be a
+        callable with a unique input parameter `x` and unique output like `x`.
     tol : float, optional
         The stopping tolerance. The algorithm is stopped when the gradient norm
         is inferior to `x0.size * tol`.
@@ -724,14 +724,14 @@ class Objective(BaseObjective):
         hyper: float = 1,
         name: str = "",
     ):
-        """A objective function `μ ψ(V·x - ω)`.
+        """A objective function `μ ψ(Vx - ω)`.
 
         Parameters
         ----------
         operator: callable
-            A callable that compute the output `V·x`.
+            A callable that compute the output `Vx`.
         adjoint: callable
-            A callable that compute `Vᵀ·e`.
+            A callable that compute `Vᵀe`.
         loss: Loss
             The loss `φ`.
         data: array or list of array, optional
@@ -781,13 +781,13 @@ class Objective(BaseObjective):
         ]
 
     def operator(self, point: array) -> array:
-        """Return `V·x`."""
+        """Return `Vx`."""
         if hasattr(self, "_shape"):
             return self._list2vec(self._operator(point))
         return self._operator(point)
 
     def adjoint(self, point: array) -> array:
-        """Return `Vᵀ·x`."""
+        """Return `Vᵀx`."""
         if hasattr(self, "_shape"):
             return self._adjoint(self._vec2list(point))
         return self._adjoint(point)
@@ -795,7 +795,7 @@ class Objective(BaseObjective):
     def value(self, point: array) -> float:
         """The value of the objective function at given point
 
-        Return `μ ψ(V·x - ω)`.
+        Return `μ ψ(Vx - ω)`.
         """
         self.lastv = self.hyper * np.sum(self.loss(self.operator(point) - self.data))
         return self.lastv
@@ -803,7 +803,7 @@ class Objective(BaseObjective):
     def gradient(self, point: array) -> array:
         """The gradient and value at given point
 
-        Return `μ Vᵀ·φ'(V·x - ω)`.
+        Return `μ Vᵀφ'(Vx - ω)`.
         """
         residual = self.operator(point) - self.data
         if self.calc_fun:
@@ -819,7 +819,7 @@ class Objective(BaseObjective):
     def gr_coeffs(self, point: array) -> array:
         """The Geman & Reynolds coefficients at given point
 
-        Given `x` return `φ'(V·x - ω) / (V·x - ω)`
+        Given `x` return `φ'(Vx - ω) / (Vx - ω)`.
         """
         obj = self.operator(point) - self.data
         return self.loss.gr_coeffs(obj)
@@ -879,18 +879,18 @@ class QuadObjective(Objective):
         adjoint: callable
             A callable that compute `Vᵀe`.
         hessp: callable, optional
-            A callable that compute `Qx` as `Qx = Vᵀ·B·V·x`. Must take a
-            parameter like `operator` and return a parameter like `adjoint` (`x`
-            like in both case).
+            A callable that compute `Qx` as `Qx = VᵀBVx`. Must take a parameter
+            like `operator` and return a parameter like `adjoint` (`x`-like in
+            both case).
         data: array or list of array, optional
             The data vector `ω`.
         hyper: float, optional
             The hyperparameter `μ`.
         invcovp: callable, optional
             A callable, that take a parameter like `adjoint` and return a
-            parameter like `operator` (`ω` like parameter in both case), that
-            apply the inverse covariance, or metric, `B`. Equivalent to Identity
-            if `None`.
+            parameter like `operator` (`ω`-like in both case), that apply the
+            inverse covariance, or metric, `B`. Equivalent to Identity if
+            `None`.
         name: str, optional
             The name of the objective.
 
