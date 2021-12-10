@@ -592,7 +592,7 @@ class BaseObjective(abc.ABC):
 
     @abc.abstractmethod
     def operator(self, point: array) -> array:
-        """Compute the output of `V·x`."""
+        """Compute the output of `Vx`."""
         return NotImplemented
 
     @abc.abstractmethod
