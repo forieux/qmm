@@ -417,7 +417,7 @@ def lcg(
     ----------
     objv_list : list of `QuadObjective`
         A list of :class:`QuadObjective` objects that each represents
-        a `½ μ ||V·x - ω||²`. The objectives are summed.
+        a `½ μ ||Vx - ω||²_B`. The objectives are summed.
     x0 : ndarray
         The initial point.
     precond : callable, optional
@@ -738,7 +738,7 @@ class Objective(BaseObjective):
             The data vector `ω`.
         hyper: float, optional
             The hyperparameter `μ`.
-        name: str
+        name: str, optional
             The name of the objective.
 
         Notes
@@ -847,9 +847,9 @@ class QuadObjective(Objective):
     hyper : float
         The hyperparameter value `μ`.
     ht_data : array
-        The retroprojected data `μ Vᵀ·B·ω`.
+        The retroprojected data `μ VᵀBω`.
     constant : float
-        The constant value `μ ωᵀ·B·ω`.
+        The constant value `μ ωᵀBω`.
     """
 
     def __init__(  # pylint: disable=too-many-arguments
@@ -862,33 +862,37 @@ class QuadObjective(Objective):
         invcovp: Callable[[array], array] = None,
         name: str = "",
     ):
-        """A quadratic objective `½ μ ||V·x - ω||²_B`
+        """A quadratic objective `½ μ ||Vx - ω||²_B`
 
         Parameters
         ----------
         operator: callable
-            A callable that compute the output `V·x`.
+            A callable that compute the output `Vx`.
         adjoint: callable
-            A callable that compute `Vᵀ·e`.
+            A callable that compute `Vᵀe`.
         hessp: callable, optional
-            A callable that compute `Q·x` as `Q·x = Vᵀ·B·V·x`.
+            A callable that compute `Qx` as `Qx = Vᵀ·B·V·x`. Must take a
+            parameter like `operator` and return a parameter like `adjoint` (`x`
+            like in both case).
         data: array or list of array, optional
             The data vector `ω`.
         hyper: float, optional
             The hyperparameter `μ`.
         invcovp: callable, optional
-            A callable that apply the inverse covariance, or metric, `B`.
-            Equivalent to Identity if not provided.
-        name: str
+            A callable, that take a parameter like `adjoint` and return a
+            parameter like `operator` (`ω` like parameter in both case), that
+            apply the inverse covariance, or metric, `B`. Equivalent to Identity
+            if `None`.
+        name: str, optional
             The name of the objective.
 
         Notes
         -----
         The `hessp` (`Q`) callable is used for gradient computation as `∇ = μ
-        (Q·x - b)` where `b = Vᵀ·B·ω` instead of `∇ = μ Vᵀ·B·(V·x - ω)`. This is
-        optional and in some case this is more efficient.
+        (Qx - b)` where `b = VᵀBω` instead of `∇ = μ VᵀB(Vx - ω)`. This is
+        optional and in some case can be more efficient. Use it only in that case.
 
-        The variable `b = Vᵀ·B·ω` is computed at object initialisation.
+        The variable `b = VᵀBω` is computed at object initialisation.
 
         """
         super().__init__(operator, adjoint, Square(), data=data, hyper=hyper, name=name)
@@ -910,21 +914,21 @@ class QuadObjective(Objective):
             self.ht_data = 0  # μ
             self.constant = 0
         else:
-            # second term b = μ Vᵀ·B·ω
+            # second term b = μ VᵀBω
             self.ht_data = hyper * adjoint(self.invcovp(data))
             if isinstance(data, list):
-                # constant c = μ ωᵀ·B·ω
+                # constant c = μ ∑_i ωᵢᵀBᵢωᵢ
                 self.constant = hyper * sum(
                     np.real(np.sum(d * Bd)) for d, Bd in zip(data, self.invcovp(data))
                 )
             else:
-                # constant c = μ ωᵀ·B·ω
+                # constant c = μ ωᵀBω
                 self.constant = hyper * np.real(np.sum(data * self.invcovp(data)))
 
     def value(self, point: array) -> float:
         """The value of the objective function at given point
 
-        Return `½ μ ||V·x - ω||²_B`.
+        Return `½ μ ||Vx - ω||²_B`.
         """
         diff = self.operator(point) - self.data
         self.lastv = self.hyper * np.sum(diff * self.invcovp(diff)) / 2
@@ -933,24 +937,24 @@ class QuadObjective(Objective):
     def gradient(self, point: array) -> array:
         """The gradient and value at given point
 
-        Return `∇ = μ (Q·x - b) = μ Vᵀ·B·(V·x - ω)`.
+        Return `∇ = μ (Qx - b) = μ VᵀB(Vx - ω)`.
 
         Notes
         -----
         Objective value is computed with low overhead thanks to the relation
 
-        `J(x) = ½ (xᵀ·∇ - xᵀ·b + μ ωᵀ·B·ω)`
+        `J(x) = ½ (xᵀ∇ - xᵀb + μ ωᵀBω)`.
         """
         Qx = self.hessp(point)
         self.lastgv = self.value_hessp(point, Qx)
         return self.hessp(point) - self.ht_data
 
     def value_hessp(self, point, hessp):
-        """Return `J(x)` value at low cost given `x` and `q = Q·x`
+        """Return `J(x)` value at low cost given `x` and `q = Qx`
 
-        thanks to relation
+        thanks to the relation
 
-        `J(x) =  ½ (xᵀ·q - 2 xᵀ·b + μ ωᵀ·B·ω)`"""
+        `J(x) =  ½ (xᵀq - 2 xᵀb + μ ωᵀBω)`."""
         return (
             np.sum(np.reshape(point, (-1)) * np.reshape(hessp, (-1)))
             - 2 * np.sum(np.reshape(point, (-1)) * np.reshape(self.ht_data, (-1)))
@@ -958,11 +962,11 @@ class QuadObjective(Objective):
         ) / 2
 
     def value_residual(self, point, residual):
-        """Return `J(x)` value at low cost given `x` and `r = b - Q·x`
+        """Return `J(x)` value at low cost given `x` and `r = b - Qx`
 
-        thanks to relation
+        thanks to the relation
 
-        `J(x) =  ½ (xᵀ·(-b - r) + μ ωᵀ·B·ω)`"""
+        `J(x) =  ½ (xᵀ(-b - r) + μ ωᵀBω)`."""
         return (np.sum(point * (-self.ht_data - residual)) + self.constant) / 2
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
@@ -1117,6 +1121,10 @@ class Loss(abc.ABC):
         idx = point != 0
         aux[idx] = self.gradient(point[idx]) / point[idx]
         return aux
+
+    def gy_coeffs(self, point: array) -> array:
+        """The Geman & Yang `x - φ'(x)` coefficients at given point."""
+        return point - self.gradient(point)
 
     def __call__(self, point: array) -> array:
         """The value at given point."""
