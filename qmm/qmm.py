@@ -83,7 +83,7 @@ class OptimizeResult(dict):
     nit: int
         Number of iterations performed by the optimizer.
     diff: list of float
-        The value of ||x^(k+1) - x^(k)||² at each iteration
+        The value of ||x_{k+1} - x_{k}||² at each iteration
     time: list of float
         The time at each iteration, starting at 0, in seconds.
     fun: float
@@ -175,7 +175,7 @@ def mmmg(
     ----------
     objv_list : list of `BaseObjective`
         A list of :class:`BaseObjective` objects that each represents
-        a `μ ψ(V·x - ω)`. The objectives are summed.
+        a `μ ψ(Vx - ω)`. The objectives are summed.
     x0 : array
         The initial point.
     tol : float, optional
@@ -184,8 +184,8 @@ def mmmg(
     max_iter : int, optional
         The maximum number of iterations.
     precond : callable, optional
-        A callable that must implement a preconditioner, that is `P·x`. Must
-        be a callable with a unique input parameter `x` and unique output.
+        A callable that must implement a preconditioner, that is `Px`. Must be a
+        callable with a unique input parameter `x` and unique output like `x`.
     callback : callable, optional
         A function that receive the `OptimizeResult` at the end of each
         iteration.
@@ -203,6 +203,7 @@ def mmmg(
        Strategy for Subspace Optimization Applied to Image Restoration,” IEEE
        Trans. on Image Process., vol. 20, no. 6, pp. 1517–1528, Jun. 2011, doi:
        10.1109/TIP.2010.2103083.
+
     """
     if precond is None:
         precond = lambda x: x
@@ -212,6 +213,7 @@ def mmmg(
         previous_flag.append(objv.calc_fun)
         objv.calc_fun = calc_fun
 
+    # TODO: check that .copy() is necessary
     res.x = x0.copy().reshape((-1, 1))
 
     # The first previous moves are initialized with 0 array. Consequently, the
@@ -336,6 +338,7 @@ def mmcg(
         previous_flag.append(objv.calc_fun)
         objv.calc_fun = calc_fun
 
+    # TODO: check that .copy() is necessary
     res.x = x0.copy().reshape((-1, 1))
 
     residual = -vectgradient(objv_list, res.x, x0.shape)
@@ -445,6 +448,7 @@ def lcg(
         precond = lambda x: x
     res = OptimizeResult()
 
+    # TODO: check that .copy() is necessary
     res.x = x0.copy().reshape((-1, 1))
 
     second_term = np.reshape(reduce(iadd, (c.hdata_t for c in objv_list)), (-1, 1))
@@ -680,9 +684,7 @@ class MixedObjective(collections.abc.MutableSequence):
             self._objv_list.extend(objv._objv_list)
         else:
             raise TypeError(
-                "unsupported operand type(s) for +: 'MixedObjective' and {}".format(
-                    type(objv)
-                )
+                f"unsupported operand type(s) for +: 'MixedObjective' and {type(objv)}"
             )
         return self
 
@@ -691,9 +693,7 @@ class MixedObjective(collections.abc.MutableSequence):
             self._objv_list.append(objv)
         else:
             raise TypeError(
-                "unsupported operand type(s) for +: 'MixedObjective' and {}".format(
-                    type(objv)
-                )
+                f"unsupported operand type(s) for +: 'MixedObjective' and {type(objv)}"
             )
         return self
 
@@ -945,8 +945,8 @@ class QuadObjective(Objective):
 
         `J(x) = ½ (xᵀ∇ - xᵀb + μ ωᵀBω)`.
         """
-        Qx = self.hessp(point)
-        self.lastgv = self.value_hessp(point, Qx)
+        hessp = self.hessp(point)
+        self.lastgv = self.value_hessp(point, hessp)
         return self.hessp(point) - self.ht_data
 
     def value_hessp(self, point, hessp):
