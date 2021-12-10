@@ -227,7 +227,7 @@ def mmmg(
 
     for iteration in range(max_iter):
         # Vectorized gradient
-        grad = _gradient(objv_list, res.x, x0.shape)
+        grad = vectgradient(objv_list, res.x, x0.shape)
         res.grad_norm.append(la.norm(grad))
         res.jac = grad.reshape(x0.shape)
         res.fun = lastgv(objv_list)
@@ -338,7 +338,7 @@ def mmcg(
 
     res.x = x0.copy().reshape((-1, 1))
 
-    residual = -_gradient(objv_list, res.x, x0.shape)
+    residual = -vectgradient(objv_list, res.x, x0.shape)
     sec = vect(precond, residual, x0.shape)
     direction = sec
     delta = residual.T @ direction
@@ -366,7 +366,7 @@ def mmcg(
         res.time.append(time.time())
 
         # Gradient
-        residual = -_gradient(objv_list, res.x, x0.shape)
+        residual = -vectgradient(objv_list, res.x, x0.shape)
         res.jac = -residual.reshape(x0.shape)
         res.fun = lastgv(objv_list)
 
@@ -536,7 +536,7 @@ def vectorize(shape: Tuple) -> Callable:
 
 
 # Vectorized gradient
-def _gradient(
+def vectgradient(
     objv_list: Sequence["BaseObjective"], point: array, shape: Tuple
 ) -> array:
     """Compute sum of gradient with vectorized parameters and return"""
