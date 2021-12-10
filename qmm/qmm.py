@@ -790,54 +790,29 @@ class Objective(BaseObjective):
 
         Notes
         -----
-        For implementation issue, `operator` and `adjoint` are wrapped by
-        methods of same name.
-
         If `data` is a list of array, `operator` must return a similar list with
         arrays of same shape, and `adjoint` must accept a similar list also.
 
         In that case, however, and for algorithm purpose, everything is
-        internally stacked as a column vector and values are therefore copied.
-        This is not efficient but flexible. Users are encouraged to do the
-        vectorization themselves and not use the "list of array" feature.
+        internally stacked as a column vector and values are therefore copied,
+        by using a `DataList` object. This is not efficient but flexible. Users
+        are encouraged to do the vectorization themselves and not use the "list
+        of array" feature.
+
         """
         super().__init__(name=name)
-        self._operator = operator
-        self._adjoint = adjoint
-
         if isinstance(data, list):
-            self._shape = [arr.shape for arr in data]
-            self._idx = np.cumsum([0] + [arr.size for arr in data])
-            self.data = self._list2vec(data)
+            datalist = DataList(operator, adjoint, data)
+            self.operator = datalist.operator
+            self.adjoint = datalist.adjoint
+            self.data = datalist.data
         else:
+            self.operator = operator
+            self.adjoint = adjoint
             self.data = 0 if data is None else data
 
         self.hyper = hyper
         self.loss = loss
-
-    @staticmethod
-    def _list2vec(arr_list: Sequence[array]) -> array:
-        """Vectorize a list of array."""
-        return np.vstack([arr.reshape((-1, 1)) for arr in arr_list])
-
-    def _vec2list(self, arr: array) -> List[array]:
-        """De-vectorize to a list of array."""
-        return [
-            np.reshape(arr[self._idx[i] : self._idx[i + 1]], shape)
-            for i, shape in enumerate(self._shape)
-        ]
-
-    def operator(self, point: array) -> array:
-        """Return `Vx`."""
-        if hasattr(self, "_shape"):
-            return self._list2vec(self._operator(point))
-        return self._operator(point)
-
-    def adjoint(self, point: array) -> array:
-        """Return `Vᵀx`."""
-        if hasattr(self, "_shape"):
-            return self._adjoint(self._vec2list(point))
-        return self._adjoint(point)
 
     def value(self, point: array) -> float:
         """The value of the objective function at given point
@@ -966,8 +941,8 @@ class QuadObjective(Objective):
             self.hessp = lambda x: hyper * adjoint(self.invcovp(operator(x)))
 
         if data is None:
-            self.ht_data = 0  # μ
-            self.constant = 0
+            self.ht_data = 0  # b = μ VᵀBω
+            self.constant = 0  # c = μ ωᵀBω
         else:
             # second term b = μ VᵀBω
             self.ht_data = hyper * adjoint(self.invcovp(data))
