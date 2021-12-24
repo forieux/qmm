@@ -716,6 +716,7 @@ class Objective(BaseObjective):
 
     with :math:`\Psi(u) = \sum_i \varphi(u_i)`.
 
+    The instance attributs are:
 
     data : array
         The `data` array, or the vectorized list of array given at init.
@@ -861,6 +862,8 @@ class QuadObjective(Objective):
              & = \frac{1}{2} \mu (V x - \omega)^tB(V x - \omega)
         \end{aligned}
         \end{equation}
+
+    The instance attributs are:
 
     hyper : float
         The hyperparameter value `μ`.
@@ -1051,7 +1054,7 @@ class Vmax(BaseObjective):
 
     .. math::
 
-        J(x) = \frac{1}{2} \mu \|P_{[M, +\infty[}(x) - m\|_2^2.
+        J(x) = \frac{1}{2} \mu \|P_{[M, +\infty[}(x) - M\|_2^2.
 
     vmax : float
         The maximum value `M`.

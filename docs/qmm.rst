@@ -1,19 +1,23 @@
-``qmm`` module
-==============
+API references (``qmm`` module)
+===============================
 
 .. py:currentmodule:: qmm
 
 .. _label-opt-alg:
+
+All the functionalities are provided by the unique ``qmm`` module described
+below.
 
 Optimization algorithms
 -----------------------
 
 Three algorithms are implemented.
 
-1. :func:`mmcg` that use the Majorize-Minimize Conjugate Gradient (MM-CG) and
-2. :func:`mmmg` that use the Majorize Minimize Memory Gradient (3MG).
+1. :func:`mmcg` that use the Majorize-Minimize Conjugate Gradient (MM-CG),
+2. :func:`mmmg` that use the Majorize-Minimize Memory Gradient (3MG), and
 3. :func:`lcg` that use the Linear Conjugate Gradient (CG) for quadratic
-   objective only, with exact optimal step and conjugacy parameters.
+   objective :class:`QuadObjective` only, with exact optimal step and conjugacy
+   parameters.
 
 The 3MG algorithm is usually faster but use more memory. The MM-CG can be faster
 and use less memory.
