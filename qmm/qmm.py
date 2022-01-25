@@ -37,7 +37,7 @@ __author__ = "François Orieux"
 __copyright__ = "2021, François Orieux <francois.orieux@universite-paris-saclay.fr>"
 __credits__ = ["François Orieux"]
 __license__ = "GPL-3.0-or-later"
-__version__ = "0.10.0"
+__version__ = "0.11.0"
 __maintainer__ = "François Orieux"
 __email__ = "francois.orieux@universite-paris-saclay.fr"
 __status__ = "beta"
@@ -753,6 +753,7 @@ class Objective(BaseObjective):
 
     with :math:`\Psi(u) = \sum_i \varphi(u_i)`.
 
+    The instance attributs are:
 
     data : array
         The `data` array, or the vectorized list of array given at init.
@@ -874,6 +875,8 @@ class QuadObjective(Objective):
         \end{aligned}
         \end{equation}
 
+    The instance attributs are:
+
     hyper : float
         The hyperparameter value `μ`.
     ht_data : array
@@ -911,7 +914,7 @@ class QuadObjective(Objective):
         invcovp: callable, optional
             A callable, that take a parameter like `adjoint` and return a
             parameter like `operator` (`ω`-like in both case), that apply the
-            inverse covariance, or metric, `B`. Equivalent to Identity if
+            inverse covariance, or metric, `B=Σ⁻¹`. Equivalent to Identity if
             `None`.
         name: str, optional
             The name of the objective.
@@ -1063,7 +1066,7 @@ class Vmax(BaseObjective):
 
     .. math::
 
-        J(x) = \frac{1}{2} \mu \|P_{[M, +\infty[}(x) - m\|_2^2.
+        J(x) = \frac{1}{2} \mu \|P_{[M, +\infty[}(x) - M\|_2^2.
 
     vmax : float
         The maximum value `M`.
