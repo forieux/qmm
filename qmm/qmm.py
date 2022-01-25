@@ -902,7 +902,7 @@ class QuadObjective(Objective):
         invcovp: callable, optional
             A callable, that take a parameter like `adjoint` and return a
             parameter like `operator` (`ω`-like in both case), that apply the
-            inverse covariance, or metric, `B`. Equivalent to Identity if
+            inverse covariance, or metric, `B=Σ⁻¹`. Equivalent to Identity if
             `None`.
         name: str, optional
             The name of the objective.
