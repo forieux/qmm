@@ -560,19 +560,59 @@ def lastgv(objv_list: Sequence["BaseObjective"]) -> float:
 
 
 # TODO: to complete
-class DataList:
-    """A wrapper for list of array feature."""
+class Stacked:
+    """A wrapper for list of array feature.
+
+    Interface for operator callable like
+
+         |V1|   y1
+    Vx = |: | = :
+         |Vq|   yq
+
+    associated with a list of output y = [y1, ..., yq].
+
+    If output shapes of V_i are shape_i, the `Stacked` operator return a
+    vectorized array of shape (M, 1) = (sum(prod(shape_i) for all i), 1).
+
+    Two methods are implemented.
+
+    - `operator` takes an array `x` in shape (N, ..., P), apply the callable
+      `V`, and return a the concatenation of [y1, ..., yq] in a array `y` of
+      shape (M, 1).
+
+    - `adjoint` takes an array `y` in shape (M, 1), split in a list `[y1, ...
+      yq]` and apply the callable `Vᵀ`.
+
+    Attributes
+    ----------
+    - shapes : list of tuple
+      The list of output shape
+    - data: array
+      The vectorized data.
+
+    """
 
     def __init__(
         self,
         operator: Callable[[array], Sequence[array]],
-        adjoint: Callable[[Sequence[array]], array],
+        adjoint: Callable[Sequence[array], array],
         data: List[array],
     ):
+        """A wrapper for list of array feature.
+
+        Parameters
+        ----------
+        - operator: callable
+          Apply V
+        - adjoint: callable
+          Apply Vᵀ
+        - data: list of array
+          Output of each Vi.
+        """
         self._operator = operator
         self._adjoint = adjoint
-        self.shape = [arr.shape for arr in data]
-        self.idx = np.cumsum([0] + [arr.size for arr in data])
+        self._idx = np.cumsum([0] + [arr.size for arr in data])
+        self.shapes = [arr.shape for arr in data]
         self.data = self.list2vec(data)
 
     @staticmethod
@@ -583,7 +623,7 @@ class DataList:
     def vec2list(self, arr: array) -> List[array]:
         """De-vectorize to a list of array."""
         return [
-            np.reshape(arr[self.idx[i] : self.idx[i + 1]], shape)
+            np.reshape(arr[self._idx[i] : self._idx[i + 1]], shape)
             for i, shape in enumerate(self.shape)
         ]
 
@@ -593,13 +633,11 @@ class DataList:
 
     def adjoint(self, point: array) -> array:
         """Return `Vᵀx` from array."""
-        return self._adjoint(self.vec2list(point))
+        return self._adjoints(self.vec2list(point)
 
 
 #%% \
 # Objectives
-
-
 class BaseObjective(abc.ABC):
     r"""An abstract base class for objective function
 
@@ -796,9 +834,9 @@ class Objective(BaseObjective):
 
         In that case, however, and for algorithm purpose, everything is
         internally stacked as a column vector and values are therefore copied,
-        by using a `DataList` object. This is not efficient but flexible. Users
-        are encouraged to do the vectorization themselves and not use the "list
-        of array" feature.
+        by using a `Stacked` object. This is not efficient but flexible. Users
+        are encouraged to do the vectorization themselves and use this "list of
+        array" feature.
 
         """
         super().__init__(name=name)
@@ -952,7 +990,7 @@ class QuadObjective(Objective):
             if isinstance(data, list):
                 # constant c = μ ∑_i ωᵢᵀBᵢωᵢ
                 self.constant = hyper * sum(
-                    np.real(np.sum(d * Bd)) for d, Bd in zip(data, self.invcovp(data))
+                    np.real(np.sum(y * By)) for y, By in zip(data, self.invcovp(data))
                 )
             else:
                 # constant c = μ ωᵀBω
@@ -974,7 +1012,8 @@ class QuadObjective(Objective):
 
         Notes
         -----
-        Objective value is computed with low overhead thanks to the relation
+        Objective value is always computed with low overhead thanks to the
+        relation
 
         `J(x) = ½ (xᵀ∇ - xᵀb + μ ωᵀBω)`.
         """
@@ -1181,7 +1220,7 @@ class Square(Loss):
         super().__init__(inf=1, convex=True, coercive=True)
 
     def value(self, point: array) -> array:
-        return point ** 2 / 2
+        return point**2 / 2
 
     def gradient(self, point: array) -> array:
         return point
@@ -1212,7 +1251,7 @@ class Huber(Loss):
     def value(self, point: array) -> array:
         return np.where(
             np.abs(point) <= self.delta,
-            point ** 2 / 2,
+            point**2 / 2,
             self.delta * (np.abs(point) - self.delta / 2),
         )
 
@@ -1248,10 +1287,10 @@ class Hyperbolic(Loss):
         self.delta = delta
 
     def value(self, point: array) -> array:
-        return self.delta ** 2 * (np.sqrt(1 + (point ** 2) / (self.delta ** 2)) - 1)
+        return self.delta**2 * (np.sqrt(1 + (point**2) / (self.delta**2)) - 1)
 
     def gradient(self, point: array) -> array:
-        return point / np.sqrt(1 + (point ** 2) / self.delta ** 2)
+        return point / np.sqrt(1 + (point**2) / self.delta**2)
 
     def __repr__(self):
         return f"""{type(self)}
@@ -1276,14 +1315,14 @@ class HebertLeahy(Loss):
 
     def __init__(self, delta: float):
         """The Hebert & Leahy loss."""
-        super().__init__(inf=2 / delta ** 2, convex=False, coercive=True)
+        super().__init__(inf=2 / delta**2, convex=False, coercive=True)
         self.delta = delta
 
     def value(self, point: array) -> array:
-        return np.log(1 + point ** 2 / self.delta ** 2)
+        return np.log(1 + point**2 / self.delta**2)
 
     def gradient(self, point: array) -> array:
-        return 2 * point / (self.delta ** 2 + point ** 2)
+        return 2 * point / (self.delta**2 + point**2)
 
     def __repr__(self):
         return f"""{type(self)}
@@ -1307,14 +1346,14 @@ class GemanMcClure(Loss):
 
     def __init__(self, delta: float):
         r"""The Geman & Mc Clure loss."""
-        super().__init__(1 / (delta ** 2), convex=False, coercive=False)
+        super().__init__(1 / (delta**2), convex=False, coercive=False)
         self.delta = delta
 
     def value(self, point: array) -> array:
-        return point ** 2 / (2 * self.delta ** 2 + point ** 2)
+        return point**2 / (2 * self.delta**2 + point**2)
 
     def gradient(self, point: array) -> array:
-        return 4 * point * self.delta ** 2 / (2 * self.delta ** 2 + point ** 2) ** 2
+        return 4 * point * self.delta**2 / (2 * self.delta**2 + point**2) ** 2
 
     def __repr__(self):
         return f"""{type(self)}
@@ -1338,14 +1377,14 @@ class TruncSquareApprox(Loss):
 
     def __init__(self, delta: array):
         """The truncated square approximation."""
-        super().__init__(inf=1 / (delta ** 2), convex=False, coercive=False)
+        super().__init__(inf=1 / (delta**2), convex=False, coercive=False)
         self.delta = delta
 
     def value(self, point: array) -> array:
-        return 1 - np.exp(-(point ** 2) / (2 * self.delta ** 2))
+        return 1 - np.exp(-(point**2) / (2 * self.delta**2))
 
     def gradient(self, point: array) -> array:
-        return point / (self.delta ** 2) * np.exp(-(point ** 2) / (2 * self.delta ** 2))
+        return point / (self.delta**2) * np.exp(-(point**2) / (2 * self.delta**2))
 
     def __repr__(self):
         return f"""{type(self)}
