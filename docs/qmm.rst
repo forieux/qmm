@@ -107,14 +107,19 @@ objective function.
 .. note::
 
    The ``operator`` argument for :class:`Objective` and :class:`QuadObjective`
-   must be a callable that accept an ``array`` as input and return an array as
-   output. However, the operator **can also return** a ``list`` of array (for
-   data fusion for instance). In that case, all these arrays are internally
-   vectorized and the data are therefore memory copied.
+   must be a callable that accept an ``array`` as input. However, the operator
+   can return an array as output but **can also return** a ``list`` of array
+   (for data fusion for instance). In that case, all these arrays are handled by
+   a :class:`Stacked` class, internally vectorized and the data are therefore
+   memory copied, at each iteration.
 
-   If operator returns a list of array, the ``adjoint`` **must** accept a list of
-   array also. Again, everything is vectorized and the `Objective` and
-   `QuadObjective` rebuild the list of array internally.
+   If ``operator`` returns a list of array, the ``adjoint`` **must** accept a
+   list of array also. Again, everything is vectorized and `Objective` rebuild
+   the list of array internally.
+
+   `QuadObjective` handle this ``list`` of array more efficiently since data
+   :math:`\omagea` is not stored internally by the class but only :math:`\mu V^T
+   B \omega`, that is an array like `x`.
 
    If given, the ``hessp`` callable argument for :class:`QuadObjective` must
    accept an array and returns an array.
@@ -134,7 +139,7 @@ Sum of objectives
 ~~~~~~~~~~~~~~~~~
 
 The :class:`MixedObjective` is a convenient (not required) list-like class that
-represent the sum of :class:`BaseObjective`. Moreoever, :class:`BaseObjective`
+represent the sum of :class:`BaseObjective`. Moreover, :class:`BaseObjective`
 and :class:`MixedObjective` support the "+" operator and returns a
 :class:`MixedObjective` instance, or update the instance, respectively. Since
 :class:`MixedObjective` is a list, it can be used with :ref:`optimization

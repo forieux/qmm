@@ -551,7 +551,7 @@ def vectgradient(
 ) -> array:
     """Compute sum of gradient with vectorized parameters and return."""
     # The use of reduce and iadd do a more efficient numpy inplace sum
-    return reduce(iadd, (vect_call(o.gradient, point, shape) for o in objv_list))
+    return reduce(iadd, (vect_call(objv.gradient, point, shape) for objv in objv_list))
 
 
 def lastgv(objv_list: Sequence["BaseObjective"]) -> float:
@@ -559,7 +559,6 @@ def lastgv(objv_list: Sequence["BaseObjective"]) -> float:
     return sum(objv.lastgv for objv in objv_list)
 
 
-# TODO: to complete
 class Stacked:
     """A wrapper for list of array feature.
 
@@ -595,7 +594,7 @@ class Stacked:
     def __init__(
         self,
         operator: Callable[[array], Sequence[array]],
-        adjoint: Callable[Sequence[array], array],
+        adjoint: Callable[[Sequence[array]], array],
         data: List[array],
     ):
         """A wrapper for list of array feature.
@@ -624,7 +623,7 @@ class Stacked:
         """De-vectorize to a list of array."""
         return [
             np.reshape(arr[self._idx[i] : self._idx[i + 1]], shape)
-            for i, shape in enumerate(self.shape)
+            for i, shape in enumerate(self.shapes)
         ]
 
     def operator(self, point: array) -> array:
@@ -633,11 +632,13 @@ class Stacked:
 
     def adjoint(self, point: array) -> array:
         """Return `Vᵀx` from array."""
-        return self._adjoints(self.vec2list(point)
+        return self._adjoint(self.vec2list(point))
 
 
 #%% \
 # Objectives
+
+
 class BaseObjective(abc.ABC):
     r"""An abstract base class for objective function
 
@@ -653,16 +654,19 @@ class BaseObjective(abc.ABC):
         in `lastgv` attribute (False by default).
     name: str
         The name of the objective.
+    hyper: float
+        The hyperparameter value `μ`.
     lastv: float
         The last evaluated value of the objective (0 by default).
     lastgv: float
         The value of objective obtained during gradient computation (0 by default).
     """
 
-    def __init__(self, name=""):
+    def __init__(self, hyper=1, name=""):
         self.lastgv = 0
         self.lastv = 0
         self.calc_fun = False
+        self.hyper = hyper
         self.name = name
 
     @abc.abstractmethod
@@ -702,6 +706,9 @@ class BaseObjective(abc.ABC):
             The normal matrix
         """
         return NotImplemented
+
+    def __call__(self, point: array) -> float:
+        return self.value(point)
 
     def __add__(self, objv: "BaseObjective"):
         return MixedObjective([self, objv])
@@ -839,19 +846,21 @@ class Objective(BaseObjective):
         array" feature.
 
         """
-        super().__init__(name=name)
+        super().__init__(hyper=hyper, name=name)
         if isinstance(data, list):
-            datalist = DataList(operator, adjoint, data)
-            self.operator = datalist.operator
-            self.adjoint = datalist.adjoint
-            self.data = datalist.data
+            self.stacked = Stacked(operator, adjoint, data)
+            self.op_p = self.stacked.operator
+            self.adj = self.stacked.adjoint
+            self.data = self.stacked.data
         else:
-            self.operator = operator
-            self.adjoint = adjoint
+            self.op_p = operator
+            self.adj = adjoint
             self.data = 0 if data is None else data
 
-        self.hyper = hyper
         self.loss = loss
+
+    def operator(self, point: array) -> array:
+        return self.op_p(point)
 
     def value(self, point: array) -> float:
         """The value of the objective function at given point
@@ -869,7 +878,7 @@ class Objective(BaseObjective):
         residual = self.operator(point) - self.data
         if self.calc_fun:
             self.lastgv = self.hyper * np.sum(self.loss(residual))
-        return self.hyper * self.adjoint(self.loss.gradient(residual))
+        return self.hyper * self.adj(self.loss.gradient(residual))
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
         matrix = np.real(
@@ -893,14 +902,11 @@ class Objective(BaseObjective):
         aux = self.operator(point)
         return aux - self.loss.gradient(aux - self.data)
 
-    def __call__(self, point: array) -> float:
-        return self.value(point)
-
     def __repr__(self):
         return f"{self.name} ({type(self).__name__}, loss: {type(self.loss).__name__}), hyper {self.hyper}, last eval {self.lastv}"
 
 
-class QuadObjective(Objective):
+class QuadObjective(BaseObjective):
     r"""A quadratic objective function
 
     .. math::
@@ -913,7 +919,7 @@ class QuadObjective(Objective):
         \end{aligned}
         \end{equation}
 
-    The instance attributs are:
+    The instance attributes are:
 
     hyper : float
         The hyperparameter value `μ`.
@@ -950,10 +956,9 @@ class QuadObjective(Objective):
         hyper: float, optional
             The hyperparameter `μ`.
         invcovp: callable, optional
-            A callable, that take a parameter like `adjoint` and return a
-            parameter like `operator` (`ω`-like in both case), that apply the
-            inverse covariance, or metric, `B=Σ⁻¹`. Equivalent to Identity if
-            `None`.
+            A callable, that take a parameter like `adjoint` and return like
+            `operator` (`ω`-like in both case), that apply the inverse
+            covariance, or metric, `B=Σ⁻¹`. Equivalent to Identity if `None`.
         name: str, optional
             The name of the objective.
 
@@ -966,15 +971,14 @@ class QuadObjective(Objective):
         The variable `b = VᵀBω` is computed at object initialisation.
 
         """
-        super().__init__(operator, adjoint, Square(), data=data, hyper=hyper, name=name)
+        super().__init__(hyper=hyper, name=name)
+
+        self.op_p = operator
 
         if invcovp is None:
-            # Identity
-            self.invcovp = lambda x: x
-        else:
+            self.invcovp = lambda x: x  # Identity
+        elif invcovp is not None:
             self.invcovp = invcovp
-
-        self.hyper = hyper
 
         if hessp is not None:
             self.hessp = lambda x: hyper * hessp(x)
@@ -982,11 +986,11 @@ class QuadObjective(Objective):
             self.hessp = lambda x: hyper * adjoint(self.invcovp(operator(x)))
 
         if data is None:
-            self.ht_data = 0  # b = μ VᵀBω
+            self.VtB_data = 0  # b = μ VᵀBω
             self.constant = 0  # c = μ ωᵀBω
         else:
             # second term b = μ VᵀBω
-            self.ht_data = hyper * adjoint(self.invcovp(data))
+            self.VtB_data = hyper * adjoint(self.invcovp(data))
             if isinstance(data, list):
                 # constant c = μ ∑_i ωᵢᵀBᵢωᵢ
                 self.constant = hyper * sum(
@@ -996,13 +1000,24 @@ class QuadObjective(Objective):
                 # constant c = μ ωᵀBω
                 self.constant = hyper * np.real(np.sum(data * self.invcovp(data)))
 
+    def operator(self, point: array) -> array:
+        return self.op_p(point)
+
     def value(self, point: array) -> float:
         """The value of the objective function at given point
 
         Return `½ μ ||Vx - ω||²_B`.
         """
-        diff = self.operator(point) - self.data
-        self.lastv = self.hyper * np.sum(diff * self.invcovp(diff)) / 2
+        # Compute J(x) = ½ (μ xVᵀBVx - 2 xᵀb + c), with b = μVᵀBω and c = μωᵀBω
+        Vx = self.operator(point)
+        # xVᵀBVx
+        if isinstance(Vx, list):
+            self.lastv = self.hyper * sum(
+                np.sum(Vx_i * BVx_i) for Vx_i, BVx_i in zip(Vx, self.invcovp(Vx))
+            )
+        else:
+            self.lastv = self.hyper * np.sum(Vx * self.invcovp(Vx))
+        self.lastv = (self.lastv - 2 * np.sum(Vx * self.VtB_data) + self.constant) / 2
         return self.lastv
 
     def gradient(self, point: array) -> array:
@@ -1019,7 +1034,7 @@ class QuadObjective(Objective):
         """
         hessp = self.hessp(point)
         self.lastgv = self.value_hessp(point, hessp)
-        return self.hessp(point) - self.ht_data
+        return self.hessp(point) - self.VtB_data
 
     def value_hessp(self, point, hessp):
         """Return `J(x)` value at low cost given `x` and `q = Qx`
@@ -1029,7 +1044,7 @@ class QuadObjective(Objective):
         `J(x) =  ½ (xᵀq - 2 xᵀb + μ ωᵀBω)`."""
         return (
             np.sum(np.reshape(point, (-1)) * np.reshape(hessp, (-1)))
-            - 2 * np.sum(np.reshape(point, (-1)) * np.reshape(self.ht_data, (-1)))
+            - 2 * np.sum(np.reshape(point, (-1)) * np.reshape(self.VtB_data, (-1)))
             + self.constant
         ) / 2
 
@@ -1039,7 +1054,7 @@ class QuadObjective(Objective):
         thanks to the relation
 
         `J(x) =  ½ (xᵀ(-b - r) + μ ωᵀBω)`."""
-        return (np.sum(point * (-self.ht_data - residual)) + self.constant) / 2
+        return (np.sum(point * (-self.VtB_data - residual)) + self.constant) / 2
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
         return np.real(np.conj(vecs.T) @ vecs)
@@ -1047,9 +1062,6 @@ class QuadObjective(Objective):
     def gr_coeffs(self, point: array) -> array:
         """Return 1."""
         return 1
-
-    def __call__(self, point: array) -> float:
-        return self.value(point)
 
 
 class Vmin(BaseObjective):
@@ -1079,9 +1091,8 @@ class Vmin(BaseObjective):
         name: str
             The name of the objective.
         """
-        super().__init__(name=name)
+        super().__init__(hyper=hyper, name=name)
         self.vmin = vmin
-        self.hyper = hyper
 
     def operator(self, point):
         return point[point <= self.vmin]
@@ -1127,9 +1138,8 @@ class Vmax(BaseObjective):
         name: str
             The name of the objective.
         """
-        super().__init__(name=name)
+        super().__init__(hyper=hyper, name=name)
         self.vmax = vmax
-        self.hyper = hyper
 
     def operator(self, point):
         return point[point >= self.vmax]

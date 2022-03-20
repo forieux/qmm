@@ -6,7 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
+### Added
+- The list of data feature has been factorized in a 'Stacked' class.
 
 ### Changed
 - Docstring and documentation fixes
