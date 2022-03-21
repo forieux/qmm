@@ -8,9 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - The list of data feature has been factorized in a 'Stacked' class.
+- QuadObjective computes lazily the second term and the constant.
 
 ### Changed
-- Docstring and documentation fixes
+- Docstring and documentation fixes.
 
 ## [0.11.0] - 2021-12-10
 

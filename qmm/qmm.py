@@ -979,6 +979,8 @@ class QuadObjective(BaseObjective):
             ).operator
         else:
             self._op = operator
+        self._adj = adjoint
+        self._data = data
 
         if invcovp is None:
             self.invcovp = lambda x: x  # Identity
@@ -992,20 +994,35 @@ class QuadObjective(BaseObjective):
 
         if data is None:
             # b = μ VᵀBω
-            self.VtB_data = 0  # pylint: disable=invalid-name
+            self._vtb_data = 0
             # c = μ ωᵀBω
-            self.constant = 0
+            self._cst = 0
         else:
-            # second term b = μ VᵀBω
-            self.VtB_data = hyper * adjoint(self.invcovp(data))
-            if isinstance(data, list):
-                # constant c = μ ∑_i ωᵢᵀBᵢωᵢ
-                self.constant = hyper * sum(
-                    np.real(np.sum(y * By)) for y, By in zip(data, self.invcovp(data))
+            # Lazy computation of second term b and constant c
+            self._vtb_data = None
+            self._cst = None
+
+    @property
+    def VtB_data(self):  # pylint: disable=invalid-name
+        """The second term b = μ ∑ᵢ VᵢᵀBᵢωᵢ"""
+        if self._vtb_data is None:
+            self._vtb_data = self.hyper * self._adj(self.invcovp(self._data))
+        return self._vtb_data
+
+    @property
+    def constant(self):
+        """The constant c = μ ∑_i ωᵢᵀBᵢωᵢ"""
+        if self._cst is None:
+            if isinstance(self._data, list):
+                self._cst = self.hyper * sum(
+                    np.real(np.sum(y * By))
+                    for y, By in zip(self._data, self.invcovp(self._data))
                 )
             else:
-                # constant c = μ ωᵀBω
-                self.constant = hyper * np.real(np.sum(data * self.invcovp(data)))
+                self._cst = self.hyper * np.real(
+                    np.sum(self._data * self.invcovp(self._data))
+                )
+        return self._cst
 
     def operator(self, point: array) -> array:
         return self._op(point)
