@@ -68,7 +68,7 @@ __all__ = [
 ]
 
 
-class OptimizeResult(dict):
+class OptimizeResult(dict):  # pylint: disable=too-many-instance-attributes
     """Represents the optimization result.
 
     x: array
@@ -156,7 +156,7 @@ class OptimizeResult(dict):
         return list(self.keys())
 
 
-def mmmg(
+def mmmg(  # pylint: disable=too-many-locals
     objv_list: Sequence["BaseObjective"],
     x0: array,  # pylint: disable=invalid-name
     tol: float = 1e-4,
@@ -213,7 +213,6 @@ def mmmg(
         previous_flag.append(objv.calc_fun)
         objv.calc_fun = calc_fun
 
-    # TODO: check that .copy() is necessary
     res.x = x0.copy().reshape((-1, 1))
 
     # The first previous moves are initialized with 0 array. Consequently, the
@@ -284,7 +283,7 @@ def mmmg(
     return res
 
 
-def mmcg(
+def mmcg(  # pylint: disable=too-many-locals
     objv_list: Sequence["BaseObjective"],
     x0: array,  # pylint: disable=invalid-name
     tol: float = 1e-4,
@@ -338,9 +337,9 @@ def mmcg(
         previous_flag.append(objv.calc_fun)
         objv.calc_fun = calc_fun
 
-    # TODO: check that .copy() is necessary
     res.x = x0.copy().reshape((-1, 1))
 
+    # pylint: disable=invalid-unary-operand-type
     residual = -vectgradient(objv_list, res.x, x0.shape)
     sec = vect_call(precond, residual, x0.shape)
     direction = sec
@@ -405,7 +404,7 @@ def mmcg(
     return res
 
 
-def lcg(
+def lcg(  # pylint: disable=too-many-locals
     objv_list: Sequence["QuadObjective"],
     x0: array,  # pylint: disable=invalid-name
     tol: float = 1e-4,
@@ -450,10 +449,11 @@ def lcg(
         precond = lambda x: x
     res = OptimizeResult()
 
-    # TODO: check that .copy() is necessary
     res.x = x0.copy().reshape((-1, 1))
 
-    second_term = np.reshape(reduce(iadd, (c.hdata_t for c in objv_list)), (-1, 1))
+    second_term = np.reshape(
+        reduce(iadd, (qobjv.VtB_data for qobjv in objv_list)), (-1, 1)
+    )
     constant = reduce(iadd, (c.constant for c in objv_list))
 
     def hessian(arr):
@@ -595,7 +595,7 @@ class Stacked:
         self,
         operator: Callable[[array], Sequence[array]],
         adjoint: Callable[[Sequence[array]], array],
-        data: List[array],
+        shapes: List[Tuple[int]],
     ):
         """A wrapper for list of array feature.
 
@@ -605,14 +605,13 @@ class Stacked:
           Apply V
         - adjoint: callable
           Apply Vᵀ
-        - data: list of array
-          Output of each Vi.
+        - shapes: list of shape
+          Shape of each output of Vx.
         """
+        self.shapes = shapes
         self._operator = operator
         self._adjoint = adjoint
-        self._idx = np.cumsum([0] + [arr.size for arr in data])
-        self.shapes = [arr.shape for arr in data]
-        self.data = self.list2vec(data)
+        self._idx = np.cumsum([0] + [np.prod(shape) for shape in shapes])
 
     @staticmethod
     def list2vec(arr_list: Sequence[array]) -> array:
@@ -848,19 +847,19 @@ class Objective(BaseObjective):
         """
         super().__init__(hyper=hyper, name=name)
         if isinstance(data, list):
-            self.stacked = Stacked(operator, adjoint, data)
-            self.op_p = self.stacked.operator
-            self.adj = self.stacked.adjoint
-            self.data = self.stacked.data
+            stacked = Stacked(operator, adjoint, [dat.shape for dat in data])
+            self._op: Callable[[array], array] = stacked.operator
+            self._adj: Callable[[array], array] = stacked.adjoint
+            self.data = stacked.list2vec(data)
         else:
-            self.op_p = operator
-            self.adj = adjoint
+            self._op = operator
+            self._adj = adjoint
             self.data = 0 if data is None else data
 
         self.loss = loss
 
     def operator(self, point: array) -> array:
-        return self.op_p(point)
+        return self._op(point)
 
     def value(self, point: array) -> float:
         """The value of the objective function at given point
@@ -878,7 +877,7 @@ class Objective(BaseObjective):
         residual = self.operator(point) - self.data
         if self.calc_fun:
             self.lastgv = self.hyper * np.sum(self.loss(residual))
-        return self.hyper * self.adj(self.loss.gradient(residual))
+        return self.hyper * self._adj(self.loss.gradient(residual))
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
         matrix = np.real(
@@ -973,7 +972,13 @@ class QuadObjective(BaseObjective):
         """
         super().__init__(hyper=hyper, name=name)
 
-        self.op_p = operator
+        self._unvec_op = operator
+        if isinstance(data, list):
+            self._op: Callable = Stacked(
+                operator, adjoint, [dat.shape for dat in data]
+            ).operator
+        else:
+            self._op = operator
 
         if invcovp is None:
             self.invcovp = lambda x: x  # Identity
@@ -986,8 +991,10 @@ class QuadObjective(BaseObjective):
             self.hessp = lambda x: hyper * adjoint(self.invcovp(operator(x)))
 
         if data is None:
-            self.VtB_data = 0  # b = μ VᵀBω
-            self.constant = 0  # c = μ ωᵀBω
+            # b = μ VᵀBω
+            self.VtB_data = 0  # pylint: disable=invalid-name
+            # c = μ ωᵀBω
+            self.constant = 0
         else:
             # second term b = μ VᵀBω
             self.VtB_data = hyper * adjoint(self.invcovp(data))
@@ -1001,7 +1008,7 @@ class QuadObjective(BaseObjective):
                 self.constant = hyper * np.real(np.sum(data * self.invcovp(data)))
 
     def operator(self, point: array) -> array:
-        return self.op_p(point)
+        return self._op(point)
 
     def value(self, point: array) -> float:
         """The value of the objective function at given point
@@ -1009,7 +1016,7 @@ class QuadObjective(BaseObjective):
         Return `½ μ ||Vx - ω||²_B`.
         """
         # Compute J(x) = ½ (μ xVᵀBVx - 2 xᵀb + c), with b = μVᵀBω and c = μωᵀBω
-        Vx = self.operator(point)
+        Vx = self._unvec_op(point)  # pylint: disable=invalid-name
         # xVᵀBVx
         if isinstance(Vx, list):
             self.lastv = self.hyper * sum(
@@ -1017,7 +1024,9 @@ class QuadObjective(BaseObjective):
             )
         else:
             self.lastv = self.hyper * np.sum(Vx * self.invcovp(Vx))
-        self.lastv = (self.lastv - 2 * np.sum(Vx * self.VtB_data) + self.constant) / 2
+        self.lastv = (
+            self.lastv - 2 * np.sum(point * self.VtB_data) + self.constant
+        ) / 2
         return self.lastv
 
     def gradient(self, point: array) -> array:
@@ -1059,10 +1068,6 @@ class QuadObjective(BaseObjective):
     def norm_mat_major(self, vecs: array, point: array) -> array:
         return np.real(np.conj(vecs.T) @ vecs)
 
-    def gr_coeffs(self, point: array) -> array:
-        """Return 1."""
-        return 1
-
 
 class Vmin(BaseObjective):
     r"""A minimum value objective function
@@ -1097,7 +1102,7 @@ class Vmin(BaseObjective):
     def operator(self, point):
         return point[point <= self.vmin]
 
-    def value(self, point: array) -> array:
+    def value(self, point: array) -> float:
         """Return the value at current point."""
         return self.hyper * np.sum((point[point <= self.vmin] - self.vmin) ** 2) / 2
 
@@ -1144,7 +1149,7 @@ class Vmax(BaseObjective):
     def operator(self, point):
         return point[point >= self.vmax]
 
-    def value(self, point: array) -> array:
+    def value(self, point: array) -> float:
         """Return the value at current point."""
         return self.hyper * np.sum((point[point >= self.vmax] - self.vmax) ** 2) / 2
 

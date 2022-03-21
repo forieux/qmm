@@ -107,11 +107,12 @@ objective function.
 .. note::
 
    The ``operator`` argument for :class:`Objective` and :class:`QuadObjective`
-   must be a callable that accept an ``array`` as input. However, the operator
-   can return an array as output but **can also return** a ``list`` of array
-   (for data fusion for instance). In that case, all these arrays are handled by
-   a :class:`Stacked` class, internally vectorized and the data are therefore
-   memory copied, at each iteration.
+   must be a callable that accept an ``array`` as input. The operator can return
+   an array as output but **can also return** a ``list`` of array (for data
+   fusion for instance). However, for needs of optimization algorithm
+   implementation, everything must be an array internally. In case of ``list``
+   or arrays, all these arrays are handled by a `Stacked` class, internally
+   vectorized and the data are therefore memory copied, at each iteration.
 
    If ``operator`` returns a list of array, the ``adjoint`` **must** accept a
    list of array also. Again, everything is vectorized and `Objective` rebuild

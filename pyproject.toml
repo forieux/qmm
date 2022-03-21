@@ -43,13 +43,21 @@ mypy = "^0.812"
 pytest = "^6.2.3"
 udft = "^3.2.1"
 scipy = "^1.6.3"
+pylint = "^2.12.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.pylint.'MESSAGES CONTROL']
+[tool.pylint.master]
+load-plugins = "pylint.extensions.docparams"
+
+[tool.pylint.messages_control]
 max-parents = 10
 disable = [
   "bad-continuation",
   "line-too-long", ]
+
+[tool.pylint.design]
+max-args = 7
+max-attributes = 8
