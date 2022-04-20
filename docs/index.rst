@@ -64,15 +64,20 @@ License
 
 .. rubric:: License
 
-The project is licensed under the GPLv3 license. If you use the library, please
-cite it
+The project is licensed under the GPLv3 license and has a DOI with Zenodo. If
+you use the library, please cite it (you can change the version number).
 
 ::
 
-    @software{qmm,
-       title = {Q-MM: The Quadratic Majorize-Minimize Python toolbox},
-       author = {Orieux, Fran\c{c}ois and Abirizk, Ralph},
-       url = {https://github.com/forieux/qmm},
+    @software{francois_orieux_2022_6373070,
+      author       = {François Orieux and Ralph Abirizk},
+      title        = {Q-MM: The Quadratic Majorize-Minimize Python toolbox},
+      month        = mar,
+      year         = 2022,
+      publisher    = {Zenodo},
+      version      = {0.12.0},
+      doi          = {10.5281/zenodo.6373069},
+      url          = {https://doi.org/10.5281/zenodo.6373069}
     }
 
 and associated publications, see :doc:`Background <background>`.

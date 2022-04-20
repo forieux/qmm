@@ -158,7 +158,7 @@ A example of bibtex is
 
     @software{francois_orieux_2022_6373070,
       author       = {François Orieux and Ralph Abirizk},
-      title = {Q-MM: The Quadratic Majorize-Minimize Python toolbox},
+      title        = {Q-MM: The Quadratic Majorize-Minimize Python toolbox},
       month        = mar,
       year         = 2022,
       publisher    = {Zenodo},
