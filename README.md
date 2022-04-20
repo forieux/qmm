@@ -152,7 +152,8 @@ Q-MM has a DOI with Zenodo
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6373069.svg)](https://doi.org/10.5281/zenodo.6373069).
 Specific version can also be cited. Citation can be
 
-    François Orieux, & Ralph Abirizk. (2022). Q-MM: The Quadratic Majorize-Minimize Python toolbox (v0.12.0). Zenodo. https://doi.org/10.5281/zenodo.6373070
+    François Orieux, & Ralph Abirizk. (2022). Q-MM: The Quadratic Majorize-Minimize
+    Python toolbox (v0.12.0). Zenodo. https://doi.org/10.5281/zenodo.6373070
 
 A example of bibtex is
 
