@@ -1,6 +1,7 @@
 Q-MM: A Python toolbox for Quadratic Majorization-Minimization
 ==============================================================
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6373070.svg)](https://doi.org/10.5281/zenodo.6373070)
 ![licence](https://img.shields.io/github/license/forieux/qmm)
 ![pypi](https://img.shields.io/pypi/v/qmm)
 ![status](https://img.shields.io/pypi/status/qmm)
@@ -23,16 +24,10 @@ and
     Image Process., vol. 20, no. 6, pp. 1517–1528, Jun. 2011, doi:
     10.1109/TIP.2010.2103083.
 
-See [documentation](https://qmm.readthedocs.io/en/stable/index.html) for
-more background. If you use this code, please cite the references above
-and a citation of this toolbox will also be appreciated. You can also
-click ⭐ on the repo.
-
-    @software{qmm,
-       title = {Q-MM: The Quadratic Majorize-Minimize Python toolbox},
-       author = {Orieux, Fran\c{c}ois and Abirizk, Ralph},
-       url = {https://github.com/forieux/qmm},
-    }
+See [documentation](https://qmm.readthedocs.io/en/stable/index.html) for more
+background. If you use this code, please cite the references above and a
+citation of this toolbox will also be appreciated, see [below](#citation). You
+can also click ⭐ on the repo.
 
 Quadratic Majorize-Minimize
 ---------------------------
@@ -149,6 +144,28 @@ orieux AT l2s.centralesupelec.fr
 More information about me [here](https://pro.orieux.fr). F. Orieux and
 R. Abirizk are affiliated to the Signal and Systems Laboratory
 [L2S](https://l2s.centralesupelec.fr/).
+
+Citation
+--------
+
+Q-MM has a DOI with Zenodo
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6373069.svg)](https://doi.org/10.5281/zenodo.6373069).
+Specific version can also be cited. Citation can be
+
+    François Orieux, & Ralph Abirizk. (2022). Q-MM: The Quadratic Majorize-Minimize Python toolbox (v0.12.0). Zenodo. https://doi.org/10.5281/zenodo.6373070
+
+A example of bibtex is
+
+    @software{francois_orieux_2022_6373070,
+      author       = {François Orieux and Ralph Abirizk},
+      title = {Q-MM: The Quadratic Majorize-Minimize Python toolbox},
+      month        = mar,
+      year         = 2022,
+      publisher    = {Zenodo},
+      version      = {0.12.0},
+      doi          = {10.5281/zenodo.6373069},
+      url          = {https://doi.org/10.5281/zenodo.6373069}
+    }
 
 Acknowledgement
 ---------------
