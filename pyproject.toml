@@ -44,6 +44,7 @@ pytest = "^6.2.3"
 udft = "^3.2.1"
 scipy = "^1.6.3"
 pylint = "^2.12.2"
+jinja2 = "<3.1.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

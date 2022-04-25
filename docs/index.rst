@@ -12,7 +12,7 @@ by Majorization-Minimization with quadratic surrogate function. In particular,
 **no linesearch** is necessary and **close form formula for the step** are used
 with guaranteed convergence without sub-iteration. The explicit step formula
 allows fast convergence of the algorithm to a minimizer with minimal tuning
-parameters. However, the objective function must meet the conditions, see
+parameters. However, the objective function must meet conditions, see
 :doc:`Background <background>`.
 
 Features
@@ -45,9 +45,8 @@ If you are having issues, please let us know
 
 orieux AT l2s.centralesupelec.fr
 
-F. Orieux (`academic pages <https://pro.orieux.fr>`_) and R. Abirizk are
-affiliated to the Signal and Systems Laboratory `L2S
-<https://l2s.centralesupelec.fr/>`_.
+`F. Orieux <https://pro.orieux.fr>`_ and R. Abirizk are affiliated to the Signal
+and Systems Laboratory `L2S <https://l2s.centralesupelec.fr/>`_.
 
 Acknowledgement
 ===============
@@ -61,8 +60,6 @@ a Matlab package that implements 3MG for image deconvolution on here `webpage
 
 License
 =======
-
-.. rubric:: License
 
 The project is licensed under the GPLv3 license and has a DOI with Zenodo. If
 you use the library, please cite it (you can change the version number).
