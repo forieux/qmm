@@ -161,6 +161,7 @@ def mmmg(  # pylint: disable=too-many-locals
     x0: array,  # pylint: disable=invalid-name
     tol: float = 1e-4,
     max_iter: int = 500,
+    min_iter: int = 0,
     precond: Optional[Callable[[array], array]] = None,
     callback: Optional[Callable[[OptimizeResult], None]] = None,
     calc_fun: bool = False,
@@ -183,6 +184,8 @@ def mmmg(  # pylint: disable=too-many-locals
         is inferior to `x0.size * tol`.
     max_iter : int, optional
         The maximum number of iterations.
+    min_iter : int, optional
+        The minimum number of iterations.
     precond : callable, optional
         A callable that must implement a preconditioner, that is `Px`. Must be a
         callable with a unique input parameter `x` and unique output like `x`.
@@ -234,7 +237,7 @@ def mmmg(  # pylint: disable=too-many-locals
         res.fun = lastgv(objv_list)
 
         # Stopping test
-        if res.grad_norm[-1] < x0.size * tol:
+        if res.grad_norm[-1] < x0.size * tol and iteration >= min_iter:
             res.success = True
             res.status = 0
             break
@@ -288,6 +291,7 @@ def mmcg(  # pylint: disable=too-many-locals
     x0: array,  # pylint: disable=invalid-name
     tol: float = 1e-4,
     max_iter: int = 500,
+    min_iter: int = 0,
     precond: Optional[Callable[[array], array]] = None,
     callback: Optional[Callable[[OptimizeResult], None]] = None,
     calc_fun: bool = False,
@@ -310,6 +314,8 @@ def mmcg(  # pylint: disable=too-many-locals
         is inferior to `x0.size * tol`.
     max_iter : int, optional
         The maximum number of iterations.
+    min_iter : int, optional
+        The minimum number of iterations.
     precond : callable, optional
         A callable that must implement a preconditioner, that is `Px`. Must be a
         callable with a unique input parameter `x` and unique output like `x`.
@@ -350,7 +356,7 @@ def mmcg(  # pylint: disable=too-many-locals
     for iteration in range(max_iter):
         # Stop test
         res.grad_norm.append(la.norm(residual))
-        if res.grad_norm[-1] < x0.size * tol:
+        if res.grad_norm[-1] < x0.size * tol and iteration >= min_iter:
             break
 
         # update
@@ -433,6 +439,8 @@ def lcg(  # pylint: disable=too-many-locals
         is inferior to `x0.size * tol`.
     max_iter : int, optional
         The maximum number of iterations.
+    min_iter : int, optional
+        The minimum number of iterations.
     callback : callable, optional
         A function that receive the `OptimizeResult` at the end of each
         iteration.
