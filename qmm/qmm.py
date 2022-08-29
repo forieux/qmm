@@ -409,6 +409,7 @@ def lcg(  # pylint: disable=too-many-locals
     x0: array,  # pylint: disable=invalid-name
     tol: float = 1e-4,
     max_iter: int = 500,
+    min_iter: int = 0,
     precond: Optional[Callable[[array], array]] = None,
     callback: Optional[Callable[[OptimizeResult], None]] = None,
     calc_fun: bool = False,
@@ -497,7 +498,7 @@ def lcg(  # pylint: disable=too-many-locals
         res.time.append(time.time())
 
         # Stopping condition
-        if np.sqrt(res.grad_norm[-1]) < x0.size * tol:
+        if np.sqrt(res.grad_norm[-1]) < x0.size * tol and iteration >= min_iter:
             res.success = True
             res.status = 0
             break
@@ -1252,7 +1253,7 @@ class Square(Loss):
         super().__init__(inf=1, convex=True, coercive=True)
 
     def value(self, point: array) -> array:
-        return point**2 / 2
+        return point ** 2 / 2
 
     def gradient(self, point: array) -> array:
         return point
@@ -1283,7 +1284,7 @@ class Huber(Loss):
     def value(self, point: array) -> array:
         return np.where(
             np.abs(point) <= self.delta,
-            point**2 / 2,
+            point ** 2 / 2,
             self.delta * (np.abs(point) - self.delta / 2),
         )
 
@@ -1319,10 +1320,10 @@ class Hyperbolic(Loss):
         self.delta = delta
 
     def value(self, point: array) -> array:
-        return self.delta**2 * (np.sqrt(1 + (point**2) / (self.delta**2)) - 1)
+        return self.delta ** 2 * (np.sqrt(1 + (point ** 2) / (self.delta ** 2)) - 1)
 
     def gradient(self, point: array) -> array:
-        return point / np.sqrt(1 + (point**2) / self.delta**2)
+        return point / np.sqrt(1 + (point ** 2) / self.delta ** 2)
 
     def __repr__(self):
         return f"""{type(self)}
@@ -1347,14 +1348,14 @@ class HebertLeahy(Loss):
 
     def __init__(self, delta: float):
         """The Hebert & Leahy loss."""
-        super().__init__(inf=2 / delta**2, convex=False, coercive=True)
+        super().__init__(inf=2 / delta ** 2, convex=False, coercive=True)
         self.delta = delta
 
     def value(self, point: array) -> array:
-        return np.log(1 + point**2 / self.delta**2)
+        return np.log(1 + point ** 2 / self.delta ** 2)
 
     def gradient(self, point: array) -> array:
-        return 2 * point / (self.delta**2 + point**2)
+        return 2 * point / (self.delta ** 2 + point ** 2)
 
     def __repr__(self):
         return f"""{type(self)}
@@ -1378,14 +1379,14 @@ class GemanMcClure(Loss):
 
     def __init__(self, delta: float):
         r"""The Geman & Mc Clure loss."""
-        super().__init__(1 / (delta**2), convex=False, coercive=False)
+        super().__init__(1 / (delta ** 2), convex=False, coercive=False)
         self.delta = delta
 
     def value(self, point: array) -> array:
-        return point**2 / (2 * self.delta**2 + point**2)
+        return point ** 2 / (2 * self.delta ** 2 + point ** 2)
 
     def gradient(self, point: array) -> array:
-        return 4 * point * self.delta**2 / (2 * self.delta**2 + point**2) ** 2
+        return 4 * point * self.delta ** 2 / (2 * self.delta ** 2 + point ** 2) ** 2
 
     def __repr__(self):
         return f"""{type(self)}
@@ -1409,14 +1410,14 @@ class TruncSquareApprox(Loss):
 
     def __init__(self, delta: array):
         """The truncated square approximation."""
-        super().__init__(inf=1 / (delta**2), convex=False, coercive=False)
+        super().__init__(inf=1 / (delta ** 2), convex=False, coercive=False)
         self.delta = delta
 
     def value(self, point: array) -> array:
-        return 1 - np.exp(-(point**2) / (2 * self.delta**2))
+        return 1 - np.exp(-(point ** 2) / (2 * self.delta ** 2))
 
     def gradient(self, point: array) -> array:
-        return point / (self.delta**2) * np.exp(-(point**2) / (2 * self.delta**2))
+        return point / (self.delta ** 2) * np.exp(-(point ** 2) / (2 * self.delta ** 2))
 
     def __repr__(self):
         return f"""{type(self)}
