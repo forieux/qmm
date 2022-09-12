@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.1] - 2022-09-12
+
+### Fixed
+- Fix `pcg` exposition.
+
+### Changed
+- Add docstring for pcg.
+
 ## [0.13.0] - 2022-09-12
 
 ### Changed
