@@ -51,6 +51,7 @@ __all__ = [
     "mmmg",
     "mmcg",
     "lcg",
+    "pcg",
     "BaseObjective",
     "MixedObjective",
     "Objective",
@@ -550,7 +551,10 @@ def pcg(  # pylint: disable=too-many-locals
     Parameters
     ----------
     normalp : callable
+        A callable that apply the matrix `A` on a vector `x`. Must accept an
+        array and return an array, both of any shape.
     secondm : array
+        The second member `b`. Can be of any shape.
     x0 : ndarray
         The initial point.
     precond : callable, optional
@@ -573,7 +577,8 @@ def pcg(  # pylint: disable=too-many-locals
 
     Notes
     -----
-    This is the same algorithm than lcg with a different API.
+    This is the same algorithm than `lcg` with a different API.
+
     """
 
     if precond is None:
