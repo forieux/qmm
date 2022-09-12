@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2022-09-12
+
+### Changed
+- Remove `calc_fun` for `lcg` since the overhead is very small
+
+### Added
+- Add `pcg`, similar to `lcg` with a differente API.
+
 ## [0.12.1] - 2022-06-20
 
 ### Changed
