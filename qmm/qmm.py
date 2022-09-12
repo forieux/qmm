@@ -418,7 +418,6 @@ def lcg(  # pylint: disable=too-many-locals
     min_iter: int = 0,
     precond: Optional[Callable[[array], array]] = None,
     callback: Optional[Callable[[OptimizeResult], None]] = None,
-    calc_fun: bool = False,
 ) -> OptimizeResult:
     """Linear Conjugate Gradient (CG) algorithm.
 
@@ -444,9 +443,6 @@ def lcg(  # pylint: disable=too-many-locals
     callback : callable, optional
         A function that receive the `OptimizeResult` at the end of each
         iteration.
-    calc_fun: boolean, optional
-        If True, objective function is computed at each iteration with low
-        overhead. False by default. Not used by the algorithm.
 
     Returns
     -------
@@ -460,7 +456,7 @@ def lcg(  # pylint: disable=too-many-locals
 
     res.x = x0.copy().reshape((-1, 1))
 
-    second_term = np.reshape(
+    second_member = np.reshape(
         reduce(iadd, (qobjv.VtB_data for qobjv in objv_list)), (-1, 1)
     )
     constant = reduce(iadd, (c.constant for c in objv_list))
@@ -469,10 +465,10 @@ def lcg(  # pylint: disable=too-many-locals
         return reduce(iadd, (vect_call(c.hessp, arr, x0.shape) for c in objv_list))
 
     def value_residual(arr, residual):
-        return (np.sum(arr * (-second_term - residual)) + constant) / 2
+        return (np.sum(arr * (-second_member - residual)) + constant) / 2
 
     # Gradient at current x0
-    residual = second_term - hessian(res.x)
+    residual = second_member - hessian(res.x)
     direction = vect_call(precond, residual, x0.shape)
 
     res.grad_norm.append(np.sum(np.real(np.conj(residual) * direction)))
@@ -480,8 +476,7 @@ def lcg(  # pylint: disable=too-many-locals
 
     for iteration in range(max_iter):
         hessp = hessian(direction)
-        if calc_fun:
-            res.fun = value_residual(res.x, residual)
+        res.fun = value_residual(res.x, residual)
 
         # s = rᵀr / dᵀAd
         # Optimal step
@@ -492,7 +487,130 @@ def lcg(  # pylint: disable=too-many-locals
 
         # r^(i+1) = r^(i) - s * A·d
         if iteration % 50 == 0:
-            residual = second_term - hessian(res.x)
+            residual = second_member - hessian(res.x)
+        else:
+            residual -= step * hessp
+        res.jac = -residual.reshape(x0.shape)
+
+        # Conjugate direction with preconditionner
+        secant = vect_call(precond, residual, x0.shape)
+        res.grad_norm.append(np.sum(np.real(np.conj(residual) * secant)))
+        direction = secant + (res.grad_norm[-1] / res.grad_norm[-2]) * direction
+
+        res.diff.append(np.sum(step * direction) ** 2)
+        res.time.append(time.time())
+
+        # Stopping condition
+        if np.sqrt(res.grad_norm[-1]) < x0.size * tol and iteration >= min_iter:
+            res.success = True
+            res.status = 0
+            break
+
+        if callback is not None:
+            callback(res)
+
+    if res.status == 0:
+        res.message = "Stopping conditions reached."
+    else:
+        res.success = False
+        res.status = 1
+        res.message = "Maximum number of iterations has been exceeded."
+    res.x = np.reshape(res.x, x0.shape)
+    res.njev = iteration + 1
+    res.nit = iteration + 1
+    res.grad_norm = list(np.sqrt(res.grad_norm))
+    res.time = list(np.asarray(res.time) - res.time[0])
+
+    return res
+
+
+def pcg(  # pylint: disable=too-many-locals
+    normalp: Callable[[array], array],
+    secondm: array,
+    x0: array,  # pylint: disable=invalid-name
+    tol: float = 1e-4,
+    max_iter: int = 500,
+    min_iter: int = 0,
+    precond: Optional[Callable[[array], array]] = None,
+    callback: Optional[Callable[[OptimizeResult], None]] = None,
+) -> OptimizeResult:
+    """Preconditionnate Conjugate Gradient (CG) algorithm.
+
+    Preconditionnate Conjugate Gradient for solving SDP linear system
+
+    .. math::
+        A x = b
+
+    where :math:`A` is a SDP matrix and :math:`b` a vector. It comes from the
+    gradient cancelling of quadratic criterion
+
+    .. math::
+        J(x) = \frac{1}{2} x^T A x - 2 x^T b + c.
+
+    Parameters
+    ----------
+    normalp : callable
+    secondm : array
+    x0 : ndarray
+        The initial point.
+    precond : callable, optional
+        A callable that must implement a preconditioner, that is `Px`. Must be a
+        callable with a unique input parameter `x` and unique output like `x`.
+    tol : float, optional
+        The stopping tolerance. The algorithm is stopped when the gradient norm
+        is inferior to `x0.size * tol`.
+    max_iter : int, optional
+        The maximum number of iterations.
+    min_iter : int, optional
+        The minimum number of iterations.
+    callback : callable, optional
+        A function that receive the `OptimizeResult` at the end of each
+        iteration.
+
+    Returns
+    -------
+    result : OptimizeResult
+
+    Notes
+    -----
+    This is the same algorithm than lcg with a different API.
+    """
+
+    if precond is None:
+        precond = lambda x: x
+    res = OptimizeResult()
+
+    res.x = x0.copy().reshape((-1, 1))
+
+    second_member = np.reshape(secondm, (-1, 1))
+
+    def hessian(arr):
+        return vect_call(normalp, arr, x0.shape)
+
+    def value_residual(arr, residual):
+        return np.sum(arr * (-second_member - residual)) / 2
+
+    # Gradient at current x0
+    residual = second_member - hessian(res.x)
+    direction = vect_call(precond, residual, x0.shape)
+
+    res.grad_norm.append(np.sum(np.real(np.conj(residual) * direction)))
+    res.time.append(time.time())
+
+    for iteration in range(max_iter):
+        hessp = hessian(direction)
+        res.fun = value_residual(res.x, residual)
+
+        # s = rᵀr / dᵀAd
+        # Optimal step
+        step = res.grad_norm[-1] / np.sum(np.real(np.conj(direction) * hessp))
+
+        # Descent x^(i+1) = x^(i) + s*d
+        res.x += step * direction
+
+        # r^(i+1) = r^(i) - s * A·d
+        if iteration % 50 == 0:
+            residual = second_member - hessian(res.x)
         else:
             residual -= step * hessp
         res.jac = -residual.reshape(x0.shape)
@@ -540,7 +658,15 @@ def vect_call(func: Callable[[array], array], point: array, shape: Tuple) -> arr
 
 # Not used in the module, only provided for user convenience
 def vectorize(shape: Tuple) -> Callable:
-    """Return a decorator to vectorize input and output given `shape`"""
+    """Return a decorator to vectorize input and output given `shape`.
+
+    Suppose you have a function (a gradient typically) that demands an array
+    with a specific shape, say (N, M) and return an array with another shape,
+    say (P, Q). But you use an algorithm (optimize from scipy for instance) that
+    demands vector only of shape (R, ) and (T,). This decorator factory return a
+    decorator that do the job conversion
+
+    """
 
     def decorator(func: Callable[[array], array]) -> Callable[[array], array]:
         """A decorator to vectorize input and output"""
