@@ -445,6 +445,9 @@ def lcg(  # pylint: disable=too-many-locals
     callback : callable, optional
         A function that receive the `OptimizeResult` at the end of each
         iteration.
+    calc_objv: boolean, optional
+        If True, objective function is computed at each iteration with low
+        overhead. False by default. Not used by the algorithm.
 
     Returns
     -------
