@@ -458,10 +458,13 @@ def lcg(  # pylint: disable=too-many-locals
 
     res.x = x0.copy().reshape((-1, 1))
 
-    second_member = np.reshape(
-        reduce(iadd, (qobjv.VtB_data for qobjv in objv_list)), (-1, 1)
-    )
-    constant = reduce(iadd, (c.constant for c in objv_list))
+    # A more efficient solution will be to use np.add with `out` argument.
+    # Previous implementation used iadd but there was a bug where the second
+    # member of the first criterion where updated to the sum of all the second
+    # member, that was the same array.
+    second_member = np.reshape(sum(qobjv.VtB_data for qobjv in objv_list), (-1, 1))
+
+    constant = sum(c.constant for c in objv_list)
 
     def hessian(arr):
         return reduce(iadd, (vect_call(c.hessp, arr, x0.shape) for c in objv_list))
@@ -900,7 +903,7 @@ class MixedObjective(collections.abc.MutableSequence):
 
     def value(self, point: array) -> float:
         """The value J(x)"""
-        return reduce(iadd, (o.value(point) for o in self._objv_list))
+        return sum(o.value(point) for o in self._objv_list)
 
     def gradient(self, point: array) -> array:
         """The gradient ∇J(x)"""
