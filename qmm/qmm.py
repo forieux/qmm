@@ -1413,8 +1413,8 @@ class Huber(Loss):
 
        \varphi(u) =
        \begin{cases}
-          \frac{1}{2} u^2 & \text{, if } u \leq \delta, \\
-          \delta |u| - \frac{\delta^2}{2} & \text{, otherwise.}
+          \frac{1}{2} u^2, & \text{if } u \leq \delta, \\
+          \delta |u| - \frac{\delta^2}{2}, & \text{otherwise.}
        \end{cases}
 
     """
@@ -1438,9 +1438,9 @@ class Huber(Loss):
         return f"""{type(self)}
 
        ⎛
-       ⎜ ½ u²        , if |u| < δ
+       ⎜ ½ u²,         if |u| < δ
 φ(u) = ⎜
-       ⎜ δ|u| - δ²/2 , otherwise.
+       ⎜ δ|u| - δ²/2,  otherwise.
        ⎝
 
 with δ = {self.delta}
