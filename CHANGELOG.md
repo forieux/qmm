@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.1] - 2023-06-06
+
+### Fixed
+- Remove a `print("here")`.
+- Small docstring typo fix.
+
+### Changed
+- Rename `calc_fun` to `calc_objv`.
+- Add `calc_objv` argument to lcg.
+- Fix `lcg` second member update.
+
 ## [0.13.1] - 2022-09-12
 
 ### Fixed
