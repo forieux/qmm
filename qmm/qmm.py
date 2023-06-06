@@ -911,7 +911,6 @@ class MixedObjective(collections.abc.MutableSequence):
         if isinstance(objv, BaseObjective):
             self._objv_list.append(objv)
         elif isinstance(objv, MixedObjective):
-            print("here")
             self._objv_list.extend(objv._objv_list)
         else:
             raise TypeError(
