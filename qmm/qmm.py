@@ -165,7 +165,7 @@ def mmmg(  # pylint: disable=too-many-locals
     min_iter: int = 0,
     precond: Optional[Callable[[array], array]] = None,
     callback: Optional[Callable[[OptimizeResult], None]] = None,
-    calc_fun: bool = False,
+    calc_objv: bool = False,
 ) -> OptimizeResult:
     r"""The Majorize-Minimize Memory Gradient (`3MG`) algorithm.
 
@@ -193,7 +193,7 @@ def mmmg(  # pylint: disable=too-many-locals
     callback : callable, optional
         A function that receive the `OptimizeResult` at the end of each
         iteration.
-    calc_fun: boolean, optional
+    calc_objv: boolean, optional
         If True, objective function is computed at each iteration with low
         overhead. False by default. Not used by the algorithm.
 
@@ -214,8 +214,8 @@ def mmmg(  # pylint: disable=too-many-locals
     res = OptimizeResult()
     previous_flag = []
     for objv in objv_list:
-        previous_flag.append(objv.calc_fun)
-        objv.calc_fun = calc_fun
+        previous_flag.append(objv.calc_objv)
+        objv.calc_objv = calc_objv
 
     res.x = x0.copy().reshape((-1, 1))
 
@@ -282,7 +282,7 @@ def mmmg(  # pylint: disable=too-many-locals
     res.time = list(np.asarray(res.time) - res.time[0])
 
     for objv, flag in zip(objv_list, previous_flag):
-        objv.calc_fun = flag
+        objv.calc_objv = flag
 
     return res
 
@@ -295,7 +295,7 @@ def mmcg(  # pylint: disable=too-many-locals
     min_iter: int = 0,
     precond: Optional[Callable[[array], array]] = None,
     callback: Optional[Callable[[OptimizeResult], None]] = None,
-    calc_fun: bool = False,
+    calc_objv: bool = False,
 ) -> OptimizeResult:
     """The Majorize-Minimize Conjugate Gradient (MM-CG) algorithm.
 
@@ -323,7 +323,7 @@ def mmcg(  # pylint: disable=too-many-locals
     callback : callable, optional
         A function that receive the `OptimizeResult` at the end of each
         iteration.
-    calc_fun: boolean, optional
+    calc_objv: boolean, optional
         If True, objective function is computed at each iteration with low
         overhead. False by default. Not used by the algorithm.
 
@@ -341,8 +341,8 @@ def mmcg(  # pylint: disable=too-many-locals
     res = OptimizeResult()
     previous_flag = []
     for objv in objv_list:
-        previous_flag.append(objv.calc_fun)
-        objv.calc_fun = calc_fun
+        previous_flag.append(objv.calc_objv)
+        objv.calc_objv = calc_objv
 
     res.x = x0.copy().reshape((-1, 1))
 
@@ -406,7 +406,7 @@ def mmcg(  # pylint: disable=too-many-locals
     res.time = list(np.asarray(res.time) - res.time[0])
 
     for objv, flag in zip(objv_list, previous_flag):
-        objv.calc_fun = flag
+        objv.calc_objv = flag
 
     return res
 
@@ -419,6 +419,7 @@ def lcg(  # pylint: disable=too-many-locals
     min_iter: int = 0,
     precond: Optional[Callable[[array], array]] = None,
     callback: Optional[Callable[[OptimizeResult], None]] = None,
+    calc_objv: bool = False,
 ) -> OptimizeResult:
     """Linear Conjugate Gradient (CG) algorithm.
 
@@ -477,7 +478,8 @@ def lcg(  # pylint: disable=too-many-locals
 
     for iteration in range(max_iter):
         hessp = hessian(direction)
-        res.fun = value_residual(res.x, residual)
+        if calc_objv:
+            res.fun = value_residual(res.x, residual)
 
         # s = rᵀr / dᵀAd
         # Optimal step
@@ -788,7 +790,7 @@ class BaseObjective(abc.ABC):
 
     Attributes
     ----------
-    calc_fun: boolean
+    calc_objv: boolean
         If true, compute the objective value when gradient is computed and store
         in `lastgv` attribute (False by default).
     name: str
@@ -804,7 +806,7 @@ class BaseObjective(abc.ABC):
     def __init__(self, hyper=1, name=""):
         self.lastgv = 0
         self.lastv = 0
-        self.calc_fun = False
+        self.calc_objv = False
         self.hyper = hyper
         self.name = name
 
@@ -1014,7 +1016,7 @@ class Objective(BaseObjective):
         Return `μ Vᵀφ'(Vx - ω)`.
         """
         residual = self.operator(point) - self.data
-        if self.calc_fun:
+        if self.calc_objv:
             self.lastgv = self.hyper * np.sum(self.loss(residual))
         return self.hyper * self._adj(self.loss.gradient(residual))
 
@@ -1264,7 +1266,7 @@ class Vmin(BaseObjective):
 
     def gradient(self, point: array) -> array:
         idx = point <= self.vmin
-        if self.calc_fun:
+        if self.calc_objv:
             self.lastgv = self.hyper * np.sum((point[idx] - self.vmin) ** 2) / 2
         return self.hyper * np.where(idx, point - self.vmin, 0)
 
@@ -1311,7 +1313,7 @@ class Vmax(BaseObjective):
 
     def gradient(self, point: array) -> array:
         idx = point >= self.vmax
-        if self.calc_fun:
+        if self.calc_objv:
             self.lastgv = self.hyper * np.sum((point[idx] - self.vmax) ** 2) / 2
         return self.hyper * np.where(idx, point - self.vmax, 0)
 
