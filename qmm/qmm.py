@@ -1371,7 +1371,7 @@ class Loss(abc.ABC):
         return aux
 
     def gy_coeffs(self, point: array) -> array:
-        """The Geman & Yang `x - φ'(x)` coefficients at given point."""
+        """The Geman & Yang `· - φ'(·)` coefficients at given point."""
         return point - self.gradient(point)
 
     def __call__(self, point: array) -> array:
