@@ -6,7 +6,7 @@ Q-MM: A Python toolbox for Quadratic Majorization-Minimization
 ![pypi](https://img.shields.io/pypi/v/qmm)
 ![status](https://img.shields.io/pypi/status/qmm)
 ![version](https://img.shields.io/pypi/pyversions/qmm)
-![maintained](https://img.shields.io/maintenance/yes/2022)
+![maintained](https://img.shields.io/maintenance/yes/2024)
 [![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
 [![Documentation Status](https://readthedocs.org/projects/qmm/badge/?version=latest)](https://qmm.readthedocs.io/en/latest/?badge=latest)
 
