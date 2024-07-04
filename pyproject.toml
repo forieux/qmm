@@ -26,7 +26,7 @@ include = ["LICENSE"]
 "Author webpage" = "https://pro.orieux.fr/"
 
 [tool.poetry.dependencies]
-python = "^3.7,<3.12"
+python = "^3.8,<4.0"
 numpy = "^1.19.4"
 
 [tool.poetry.dev-dependencies]
@@ -62,3 +62,10 @@ disable = [
 [tool.pylint.design]
 max-args = 7
 max-attributes = 8
+
+[flake8]
+max-line-length = 88
+inline-quotes = "
+
+[pycodestyle]
+max-line-length = 88
