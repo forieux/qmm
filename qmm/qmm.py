@@ -831,6 +831,12 @@ class BaseObjective(abc.ABC):
         """Compute the gradient at current point."""
         return NotImplemented
 
+    def val_grad(self, point: array) -> array:
+        """Compute and return the value and gradient at current point."""
+        grad = self.gradient(point)
+        val = self.value(point)
+        return val, grad
+
     @abc.abstractmethod
     def norm_mat_major(self, vecs: array, point: array) -> array:
         """Return the normal matrix of the quadratic major function.
@@ -911,6 +917,12 @@ class MixedObjective(collections.abc.MutableSequence):
     def gradient(self, point: array) -> array:
         """The gradient ∇J(x)"""
         return reduce(iadd, (o.gradient(point) for o in self._objv_list))
+
+    def val_grad(self, point: array) -> array:
+        """Compute and return the value and gradient at current point."""
+        grad = self.gradient(point)
+        val = self.value(point)
+        return val, grad
 
     def __call__(self, point: array) -> float:
         return self.value(point)
