@@ -65,7 +65,7 @@ max-attributes = 8
 
 [flake8]
 max-line-length = 88
-inline-quotes = "
+inline-quotes = "\""
 
 [pycodestyle]
 max-line-length = 88
