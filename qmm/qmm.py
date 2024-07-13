@@ -1393,6 +1393,20 @@ class Loss(abc.ABC):
         """The Geman & Yang `· - φ'(·)` coefficients at given point."""
         return point - self.gradient(point)
 
+    def gr_sup(self, point: array) -> array:
+        """The Geman & Reynolds `ψ(u)` sup.
+
+        ψ(u) = sup_x φ(x) - ux^2
+        """
+        return NotImplemented
+
+    def gy_sup(self, point: array) -> array:
+        """The Geman & Yang `ξ(u)` sup.
+
+        ξ(u) = sup_x φ(x) - (x - u)^2 / 2
+        """
+        return NotImplemented
+
     def __call__(self, point: array) -> array:
         """The value at given point."""
         return self.value(point)
@@ -1448,6 +1462,12 @@ class Huber(Loss):
 
     def gradient(self, point: array) -> array:
         return np.where(np.abs(point) <= self.delta, point, self.delta * np.sign(point))
+
+    def gy_sup(self, point: array) -> array:
+        return self.delta * np.abs(point)
+
+    def gr_sup(self, point: array) -> array:
+        return self.delta ** 2 / point - self.delta ** 2
 
     def __repr__(self):
         return f"""{type(self)}

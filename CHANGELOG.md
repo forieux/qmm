@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.0] - 2024-07-13
+
+### Changed
+- Add GY and GR sup when available.
+- Add sup for Huber.
+
 ## [0.16.0] - 2024-07-12
 
 ### Changed
