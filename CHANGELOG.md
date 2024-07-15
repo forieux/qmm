@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.18.0] - 2024-07-15
+
+### Changed
+- Fix objective value computation if variable are complex.
+- If variable are from Fourier transform with real input and hermitian property
+  (see np.fft.rfftn), can use custom `hdot` function.
+
 ## [0.17.0] - 2024-07-13
 
 ### Changed

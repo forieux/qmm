@@ -420,6 +420,7 @@ def lcg(  # pylint: disable=too-many-locals
     precond: Optional[Callable[[array], array]] = None,
     callback: Optional[Callable[[OptimizeResult], None]] = None,
     calc_objv: bool = False,
+    hdot_shape: tuple[int] = None,
 ) -> OptimizeResult:
     """Linear Conjugate Gradient (CG) algorithm.
 
@@ -473,7 +474,9 @@ def lcg(  # pylint: disable=too-many-locals
         return reduce(iadd, (vect_call(c.hessp, arr, x0.shape) for c in objv_list))
 
     def value_residual(arr, residual):
-        return (np.sum(arr * (-second_member - residual)) + constant) / 2
+        if hdot_shape is None:
+            return (np.sum(np.conj(arr) * (-second_member - residual)) + constant) / 2
+        return hdot(arr, -second_member - residual) / 2
 
     # Gradient at current x0
     residual = second_member - hessian(res.x)
@@ -542,6 +545,7 @@ def pcg(  # pylint: disable=too-many-locals
     min_iter: int = 0,
     precond: Optional[Callable[[array], array]] = None,
     callback: Optional[Callable[[OptimizeResult], None]] = None,
+    hdot_shape: tuple[int] = None,
 ) -> OptimizeResult:
     """Preconditionnate Conjugate Gradient (CG) algorithm.
 
@@ -578,6 +582,8 @@ def pcg(  # pylint: disable=too-many-locals
     callback : callable, optional
         A function that receive the `OptimizeResult` at the end of each
         iteration.
+    hdot_shape : shape, optional
+        If x0 is in Fourier space with rfftn, set to True for correct computation of dot product.
 
     Returns
     -------
@@ -600,12 +606,14 @@ def pcg(  # pylint: disable=too-many-locals
     def hessian(arr):
         return vect_call(normalp, arr, x0.shape)
 
-    def value_residual(arr, residual):
-        return np.sum(arr * (-second_member - residual)) / 2
-
     # Gradient at current x0
     residual = second_member - hessian(res.x)
     direction = vect_call(precond, residual, x0.shape)
+
+    def value_residual(arr, residual):
+        if hdot_shape is None:
+            return (np.sum(np.conj(arr) * (-second_member - residual)) + constant) / 2
+        return hdot(arr, -second_member - residual) / 2
 
     res.grad_norm.append(np.sum(np.real(np.conj(residual) * direction)))
     res.time.append(time.time())
@@ -662,6 +670,27 @@ def pcg(  # pylint: disable=too-many-locals
 
 #%% \
 # Utilities
+
+
+def hdot(arr1: np.ndarray, arr2: np.ndarray, inshape: tuple[int, ...]) -> float:
+    """Hermitian dot product xᴴc with x and c ∈ ℂ
+
+    If x and c are Fourier transform of vector, compute the complexe dot product
+    with hermitian property.
+
+    """
+    axis = tuple(range(-len(inshape), 0))
+    axis2 = tuple(range(-(len(inshape) - 1), 0))
+
+    dotprod = 2 * np.sum(np.conj(arr1) * arr2, axis=axis) - np.sum(
+        np.conj(arr1[..., 0]) * arr2[..., 0], axis=axis2
+    )
+
+    if inshape[-1] % 2 == 0:
+        dotprod -= np.sum(np.conj(arr1[..., -1]) * arr2[..., -1], axis=axis2)
+
+    return np.real(dotprod)
+
 
 # Vectorized call
 def vect_call(func: Callable[[array], array], point: array, shape: Tuple) -> array:
@@ -1239,7 +1268,9 @@ class QuadObjective(BaseObjective):
         thanks to the relation
 
         `J(x) =  ½ (xᵀ(-b - r) + μ ωᵀBω)`."""
-        return (np.sum(point * (-self.VtB_data - residual)) + self.constant) / 2
+        return (
+            np.sum(np.conj(point) * (-self.VtB_data - residual)) + self.constant
+        ) / 2
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
         return np.real(np.conj(vecs.T) @ vecs)
