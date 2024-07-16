@@ -612,7 +612,7 @@ def pcg(  # pylint: disable=too-many-locals
 
     def value_residual(arr, residual):
         if hdot_shape is None:
-            return (np.sum(np.conj(arr) * (-second_member - residual)) + constant) / 2
+            return np.sum(np.conj(arr) * (-second_member - residual)) / 2
         return hdot(arr, -second_member - residual) / 2
 
     res.grad_norm.append(np.sum(np.real(np.conj(residual) * direction)))
