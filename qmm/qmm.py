@@ -956,7 +956,7 @@ class MixedObjective(collections.abc.MutableSequence):
     def __call__(self, point: array) -> float:
         return self.value(point)
 
-    def __add__(self, objv: "BaseObjective" | "MixedObjective"):
+    def __add__(self, objv: Union["BaseObjective", "MixedObjective"]):
         if isinstance(objv, BaseObjective):
             self._objv_list.append(objv)
         elif isinstance(objv, MixedObjective):
