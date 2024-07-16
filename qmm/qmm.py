@@ -1,5 +1,5 @@
 # Q-MM: A Python Quadratic Majorization Minimization toolbox
-# Copyright (C) 2021 François Orieux <francois.orieux@universite-paris-saclay.fr>
+# Copyright (C) 2021-2024 François Orieux <francois.orieux@universite-paris-saclay.fr>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,8 +26,7 @@ import collections.abc
 import time
 from functools import reduce, wraps
 from operator import iadd
-from typing import (Callable, List, MutableSequence, Optional, Sequence, Tuple,
-                    Union)
+from typing import Callable, MutableSequence, Optional, Sequence, Union
 
 import numpy as np  # type: ignore
 import numpy.linalg as la  # type: ignore
@@ -583,7 +582,8 @@ def pcg(  # pylint: disable=too-many-locals
         A function that receive the `OptimizeResult` at the end of each
         iteration.
     hdot_shape : shape, optional
-        If x0 is in Fourier space with rfftn, set to True for correct computation of dot product.
+        If x0 is in Fourier space with rfftn, set to shape of x0 in real space
+        for correct computation of dot product.
 
     Returns
     -------
@@ -693,13 +693,13 @@ def hdot(arr1: np.ndarray, arr2: np.ndarray, inshape: tuple[int, ...]) -> float:
 
 
 # Vectorized call
-def vect_call(func: Callable[[array], array], point: array, shape: Tuple) -> array:
+def vect_call(func: Callable[[array], array], point: array, shape: tuple) -> array:
     """Call func with point reshaped as shape and return vectorized output"""
     return np.reshape(func(np.reshape(point, shape)), (-1, 1))
 
 
 # Not used in the module, only provided for user convenience
-def vectorize(shape: Tuple) -> Callable:
+def vectorize(shape: tuple) -> Callable:
     """Return a decorator to vectorize input and output given `shape`.
 
     Suppose you have a function (a gradient typically) that demands an array
@@ -724,7 +724,7 @@ def vectorize(shape: Tuple) -> Callable:
 
 # Vectorized gradient
 def vectgradient(
-    objv_list: Sequence["BaseObjective"], point: array, shape: Tuple
+    objv_list: Sequence["BaseObjective"], point: array, shape: tuple
 ) -> array:
     """Compute sum of gradient with vectorized parameters and return."""
     # The use of reduce and iadd do a more efficient numpy inplace sum
@@ -772,7 +772,7 @@ class Stacked:
         self,
         operator: Callable[[array], Sequence[array]],
         adjoint: Callable[[Sequence[array]], array],
-        shapes: List[Tuple[int]],
+        shapes: list[tuple[int]],
     ):
         """A wrapper for list of array feature.
 
@@ -795,7 +795,7 @@ class Stacked:
         """Vectorize a list of array."""
         return np.vstack([arr.reshape((-1, 1)) for arr in arr_list])
 
-    def vec2list(self, arr: array) -> List[array]:
+    def vec2list(self, arr: array) -> list[array]:
         """De-vectorize to a list of array."""
         return [
             np.reshape(arr[self._idx[i] : self._idx[i + 1]], shape)
@@ -956,7 +956,7 @@ class MixedObjective(collections.abc.MutableSequence):
     def __call__(self, point: array) -> float:
         return self.value(point)
 
-    def __add__(self, objv: Union["BaseObjective", "MixedObjective"]):
+    def __add__(self, objv: "BaseObjective" | "MixedObjective"):
         if isinstance(objv, BaseObjective):
             self._objv_list.append(objv)
         elif isinstance(objv, MixedObjective):
