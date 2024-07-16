@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.18.2] - 2024-07-17
+
+### Changed
+- Fix hdot call
+
 ## [0.18.1] - 2024-07-16
 
 ### Changed

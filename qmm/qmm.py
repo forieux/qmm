@@ -475,7 +475,7 @@ def lcg(  # pylint: disable=too-many-locals
     def value_residual(arr, residual):
         if hdot_shape is None:
             return (np.sum(np.conj(arr) * (-second_member - residual)) + constant) / 2
-        return hdot(arr, -second_member - residual) / 2
+        return hdot(arr, -second_member - residual, hdot_shape) / 2
 
     # Gradient at current x0
     residual = second_member - hessian(res.x)
@@ -613,7 +613,7 @@ def pcg(  # pylint: disable=too-many-locals
     def value_residual(arr, residual):
         if hdot_shape is None:
             return np.sum(np.conj(arr) * (-second_member - residual)) / 2
-        return hdot(arr, -second_member - residual) / 2
+        return hdot(arr, -second_member - residual, hdot_shape) / 2
 
     res.grad_norm.append(np.sum(np.real(np.conj(residual) * direction)))
     res.time.append(time.time())
