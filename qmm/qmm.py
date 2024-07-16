@@ -473,6 +473,8 @@ def lcg(  # pylint: disable=too-many-locals
         return reduce(iadd, (vect_call(c.hessp, arr, x0.shape) for c in objv_list))
 
     def value_residual(arr, residual):
+        arr = np.reshape(arr, x0.shape)
+        residual = np.reshape(residual, x0.shape)
         if hdot_shape is None:
             return (np.sum(np.conj(arr) * (-second_member - residual)) + constant) / 2
         return hdot(arr, -second_member - residual, hdot_shape) / 2
@@ -611,6 +613,8 @@ def pcg(  # pylint: disable=too-many-locals
     direction = vect_call(precond, residual, x0.shape)
 
     def value_residual(arr, residual):
+        arr = np.reshape(arr, x0.shape)
+        residual = np.reshape(residual, x0.shape)
         if hdot_shape is None:
             return np.sum(np.conj(arr) * (-second_member - residual)) / 2
         return hdot(arr, -second_member - residual, hdot_shape) / 2
