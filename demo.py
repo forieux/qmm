@@ -7,13 +7,14 @@ import time
 import matplotlib.pyplot as plt  # type: ignore
 import numpy as np  # type: ignore
 import numpy.linalg as la
-import scipy.misc  # type: ignore
+from scipy.datasets import ascent
+
 import scipy.optimize
 from scipy.signal import convolve2d
 
 from qmm import operators, qmm  # type: ignore
 
-imag = scipy.misc.ascent()
+imag = ascent()
 shape = imag.shape
 
 #%% Forward model
@@ -59,7 +60,7 @@ scipy_res_norm = [la.norm(jacv(init))]
 scipy_time = [time.time()]
 scipy_res = scipy.optimize.minimize(
     critv,
-    x0=init,
+    x0=init.ravel(),
     method="CG",
     jac=jacv,
     options={"maxiter": 300, "gtol": 5e-5},
@@ -94,3 +95,4 @@ plt.xlabel("Time [s]")
 plt.title(f"Gradient norm")
 plt.legend()
 plt.tight_layout()
+plt.show()
