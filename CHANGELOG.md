@@ -6,8 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.18.3] - 2025-01-30
+
 ### Changed
-- Fix typing
+- Fix ascent bug
+- Update numpy
 
 ## [0.18.2] - 2024-07-17
 
@@ -105,7 +108,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix `fun` calc in linear CG (lcg)
 - Fix `fun` attr in OptimizeResult
 - Clean OptimizeResult to remove unused fields
-- Fix step for real to complex operators 
+- Fix step for real to complex operators
 - Use abs() before square to avoid complex casting
 - Fix sectioning in documentation
 
@@ -136,9 +139,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - *BaseObjective* have a *name* string attribute.
 - Add a CHANGELOG.md file.
 
-### Changed 
+### Changed
 - rename *lastv* to *lastgv*.
-- rename *calc_objv* to *calc_fun* 
+- rename *calc_objv* to *calc_fun*
 - rename *init* to *x0* like in scipy.
 
 ## [0.4.0] - 2021-04-07
@@ -149,6 +152,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - add *calc_objv* flag to compute criterion value with low overhead.
 - add a *callback* function to optimization algorithms.
 
-### Changed 
+### Changed
 - rename *Criterion* to *Objective*.
 - rename *Potential* to *Loss*.
