@@ -1080,7 +1080,7 @@ class Objective(BaseObjective):
         matrix = self.hyper * np.real(
             np.conj(vecs.T) @ (self.gr_coeffs(point).reshape((-1, 1)) * vecs)
         )
-        return float(matrix) if matrix.size == 1 else matrix
+        return matrix
 
     def gr_coeffs(self, point: array) -> array:
         """The Geman & Reynolds coefficients at given point
