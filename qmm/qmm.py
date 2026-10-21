@@ -1171,14 +1171,19 @@ class QuadObjective(BaseObjective):
 
         self._unvec_op = operator
         if isinstance(data, list):
-            self._op: Callable = Stacked(
+            self._stacked: Optional[Stacked] = Stacked(
                 operator, adjoint, [dat.shape for dat in data]
-            ).operator
+            )
+            self._op: Callable = self._stacked.operator
         else:
+            self._stacked = None
             self._op = operator
+        # Shape of `Vx`, needed to apply `B` in `norm_mat_major`
+        self._out_shape = None if data is None else np.shape(data)
         self._adj = adjoint
         self._data = data
 
+        self._metric = invcovp is not None
         if invcovp is None:
             self.invcovp = lambda x: x  # Identity
         elif invcovp is not None:
@@ -1282,7 +1287,27 @@ class QuadObjective(BaseObjective):
         ) / 2
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
-        return np.real(np.conj(vecs.T) @ vecs)
+        """Return `μ WᵀBW`"""
+        if not self._metric:
+            return self.hyper * np.real(np.conj(vecs.T) @ vecs)
+        # Apply `B` to each column of `vecs`, a matrix of vectorized `Vx`
+        if self._stacked is not None:
+            bvecs = np.hstack(
+                [
+                    self._stacked.list2vec(self.invcovp(self._stacked.vec2list(col)))
+                    for col in vecs.T
+                ]
+            )
+        else:
+            if self._out_shape is None:
+                self._out_shape = np.shape(self._unvec_op(point))
+            bvecs = np.hstack(
+                [
+                    np.reshape(self.invcovp(np.reshape(col, self._out_shape)), (-1, 1))
+                    for col in vecs.T
+                ]
+            )
+        return self.hyper * np.real(np.conj(vecs.T) @ bvecs)
 
 
 class Vmin(BaseObjective):
