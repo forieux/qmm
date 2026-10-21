@@ -879,7 +879,7 @@ class BaseObjective(abc.ABC):
     def norm_mat_major(self, vecs: array, point: array) -> array:
         """Return the normal matrix of the quadratic major function.
 
-        Given vectors `W = V·S`, return `Wᵀ·diag(b)·W`
+        Given vectors `W = V·S`, return `μ Wᵀ·diag(b)·W`
 
         where S are the vectors defining a subspace and `b` are Geman &
         Reynolds coefficients at given `point`.
@@ -1077,7 +1077,7 @@ class Objective(BaseObjective):
         return self.hyper * self._adj(self.loss.gradient(residual))
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
-        matrix = np.real(
+        matrix = self.hyper * np.real(
             np.conj(vecs.T) @ (self.gr_coeffs(point).reshape((-1, 1)) * vecs)
         )
         return float(matrix) if matrix.size == 1 else matrix
@@ -1329,7 +1329,7 @@ class Vmin(BaseObjective):
         return self.hyper * np.where(idx, point - self.vmin, 0)
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
-        return np.real(np.conj(vecs.T) @ vecs)
+        return self.hyper * np.real(np.conj(vecs.T) @ vecs)
 
 
 class Vmax(BaseObjective):
@@ -1376,7 +1376,7 @@ class Vmax(BaseObjective):
         return self.hyper * np.where(idx, point - self.vmax, 0)
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
-        return np.real(np.conj(vecs.T) @ vecs)
+        return self.hyper * np.real(np.conj(vecs.T) @ vecs)
 
 
 #%% \
