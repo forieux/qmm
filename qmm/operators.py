@@ -135,23 +135,19 @@ class Conv2(Operator):
 
         self.imp_resp = ir
         self.shape = shape
-        self._ir_shape = ir.shape
         self.freq_resp = ir2fr(ir, self.shape)
+        # The "valid" part of the circular convolution
+        self._valid = tuple(
+            slice(len_ir - 1 - len_ir // 2, len_im - len_ir // 2)
+            for len_ir, len_im in zip(ir.shape, shape)
+        )
 
     def forward(self, point: array) -> array:
-        return idft2(dft2(point) * self.freq_resp, self.shape)[
-            : -self._ir_shape[0] + 1, : -self._ir_shape[1] + 1
-        ]
+        return idft2(dft2(point) * self.freq_resp, self.shape)[self._valid]
 
     def adjoint(self, point: array) -> array:
         out = np.zeros(self.shape)
-        out[: point.shape[0], : point.shape[1]] = point
-        return idft2(dft2(out) * self.freq_resp.conj(), self.shape)
-
-    def fwback(self, point: array) -> array:
-        out = idft2(dft2(point) * self.freq_resp, self.shape)
-        out[-self._ir_shape[0] + 1 :, :] = 0
-        out[:, -self._ir_shape[1] + 1 :] = 0
+        out[self._valid] = point
         return idft2(dft2(out) * self.freq_resp.conj(), self.shape)
 
 
@@ -263,7 +259,7 @@ def ir2fr(
         raise ValueError("center and shape must have the same length")
 
     # Place the provided IR at the beginning of the array
-    irpadded = np.zeros(imp_resp.shape[: -len(shape)] + shape)
+    irpadded = np.zeros(imp_resp.shape[: -len(shape)] + tuple(shape))
     irpadded[tuple([slice(0, s) for s in imp_resp.shape])] = imp_resp
 
     # Roll, or circshift to place the origin at index 0, the

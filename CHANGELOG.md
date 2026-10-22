@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `mmmg` and `mmcg` majorant ignored `hyper` and `invcovp`.
 - `mmcg` never reported convergence.
 - `Vmin` and `Vmax` crashed `mmmg` and gave a wrong majorant with `mmcg`.
+- `operators.Conv2` was shifted and wrapped instead of a "valid" convolution.
 
 ## [0.19.0] - 2025-01-30
 
