@@ -347,6 +347,8 @@ def mmcg(  # pylint: disable=too-many-locals
 
     # pylint: disable=invalid-unary-operand-type
     residual = -vectgradient(objv_list, res.x, x0.shape)
+    res.jac = -residual.reshape(x0.shape)
+    res.fun = lastgv(objv_list)
     sec = vect_call(precond, residual, x0.shape)
     direction = sec
     delta = residual.T @ direction
@@ -357,6 +359,8 @@ def mmcg(  # pylint: disable=too-many-locals
         # Stop test
         res.grad_norm.append(la.norm(residual))
         if res.grad_norm[-1] < x0.size * tol and iteration >= min_iter:
+            res.success = True
+            res.status = 0
             break
 
         # update
