@@ -1319,7 +1319,7 @@ class Vmin(BaseObjective):
 
     .. math::
 
-        J(x) = \frac{1}{2} \mu \|P_{]-\infty, m]}(x) - m\|_2^2.
+        J(x) = \frac{1}{2} \mu \|\min(x - m, 0)\|_2^2.
 
     vmin : float
         The minimum value `m`.
@@ -1330,7 +1330,7 @@ class Vmin(BaseObjective):
     def __init__(self, vmin: float, hyper: float, name: str = ""):
         """A minimum value objective function
 
-        `J(x) = ½ μ ||P_[m, +∞[(x) - m||²`.
+        `J(x) = ½ μ ||min(x - m, 0)||²`.
 
         Parameters
         ----------
@@ -1344,8 +1344,9 @@ class Vmin(BaseObjective):
         super().__init__(hyper=hyper, name=name)
         self.vmin = vmin
 
-    def operator(self, point):
-        return point[point <= self.vmin]
+    def operator(self, point: array) -> array:
+        """Return `x`: the quadratic majorant `½ μ ||x - x₀||²` is in `x`."""
+        return point
 
     def value(self, point: array) -> float:
         """Return the value at current point."""
@@ -1366,7 +1367,7 @@ class Vmax(BaseObjective):
 
     .. math::
 
-        J(x) = \frac{1}{2} \mu \|P_{[M, +\infty[}(x) - M\|_2^2.
+        J(x) = \frac{1}{2} \mu \|\max(x - M, 0)\|_2^2.
 
     vmax : float
         The maximum value `M`.
@@ -1377,7 +1378,7 @@ class Vmax(BaseObjective):
     def __init__(self, vmax: float, hyper: float, name: str = ""):
         """A maximum value objective function
 
-        Return `J(x) = ½ μ ||P_[M, +∞[(x) - M||²`.
+        Return `J(x) = ½ μ ||max(x - M, 0)||²`.
 
         Parameters
         ----------
@@ -1391,8 +1392,9 @@ class Vmax(BaseObjective):
         super().__init__(hyper=hyper, name=name)
         self.vmax = vmax
 
-    def operator(self, point):
-        return point[point >= self.vmax]
+    def operator(self, point: array) -> array:
+        """Return `x`: the quadratic majorant `½ μ ||x - x₀||²` is in `x`."""
+        return point
 
     def value(self, point: array) -> float:
         """Return the value at current point."""
