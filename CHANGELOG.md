@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `mmcg` never reported convergence.
 - `Vmin` and `Vmax` crashed `mmmg` and gave a wrong majorant with `mmcg`.
 - `operators.Conv2` was shifted and wrapped instead of a "valid" convolution.
+- Objective values and `mmmg`/`mmcg` steps were wrong with complex variables.
+  `Objective` still requires a real residual `Vx - ω`.
 
 ## [0.19.0] - 2025-01-30
 

@@ -256,7 +256,7 @@ def mmmg(  # pylint: disable=too-many-locals
                 objv.norm_mat_major(i_op_dir, res.x.reshape(x0.shape))
                 for objv, i_op_dir in zip(objv_list, op_directions)
             )
-        ) @ (directions.T @ grad)
+        ) @ np.real(np.conj(directions.T) @ grad)
         move = directions @ step
 
         # update
@@ -351,7 +351,7 @@ def mmcg(  # pylint: disable=too-many-locals
     res.fun = lastgv(objv_list)
     sec = vect_call(precond, residual, x0.shape)
     direction = sec
-    delta = residual.T @ direction
+    delta = np.real(np.conj(residual.T) @ direction)
 
     res.time.append(time.time())
 
@@ -368,7 +368,7 @@ def mmcg(  # pylint: disable=too-many-locals
             vect_call(objv.operator, direction, x0.shape) for objv in objv_list
         ]
 
-        step = direction.T @ residual
+        step = np.real(np.conj(direction.T) @ residual)
         step = step / sum(
             objv.norm_mat_major(i_op_dir, res.x.reshape(x0.shape))
             for objv, i_op_dir in zip(objv_list, op_direction)
@@ -386,9 +386,9 @@ def mmcg(  # pylint: disable=too-many-locals
 
         # Conjugate direction. No reset is done, see Shewchuck.
         delta_old = delta
-        delta_mid = residual.T @ sec
+        delta_mid = np.real(np.conj(residual.T) @ sec)
         sec = vect_call(precond, residual, x0.shape)
-        delta = residual.T @ sec
+        delta = np.real(np.conj(residual.T) @ sec)
         if (delta - delta_mid) / delta_old >= 0:
             direction = sec + (delta - delta_mid) / delta_old * direction
         else:
@@ -481,7 +481,9 @@ def lcg(  # pylint: disable=too-many-locals
         residual = np.reshape(residual, x0.shape)
         if hdot_shape is None:
             return (
-                np.sum(np.conj(arr) * (-second_member.reshape(x0.shape) - residual))
+                np.real(
+                    np.sum(np.conj(arr) * (-second_member.reshape(x0.shape) - residual))
+                )
                 + constant
             ) / 2
         return hdot(arr, -second_member.reshape(x0.shape) - residual, hdot_shape) / 2
@@ -624,7 +626,10 @@ def pcg(  # pylint: disable=too-many-locals
         residual = np.reshape(residual, x0.shape)
         if hdot_shape is None:
             return (
-                np.sum(np.conj(arr) * (-second_member.reshape(x0.shape) - residual)) / 2
+                np.real(
+                    np.sum(np.conj(arr) * (-second_member.reshape(x0.shape) - residual))
+                )
+                / 2
             )
         return hdot(arr, -second_member.reshape(x0.shape) - residual, hdot_shape) / 2
 
@@ -1045,6 +1050,9 @@ class Objective(BaseObjective):
         are encouraged to do the vectorization themselves and use this "list of
         array" feature.
 
+        The residual `Vx - ω` must be real: losses `φ` are not defined for
+        complex values. Use `QuadObjective` for complex quadratic terms.
+
         """
         super().__init__(hyper=hyper, name=name)
         if isinstance(data, list):
@@ -1221,12 +1229,12 @@ class QuadObjective(BaseObjective):
         if self._cst is None:
             if isinstance(self._data, list):
                 self._cst = self.hyper * sum(
-                    np.real(np.sum(y * By))
+                    np.real(np.sum(np.conj(y) * By))
                     for y, By in zip(self._data, self.invcovp(self._data))
                 )
             else:
                 self._cst = self.hyper * np.real(
-                    np.sum(self._data * self.invcovp(self._data))
+                    np.sum(np.conj(self._data) * self.invcovp(self._data))
                 )
         return self._cst
 
@@ -1243,12 +1251,15 @@ class QuadObjective(BaseObjective):
         # xVᵀBVx
         if isinstance(Vx, list):
             self.lastv = self.hyper * sum(
-                np.sum(Vx_i * BVx_i) for Vx_i, BVx_i in zip(Vx, self.invcovp(Vx))
+                np.real(np.sum(np.conj(Vx_i) * BVx_i))
+                for Vx_i, BVx_i in zip(Vx, self.invcovp(Vx))
             )
         else:
-            self.lastv = self.hyper * np.sum(Vx * self.invcovp(Vx))
+            self.lastv = self.hyper * np.real(np.sum(np.conj(Vx) * self.invcovp(Vx)))
         self.lastv = (
-            self.lastv - 2 * np.sum(point * self.VtB_data) + self.constant
+            self.lastv
+            - 2 * np.real(np.sum(np.conj(point) * self.VtB_data))
+            + self.constant
         ) / 2
         return self.lastv
 
@@ -1274,9 +1285,10 @@ class QuadObjective(BaseObjective):
         thanks to the relation
 
         `J(x) =  ½ (xᵀq - 2 xᵀb + μ ωᵀBω)`."""
+        conj_x = np.conj(np.reshape(point, (-1)))
         return (
-            np.sum(np.reshape(point, (-1)) * np.reshape(hessp, (-1)))
-            - 2 * np.sum(np.reshape(point, (-1)) * np.reshape(self.VtB_data, (-1)))
+            np.real(np.sum(conj_x * np.reshape(hessp, (-1))))
+            - 2 * np.real(np.sum(conj_x * np.reshape(self.VtB_data, (-1))))
             + self.constant
         ) / 2
 
@@ -1287,7 +1299,8 @@ class QuadObjective(BaseObjective):
 
         `J(x) =  ½ (xᵀ(-b - r) + μ ωᵀBω)`."""
         return (
-            np.sum(np.conj(point) * (-self.VtB_data - residual)) + self.constant
+            np.real(np.sum(np.conj(point) * (-self.VtB_data - residual)))
+            + self.constant
         ) / 2
 
     def norm_mat_major(self, vecs: array, point: array) -> array:
