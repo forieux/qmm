@@ -24,8 +24,7 @@ This module implements Quadratic Majorize-Minimize optimization algorithms.
 import abc
 import collections.abc
 import time
-from functools import reduce, wraps
-from operator import iadd
+from functools import wraps
 from typing import Callable, MutableSequence, Optional, Sequence, Union
 
 import numpy as np  # type: ignore
@@ -470,16 +469,12 @@ def lcg(  # pylint: disable=too-many-locals
 
     res.x = x0.copy().reshape((-1, 1))
 
-    # A more efficient solution will be to use np.add with `out` argument.
-    # Previous implementation used iadd but there was a bug where the second
-    # member of the first criterion where updated to the sum of all the second
-    # member, that was the same array.
     second_member = np.reshape(sum(qobjv.VtB_data for qobjv in objv_list), (-1, 1))
 
     constant = sum(c.constant for c in objv_list)
 
     def hessian(arr):
-        return reduce(iadd, (vect_call(c.hessp, arr, x0.shape) for c in objv_list))
+        return sum(vect_call(c.hessp, arr, x0.shape) for c in objv_list)
 
     def value_residual(arr, residual):
         arr = np.reshape(arr, x0.shape)
@@ -762,8 +757,8 @@ def vectgradient(
     objv_list: Sequence["BaseObjective"], point: array, shape: tuple
 ) -> array:
     """Compute sum of gradient with vectorized parameters and return."""
-    # The use of reduce and iadd do a more efficient numpy inplace sum
-    return reduce(iadd, (vect_call(objv.gradient, point, shape) for objv in objv_list))
+    # No in-place sum: arrays returned by objectives must not be modified
+    return sum(vect_call(objv.gradient, point, shape) for objv in objv_list)
 
 
 def lastgv(objv_list: Sequence["BaseObjective"]) -> float:
@@ -986,7 +981,7 @@ class MixedObjective(collections.abc.MutableSequence):
 
     def gradient(self, point: array) -> array:
         """The gradient ∇J(x)"""
-        return reduce(iadd, (o.gradient(point) for o in self._objv_list))
+        return sum(o.gradient(point) for o in self._objv_list)
 
     def val_grad(self, point: array) -> array:
         """Compute and return the value and gradient at current point."""

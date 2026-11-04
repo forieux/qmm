@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `lcg` and `pcg` documentation of `hdot_shape` and of the objective value.
 - `a + (b + c)` was nested and crashed solvers. `sum()` and `+=` with objectives
   now work.
+- Summing gradients modified the array returned by the first objective.
 
 ## [0.19.0] - 2025-01-30
 
