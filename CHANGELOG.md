@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - `hyper` is read-only for all objectives.
+- `MixedObjective + objective` returns a new instance instead of updating the
+  left operand. `+=` to update in place.
 
 ### Fixed
 - `mmmg` and `mmcg` majorant ignored `hyper` and `invcovp`.
@@ -17,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Objective values and `mmmg`/`mmcg` steps were wrong with complex variables.
   `Objective` still requires a real residual `Vx - ω`.
 - `lcg` and `pcg` documentation of `hdot_shape` and of the objective value.
+- `a + (b + c)` was nested and crashed solvers. `sum()` and `+=` with objectives
+  now work.
 
 ## [0.19.0] - 2025-01-30
 

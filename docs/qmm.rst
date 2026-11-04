@@ -141,8 +141,9 @@ Sum of objectives
 
 The :class:`MixedObjective` is a convenient (not required) list-like class that
 represent the sum of :class:`BaseObjective`. Moreover, :class:`BaseObjective`
-and :class:`MixedObjective` support the "+" operator and returns a
-:class:`MixedObjective` instance, or update the instance, respectively. Since
+and :class:`MixedObjective` support the "+" operator and `sum()`, that return a
+new flat :class:`MixedObjective` instance without modifying the operands. The
+"+=" operator updates a :class:`MixedObjective` in place. Since
 :class:`MixedObjective` is a list, it can be used with :ref:`optimization
 algorithms<label-opt-alg>`.
 
@@ -156,7 +157,7 @@ algorithms<label-opt-alg>`.
    objective = likelihood + prior1
 
    # Equivalent to objective.append(prior2)
-   objective = objective + prior2
+   objective += prior2
 
    # Equivalent to res = mmmg([likelihood, prior1, prior2], ...)
    res = mmmg(objective, ...)

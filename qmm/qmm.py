@@ -855,8 +855,6 @@ class BaseObjective(abc.ABC):
         in `lastgv` attribute (False by default).
     name: str
         The name of the objective.
-    hyper: float
-        The read-only hyperparameter value `μ`.
     lastv: float
         The last evaluated value of the objective (0 by default).
     lastgv: float
@@ -922,8 +920,11 @@ class BaseObjective(abc.ABC):
     def __call__(self, point: array) -> float:
         return self.value(point)
 
-    def __add__(self, objv: "BaseObjective"):
-        return MixedObjective([self, objv])
+    def __add__(self, objv: Union["BaseObjective", "MixedObjective"]):
+        return MixedObjective([self]).__add__(objv)
+
+    def __radd__(self, objv: int):
+        return MixedObjective([self]).__radd__(objv)
 
 
 class MixedObjective(collections.abc.MutableSequence):
@@ -987,23 +988,27 @@ class MixedObjective(collections.abc.MutableSequence):
         return self.value(point)
 
     def __add__(self, objv: Union["BaseObjective", "MixedObjective"]):
+        """Return a new flat `MixedObjective`, operands are not modified."""
+        if isinstance(objv, BaseObjective):
+            return MixedObjective([*self._objv_list, objv])
+        if isinstance(objv, MixedObjective):
+            return MixedObjective([*self._objv_list, *objv._objv_list])
+        return NotImplemented
+
+    def __radd__(self, objv: int):
+        """Support `sum()`, that starts with `0 + objective`."""
+        if isinstance(objv, int) and objv == 0:
+            return MixedObjective(list(self._objv_list))
+        return NotImplemented
+
+    def __iadd__(self, objv: Union["BaseObjective", "MixedObjective"]):
+        """Add in place to this `MixedObjective`."""
         if isinstance(objv, BaseObjective):
             self._objv_list.append(objv)
         elif isinstance(objv, MixedObjective):
-            self._objv_list.extend(objv._objv_list)
+            self._objv_list.extend(list(objv._objv_list))
         else:
-            raise TypeError(
-                f"unsupported operand type(s) for +: 'MixedObjective' and {type(objv)}"
-            )
-        return self
-
-    def __radd__(self, objv: "BaseObjective"):
-        if isinstance(objv, BaseObjective):
-            self._objv_list.append(objv)
-        else:
-            raise TypeError(
-                f"unsupported operand type(s) for +: 'MixedObjective' and {type(objv)}"
-            )
+            return NotImplemented
         return self
 
 
