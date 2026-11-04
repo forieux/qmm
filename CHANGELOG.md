@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `MixedObjective + objective` returns a new instance instead of updating the
   left operand. `+=` to update in place.
 - Operators returning a list require `data` as a list with `mmmg` and `mmcg`.
+- `QuadObjective.gradient` calls `hessp` once instead of twice.
 
 ### Fixed
 - `mmmg` and `mmcg` majorant ignored `hyper` and `invcovp`.

@@ -1304,7 +1304,7 @@ class QuadObjective(BaseObjective):
         """
         hessp = self.hessp(point)
         self.lastgv = self.value_hessp(point, hessp)
-        return self.hessp(point) - self.VtB_data
+        return hessp - self.VtB_data
 
     def value_hessp(self, point, hessp):
         """Return `J(x)` value at low cost given `x` and `q = Qx`
