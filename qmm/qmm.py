@@ -1208,7 +1208,9 @@ class QuadObjective(BaseObjective):
             self._stacked = None
             self._op = operator
         # Shape of `Vx`, needed to apply `B` in `norm_mat_major`
-        self._out_shape = None if data is None else np.shape(data)
+        self._out_shape = (
+            None if data is None or isinstance(data, list) else np.shape(data)
+        )
         self._adj = adjoint
         self._data = data
 
