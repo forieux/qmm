@@ -718,6 +718,16 @@ def hdot(arr1: np.ndarray, arr2: np.ndarray, inshape: tuple[int, ...]) -> float:
 
 
 # Vectorized call
+def check_not_list(out: ArrOrSeq) -> array:
+    """Return `out`, an operator output, or raise if it is a list of array"""
+    if isinstance(out, list):
+        raise TypeError(
+            "An operator that returns a list requires `data` as a list of array. "
+            "Otherwise, use one objective for each output."
+        )
+    return out
+
+
 def vect_call(func: Callable[[array], array], point: array, shape: tuple) -> array:
     """Call func with point reshaped as shape and return vectorized output"""
     return np.reshape(func(np.reshape(point, shape)), (-1, 1))
@@ -1064,8 +1074,11 @@ class Objective(BaseObjective):
         In that case, however, and for algorithm purpose, everything is
         internally stacked as a column vector and values are therefore copied,
         by using a `Stacked` object. This is not efficient but flexible. Users
-        are encouraged to do the vectorization themselves and use this "list of
-        array" feature.
+        are encouraged to do the vectorization themselves instead of using this
+        "list of array" feature.
+
+        If `operator` returns a list, `data` must be a list. Without data, use
+        one objective for each output.
 
         The residual `Vx - ω` must be real: losses `φ` are not defined for
         complex values. Use `QuadObjective` for complex quadratic terms.
@@ -1085,7 +1098,7 @@ class Objective(BaseObjective):
         self.loss = loss
 
     def operator(self, point: array) -> array:
-        return self._op(point)
+        return check_not_list(self._op(point))
 
     def value(self, point: array) -> float:
         """The value of the objective function at given point
@@ -1258,7 +1271,7 @@ class QuadObjective(BaseObjective):
         return self._cst
 
     def operator(self, point: array) -> array:
-        return self._op(point)
+        return check_not_list(self._op(point))
 
     def value(self, point: array) -> float:
         """The value of the objective function at given point

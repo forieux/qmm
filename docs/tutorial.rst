@@ -58,7 +58,8 @@ output.
 .. note::
 
    The list of array allows mixed operators, like combination of data
-   observation models, or multiple regularization.
+   observation models, and requires ``data`` as a list of array. For multiple
+   regularization, use one objective for each output.
 
    Everything is internally vectorized. Therefore, the use of list of array
    implies memory copies of arrays.

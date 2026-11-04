@@ -114,9 +114,10 @@ objective function.
    or arrays, all these arrays are handled by a `Stacked` class, internally
    vectorized and the data are therefore memory copied, at each iteration.
 
-   If ``operator`` returns a list of array, the ``adjoint`` **must** accept a
-   list of array also. Again, everything is vectorized and `Objective` rebuild
-   the list of array internally.
+   If ``operator`` returns a list of array, ``data`` **must** be a list of array
+   and the ``adjoint`` **must** accept a list of array also. Again, everything is
+   vectorized and `Objective` rebuild the list of array internally. Without
+   data, use one objective for each output.
 
    `QuadObjective` handle this ``list`` of array more efficiently since data
    :math:`\omagea` is not stored internally by the class but only :math:`\mu V^T
