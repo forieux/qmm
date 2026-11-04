@@ -423,7 +423,7 @@ def lcg(  # pylint: disable=too-many-locals
     precond: Optional[Callable[[array], array]] = None,
     callback: Optional[Callable[[OptimizeResult], None]] = None,
     calc_objv: bool = False,
-    hdot_shape: tuple[int] = None,
+    hdot_shape: Optional[tuple[int, ...]] = None,
 ) -> OptimizeResult:
     """Linear Conjugate Gradient (CG) algorithm.
 
@@ -452,6 +452,11 @@ def lcg(  # pylint: disable=too-many-locals
     calc_objv: boolean, optional
         If True, objective function is computed at each iteration with low
         overhead. False by default. Not used by the algorithm.
+    hdot_shape : tuple of int, optional
+        If x0 is in Fourier space with rfftn, set to shape of x0 in real space
+        for correct computation of the objective value. Not used by the
+        algorithm. The constant `c = μ ωᵀBω` is then omitted: the objective
+        value is `J(x) - c`.
 
     Returns
     -------
@@ -555,9 +560,9 @@ def pcg(  # pylint: disable=too-many-locals
     min_iter: int = 0,
     precond: Optional[Callable[[array], array]] = None,
     callback: Optional[Callable[[OptimizeResult], None]] = None,
-    hdot_shape: tuple[int] = None,
+    hdot_shape: Optional[tuple[int, ...]] = None,
 ) -> OptimizeResult:
-    """Preconditionnate Conjugate Gradient (CG) algorithm.
+    r"""Preconditionnate Conjugate Gradient (CG) algorithm.
 
     Preconditionnate Conjugate Gradient for solving SDP linear system
 
@@ -568,7 +573,7 @@ def pcg(  # pylint: disable=too-many-locals
     gradient cancelling of quadratic criterion
 
     .. math::
-        J(x) = \frac{1}{2} x^T A x - 2 x^T b + c.
+        J(x) = \frac{1}{2} x^T A x - x^T b + c.
 
     Parameters
     ----------
@@ -603,6 +608,8 @@ def pcg(  # pylint: disable=too-many-locals
     Notes
     -----
     This is the same algorithm than `lcg` with a different API.
+
+    The constant `c` is unknown: the objective value is always `J(x) - c`.
 
     """
 
