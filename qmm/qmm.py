@@ -856,7 +856,7 @@ class BaseObjective(abc.ABC):
     name: str
         The name of the objective.
     hyper: float
-        The hyperparameter value `μ`.
+        The read-only hyperparameter value `μ`.
     lastv: float
         The last evaluated value of the objective (0 by default).
     lastgv: float
@@ -867,8 +867,13 @@ class BaseObjective(abc.ABC):
         self.lastgv = 0
         self.lastv = 0
         self.calc_objv = False
-        self.hyper = hyper
+        self._hyper = hyper
         self.name = name
+
+    @property
+    def hyper(self) -> float:
+        """The read-only hyperparameter value `μ`."""
+        return self._hyper
 
     @abc.abstractmethod
     def operator(self, point: array) -> array:

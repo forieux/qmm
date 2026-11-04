@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `hyper` is read-only for all objectives.
+
 ### Fixed
 - `mmmg` and `mmcg` majorant ignored `hyper` and `invcovp`.
 - `mmcg` never reported convergence.
