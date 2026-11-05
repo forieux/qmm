@@ -1049,7 +1049,7 @@ class Objective(BaseObjective):
         operator: Callable[[array], ArrOrSeq],
         adjoint: Callable[[ArrOrSeq], array],
         loss: "Loss",
-        data: ArrOrSeq = None,
+        data: Optional[ArrOrSeq] = None,
         hyper: float = 1,
         name: str = "",
     ):
@@ -1175,10 +1175,10 @@ class QuadObjective(BaseObjective):
         self,
         operator: Callable[[array], ArrOrSeq],
         adjoint: Callable[[ArrOrSeq], array],
-        hessp: Callable[[array], array] = None,
-        data: array = None,
+        hessp: Optional[Callable[[array], array]] = None,
+        data: Optional[array] = None,
         hyper: float = 1,
-        invcovp: Callable[[array], array] = None,
+        invcovp: Optional[Callable[[array], array]] = None,
         name: str = "",
     ):
         """A quadratic objective `½ μ ||Vx - ω||²_B`

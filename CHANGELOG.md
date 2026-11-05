@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Test suite and GitHub Actions CI.
+- Test suite and GitHub Actions CI, with ruff.
 
 ### Changed
 - `hyper` is read-only for all objectives.
@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   date.
 - Require Python 3.9 or later.
 - `Loss.gr_sup` and `Loss.gy_sup` raise `NotImplementedError` by default.
+- Package metadata use `[project]`
 
 ### Fixed
 - `mmmg` and `mmcg` majorant ignored `hyper` and `invcovp`.
@@ -41,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Loss.gr_coeffs` truncated integer inputs.
 - `Huber.gr_sup` did not match its documentation.
 - Read the Docs build.
+- Type hints of arguments with `None` as default are `Optional`.
 - Documentation clean up and update.
 
 ## [0.19.0] - 2026-01-30

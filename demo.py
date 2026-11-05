@@ -7,9 +7,8 @@ import time
 import matplotlib.pyplot as plt  # type: ignore
 import numpy as np  # type: ignore
 import numpy.linalg as la
-from scipy.datasets import ascent
-
 import scipy.optimize
+from scipy.datasets import ascent
 from scipy.signal import convolve2d
 
 from qmm import operators, qmm  # type: ignore
@@ -17,30 +16,30 @@ from qmm import operators, qmm  # type: ignore
 imag = ascent()
 shape = imag.shape
 
-#%% Forward model
+# %% Forward model
 ir = np.ones((5, 5)) / 25
 obs = operators.Conv2(ir, shape)
 
-#%% Simulated data
+# %% Simulated data
 data = convolve2d(imag, ir, mode="valid")
-data += np.random.standard_normal(data.shape)
+data += np.random.default_rng().standard_normal(data.shape)
 init = obs.adjoint(data)
 
-#%% Regularization
+# %% Regularization
 diffr = operators.Diff(axis=0)
 diffc = operators.Diff(axis=1)
 loss = qmm.HebertLeahy(delta=10)
 
-#%% Objectives definition
+# %% Objectives definition
 data_adeq = qmm.QuadObjective(obs.forward, obs.adjoint, obs.fwback, data=data)
 priorr_adeq = qmm.Objective(diffr.forward, diffr.adjoint, loss, hyper=0.5)
 priorc_adeq = qmm.Objective(diffc.forward, diffc.adjoint, loss, hyper=0.5)
 
-#%% Optimization
+# %% Optimization
 crit = data_adeq + priorr_adeq + priorc_adeq
 res = qmm.mmmg(crit, init, max_iter=300, tol=1e-7)
 
-#%% Scipy
+# %% Scipy
 critv = qmm.vectorize(init.shape)(crit)
 jacv = qmm.vectorize(init.shape)(crit.gradient)
 
@@ -69,7 +68,7 @@ scipy_res = scipy.optimize.minimize(
 
 scipy_time = np.asarray(scipy_time) - scipy_time[0]
 
-#%% Plot
+# %% Plot
 plt.figure(1)
 plt.clf()
 plt.subplot(2, 2, 1)
@@ -92,7 +91,7 @@ plt.semilogy(res.time, res.grad_norm, ".-", label="QMM")
 plt.semilogy(scipy_time, scipy_res_norm, ".-", label="Scipy 'CG'")
 plt.grid("on")
 plt.xlabel("Time [s]")
-plt.title(f"Gradient norm")
+plt.title("Gradient norm")
 plt.legend()
 plt.tight_layout()
 plt.show()

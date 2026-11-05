@@ -20,7 +20,7 @@ is not required by Q-MM, is basic, but can serve as guide or for reuse.
 """
 
 import abc
-from typing import List, Sequence, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union
 
 import numpy as np  # type: ignore
 from numpy import ndarray as array
@@ -204,7 +204,7 @@ class Diff(Operator):
 def ir2fr(
     imp_resp: array,
     shape: Sequence[int],
-    center: Sequence[int] = None,
+    center: Optional[Sequence[int]] = None,
     real: bool = True,
 ) -> array:
     """Return the frequency response from impulse responses.
