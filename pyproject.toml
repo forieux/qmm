@@ -9,7 +9,7 @@ license = "GPL-3.0-or-later"
 homepage = "https://qmm.readthedocs.io/en/stable/"
 documentation = "https://qmm.readthedocs.io/en/stable/"
 repository = "https://github.com/forieux/qmm/"
-keywords = ["optimization", "MM", "surogate", "criterion", "objective", "learning"]
+keywords = ["optimization", "MM", "surrogate", "criterion", "objective", "learning"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Topic :: Scientific/Engineering",

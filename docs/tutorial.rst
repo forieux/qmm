@@ -87,8 +87,8 @@ Then, a :class:`Objective` :math:`\mu \Psi(Vx)` named ``prior`` can be instanced
 
    prior = Objective(forward, adjoint, phi, hyper=0.01)
 
-If a quadratic objective like :math:`\|y - H x\|_2^2` is needed, the specific
-class :class:`QuadObjective` can be used
+If a quadratic objective like :math:`\frac{1}{2} \|y - H x\|_2^2` is needed, the
+specific class :class:`QuadObjective` can be used
 
 .. code-block:: python
 
@@ -110,7 +110,10 @@ Then you can run the algorithm, :func:`mmmg` for instance,
    result = mmmg([data_adeq, prior], init, max_iter=200)
 
 where the list :code:`[data_adeq, prior]` means that the two objective functions
-are summed. The output `result` is an instance of :class:`OptimizeResult`.
+are summed. The output `result` is an instance of :class:`OptimizeResult`: the
+solution is ``result.x`` and ``result.success`` tells if the algorithm has
+converged. Use ``calc_objv=True`` to get the objective values in
+``result.objv_val``.
 
 .. note::
 
@@ -133,4 +136,5 @@ Both algorithms have close form formula for the 1D or 2D step by
 Majorization-Minimization Quadratic.
 
 In addition a Linear Conjugate Gradient :func:`lcg` is implemented for quadratic
-objective.
+objective, and :func:`pcg` is the same algorithm for a linear system given by the
+user.

@@ -41,8 +41,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Loss.gr_coeffs` truncated integer inputs.
 - `Huber.gr_sup` did not match its documentation.
 - Read the Docs build.
+- Documentation clean up and update.
 
-## [0.19.0] - 2025-01-30
+## [0.19.0] - 2026-01-30
 
 ### Changed
 - Fix ascent bug

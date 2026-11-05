@@ -6,7 +6,7 @@ Q-MM: A Python toolbox for Quadratic Majorization-Minimization
 ![pypi](https://img.shields.io/pypi/v/qmm)
 ![status](https://img.shields.io/pypi/status/qmm)
 ![version](https://img.shields.io/pypi/pyversions/qmm)
-![maintained](https://img.shields.io/maintenance/yes/2024)
+![maintained](https://img.shields.io/maintenance/yes/2026)
 [![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
 [![Documentation Status](https://readthedocs.org/projects/qmm/badge/?version=latest)](https://qmm.readthedocs.io/en/latest/?badge=latest)
 
@@ -43,7 +43,7 @@ a scalar, ψₖ(u) = ∑ᵢφₖ(uᵢ), and φₖ a function that must be
 differentiable, even, coercive, φ(√·) concave, and 0 \< φ\'(u) / u \<
 +∞.
 
-The optimization is done thanks to quadratic sugorate function. In
+The optimization is done thanks to quadratic surrogate function. In
 particular, no linesearch or sub-iteration is necessary, and close form
 formula for the step are used with guaranteed convergence.
 
@@ -51,12 +51,12 @@ A classical example, like in the figure below that show an image
 deconvolution problem, is the resolution of an inverse problem with the
 minimization of
 
-J(x) = \|\|² + μ ψ(V·x)
+J(x) = ½ \|\|y - H·x\|\|² + μ ψ(V·x)
 
 where H is a low-pass forward model, V a regularization operator that
 approximate gradient (kind of high-pass filter) and ψ an edge preserving
 function like Huber. The above objective is obtained with k ∈ {1, 2},
-ψ₁(·) = \|\|², V₁ = H, ω₁ = y, and ω₂ = 0.
+ψ₁(·) = ½ \|\|·\|\|², V₁ = H, ω₁ = y, and ω₂ = 0.
 
 ![image](./docs/image.png)
 
@@ -67,6 +67,8 @@ Features
     documentation and \[2\] for details.
 -   The `mmcg`, Majorize-Minimize Conjugate Gradient algorithm. See
     documentation and \[1\] for details.
+-   The `lcg` and `pcg`, Linear Conjugate Gradient algorithms for
+    quadratic objectives.
 -   **No linesearch**: the step is obtained from a close form formula
     without sub-iteration.
 -   **No conjugacy choice**: a conjugacy strategy is not necessary
@@ -108,14 +110,14 @@ in the `functools` module in the standard library is usefull here).
 There is no constraints on the shape, everything is vectorized
 internally.
 
-After import of `qmm`, user must instantiate `Potential` objects that
+After import of `qmm`, user must instantiate `Loss` objects that
 implement `φ` and `Objective` objects that implement `μ ψ(V·x - ω)`
 
 ``` {.sourceCode .python}
 import qmm
 phi = qmm.Huber(delta=10)  # φ
 
-data_adeq = qmm.QuadObjective(H, Ht, HtH, data=data)  # ||y - H·x||²
+data_adeq = qmm.QuadObjective(H, Ht, HtH, data=data)  # ½ ||y - H·x||²
 prior = qmm.Objective(V, Vt, phi, hyper=0.01)  # μ ψ(V·x) = μ ∑ᵢ φ(vᵢᵗ·x)
 ```
 
@@ -125,7 +127,7 @@ Then you can run the algorithm
 res = qmm.mmmg([data_adeq, prior], init, max_iter=200)
 ```
 
-where `[data_adeq, prior]`{.sourceCode} means that the two objective
+where `[data_adeq, prior]` means that the two objective
 functions are summed. For more details, see
 [documentation](https://qmm.readthedocs.io/en/stable/index.html).
 

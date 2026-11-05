@@ -82,6 +82,8 @@ class OptimizeResult(dict):  # pylint: disable=too-many-instance-attributes
         Description of the cause of the termination.
     nit: int
         Number of updates of `x` performed by the optimizer.
+    njev: int
+        The same value as `nit`.
     diff: list of float
         The value of ||x_{k+1} - x_{k}||² at each update, `nit` values.
     time: list of float
@@ -437,7 +439,7 @@ def lcg(  # pylint: disable=too-many-locals
     hdot_shape : tuple of int, optional
         If x0 is in Fourier space with rfftn, set to shape of x0 in real space
         for correct computation of the objective value. Not used by the
-        algorithm. The constant `c = μ ωᵀBω` is then omitted: the objective
+        algorithm. The constant `c = ½ μ ωᵀBω` is then omitted: the objective
         value is `J(x) - c`.
 
     Returns
@@ -537,14 +539,14 @@ def pcg(  # pylint: disable=too-many-locals
     callback: Optional[Callable[[OptimizeResult], None]] = None,
     hdot_shape: Optional[tuple[int, ...]] = None,
 ) -> OptimizeResult:
-    r"""Preconditionnate Conjugate Gradient (CG) algorithm.
+    r"""Preconditioned Conjugate Gradient (CG) algorithm.
 
-    Preconditionnate Conjugate Gradient for solving SDP linear system
+    Preconditioned Conjugate Gradient for solving SPD linear system
 
     .. math::
         A x = b
 
-    where :math:`A` is a SDP matrix and :math:`b` a vector. It comes from the
+    where :math:`A` is a SPD matrix and :math:`b` a vector. It comes from the
     gradient cancelling of quadratic criterion
 
     .. math::
@@ -1163,7 +1165,7 @@ class QuadObjective(BaseObjective):
 
     hyper : float
         The hyperparameter value `μ`.
-    ht_data : array
+    VtB_data : array
         The retroprojected data `μ VᵀBω`.
     constant : float
         The constant value `μ ωᵀBω`.
@@ -1208,7 +1210,7 @@ class QuadObjective(BaseObjective):
         (Qx - b)` where `b = VᵀBω` instead of `∇ = μ VᵀB(Vx - ω)`. This is
         optional and in some case can be more efficient. Use it only in that case.
 
-        The variable `b = VᵀBω` is computed at object initialisation.
+        The variable `b = VᵀBω` is computed once, at first use.
 
         """
         super().__init__(hyper=hyper, name=name)

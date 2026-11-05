@@ -65,12 +65,12 @@ A classical example is the resolution of an inverse problem with the
 minimization of
 
 .. math::
-   J(x) = \|y - H x\|_2^2 + \mu \Psi(V x)
+   J(x) = \frac{1}{2} \|y - H x\|_2^2 + \mu \Psi(V x)
 
 where :math:`H` is a low-pass forward model, :math:`V` a regularization operator
 that approximate object gradient (kind of high-pass filter) and :math:`\Psi` an
 edge preserving function like Huber. The above objective is obtained with
-:math:`k \in \{1, 2\}`, :math:`\Psi_1(\cdot) = \|\cdot\|_2^2`, :math:`V_1 = H`,
+:math:`k \in \{1, 2\}`, :math:`\Psi_1(\cdot) = \frac{1}{2} \|\cdot\|_2^2`, :math:`V_1 = H`,
 :math:`\omega_1 = y`, and :math:`\omega_2 = 0`.
 
 References

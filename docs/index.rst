@@ -6,7 +6,7 @@ Q-MM is a small Python toolbox to optimize differentiable objective functions
 
 .. math::
 
-   \hat x = \underset{x \in \mathbb{R}}{\text{arg min}}\ J(x)
+   \hat x = \underset{x}{\text{arg min}}\ J(x)
 
 by Majorization-Minimization with quadratic surrogate function. In particular,
 **no linesearch** is necessary and **close form formula for the step** are used
@@ -20,6 +20,8 @@ Features
 
 - The ``mmmg`` (or `3mg`), Majorize-Minimize Memory Gradient algorithm.
 - The ``mmcg``, Majorize-Minimize Conjugate Gradient algorithm.
+- The ``lcg`` and ``pcg``, Linear Conjugate Gradient algorithms for quadratic
+  objectives.
 - *No linesearch*: the step is obtained from a close form formula.
 - *No conjugacy choice*: a conjugacy strategy is not necessary thanks to the
   subspace nature of the algorithms. The ``mmcg`` algorithm use a Polak-Ribière
