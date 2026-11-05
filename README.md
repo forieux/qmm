@@ -93,7 +93,7 @@ poetry add qmm
 The package can also be installed with pip. More options are described
 in the [documentation](https://qmm.readthedocs.io/en/stable/index.html).
 
-Q-MM only depends on `numpy` and Python 3.6.
+Q-MM only depends on `numpy` and requires Python 3.9 or later.
 
 Example
 -------

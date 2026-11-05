@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `objv_val` is empty and `fun` is `None` if `calc_objv` is `False`.
 - In `callback`, `res.x` has the shape of `x0` and all attributes are up to
   date.
+- Require Python 3.9 or later.
+- `Loss.gr_sup` and `Loss.gy_sup` raise `NotImplementedError` by default.
 
 ### Fixed
 - `mmmg` and `mmcg` majorant ignored `hyper` and `invcovp`.
@@ -34,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Crash with `max_iter=0` or integer `x0`, and NaN when starting on the solution.
 - `calc_objv` was not restored on exception.
 - `Loss.gr_coeffs` truncated integer inputs.
+- `Huber.gr_sup` did not match its documentation.
+- Read the Docs build.
 
 ## [0.19.0] - 2025-01-30
 

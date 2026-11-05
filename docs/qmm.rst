@@ -120,7 +120,7 @@ objective function.
    data, use one objective for each output.
 
    `QuadObjective` handle this ``list`` of array more efficiently since data
-   :math:`\omagea` is not stored internally by the class but only :math:`\mu V^T
+   :math:`\omega` is not stored internally by the class but only :math:`\mu V^T
    B \omega`, that is an array like `x`.
 
    If given, the ``hessp`` callable argument for :class:`QuadObjective` must

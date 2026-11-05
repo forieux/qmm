@@ -1,8 +1,8 @@
 Installation
 ============
 
-Q-MM only depends on ``numpy`` and requires Python 3.6. The recommended way is
-to use `poetry <https://python-poetry.org/>`_
+Q-MM only depends on ``numpy`` and requires Python 3.9 or later. The recommended
+way is to use `poetry <https://python-poetry.org/>`_
 
 .. code-block:: sh
 
