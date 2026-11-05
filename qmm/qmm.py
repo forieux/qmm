@@ -1514,16 +1514,16 @@ class Loss(abc.ABC):
     def gr_sup(self, point: array) -> array:
         """The Geman & Reynolds `ψ(u)` sup.
 
-        ψ(u) = sup_x φ(x) - ux^2
+        ψ(u) = sup_x φ(x) - u x^2 / 2
         """
-        return NotImplemented
+        raise NotImplementedError
 
     def gy_sup(self, point: array) -> array:
         """The Geman & Yang `ξ(u)` sup.
 
         ξ(u) = sup_x φ(x) - (x - u)^2 / 2
         """
-        return NotImplemented
+        raise NotImplementedError
 
     def __call__(self, point: array) -> array:
         """The value at given point."""
@@ -1585,7 +1585,7 @@ class Huber(Loss):
         return self.delta * np.abs(point)
 
     def gr_sup(self, point: array) -> array:
-        return self.delta**2 / point - self.delta**2
+        return self.delta**2 * np.maximum(1 / (2 * point) - 1 / 2, 0)
 
     def __repr__(self):
         return f"""{type(self)}
