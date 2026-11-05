@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   left operand. `+=` to update in place.
 - Operators returning a list require `data` as a list with `mmmg` and `mmcg`.
 - `QuadObjective.gradient` calls `hessp` once instead of twice.
+- `OptimizeResult` is consistent for all solvers: `nit` counts updates of `x`,
+  `grad_norm`, `time` and `objv_val` include `x0`, and `jac` and `fun` are at
+  the final `x`.
+- `objv_val` is empty and `fun` is `None` if `calc_objv` is `False`.
+- In `callback`, `res.x` has the shape of `x0` and all attributes are up to
+  date.
 
 ### Fixed
 - `mmmg` and `mmcg` majorant ignored `hyper` and `invcovp`.
@@ -24,6 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `a + (b + c)` was nested and crashed solvers. `sum()` and `+=` with objectives
   now work.
 - Summing gradients modified the array returned by the first objective.
+- `diff` was not `||x_{k+1} - x_k||²`.
+- Crash with `max_iter=0` or integer `x0`, and NaN when starting on the solution.
+- `calc_objv` was not restored on exception.
+- `Loss.gr_coeffs` truncated integer inputs.
 
 ## [0.19.0] - 2025-01-30
 

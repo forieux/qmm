@@ -24,6 +24,7 @@ This module implements Quadratic Majorize-Minimize optimization algorithms.
 import abc
 import collections.abc
 import time
+from contextlib import contextmanager
 from functools import wraps
 from typing import Callable, MutableSequence, Optional, Sequence, Union
 
@@ -80,22 +81,27 @@ class OptimizeResult(dict):  # pylint: disable=too-many-instance-attributes
     message: str
         Description of the cause of the termination.
     nit: int
-        Number of iterations performed by the optimizer.
+        Number of updates of `x` performed by the optimizer.
     diff: list of float
-        The value of ||x_{k+1} - x_{k}||² at each iteration
+        The value of ||x_{k+1} - x_{k}||² at each update, `nit` values.
     time: list of float
-        The time at each iteration, starting at 0, in seconds.
+        The time at each `x`, from `x0` included, starting at 0, in seconds.
     fun: float
-        The value of the objective function.
+        The value of the objective function at `x`. `None` if not computed.
     objv_val: list of float
-        The objective value at each iteration
+        The objective value at each `x`, from `x0` included. Empty if not
+        computed, see `calc_objv` of the optimization algorithm.
     jac: array
-        The gradient of the objective function.
+        The gradient of the objective function at `x`.
     grad_norm: list of float
-        The gradient norm at each iteration
+        The gradient norm at each `x`, from `x0` included.
 
     Notes
     -----
+    A callback receives the result after each update of `x`, with up-to-date
+    attributes. `x` has the shape of `x0`. It is updated in place during
+    optimization: make a copy to keep it.
+
     :class:`OptimizeResult` mimes `OptimizeResult` of scipy for compatibility.
 
     """
@@ -210,77 +216,66 @@ def mmmg(  # pylint: disable=too-many-locals
     if precond is None:
         precond = lambda x: x
     res = OptimizeResult()
-    previous_flag = []
-    for objv in objv_list:
-        previous_flag.append(objv.calc_objv)
-        objv.calc_objv = calc_objv
 
-    res.x = x0.copy().reshape((-1, 1))
+    point = init_point(x0)
+    res.x = point.reshape(x0.shape)
 
     # The first previous moves are initialized with 0 array. Consequently, the
     # first iterations implementation can be improved, at the cost of if
     # statement.
-    move = np.zeros_like(res.x)
+    move = np.zeros_like(point)
     op_directions = [
         np.tile(vect_call(objv.operator, move, x0.shape), 2) for objv in objv_list
     ]
     step = np.ones((2, 1))
 
-    res.time.append(time.time())
+    with set_calc_objv(objv_list, calc_objv):
+        for iteration in range(max_iter + 1):
+            # Vectorized gradient
+            grad = vectgradient(objv_list, point, x0.shape)
+            res.grad_norm.append(la.norm(grad))
+            res.jac = grad.reshape(x0.shape)
+            if calc_objv:
+                res.fun = lastgv(objv_list)
+            res.time.append(time.time())
 
-    for iteration in range(max_iter):
-        # Vectorized gradient
-        grad = vectgradient(objv_list, res.x, x0.shape)
-        res.grad_norm.append(la.norm(grad))
-        res.jac = grad.reshape(x0.shape)
-        res.fun = lastgv(objv_list)
+            if iteration > 0 and callback is not None:
+                callback(res)
 
-        # Stopping test
-        if res.grad_norm[-1] < x0.size * tol and iteration >= min_iter:
-            res.success = True
-            res.status = 0
-            break
+            # Stopping test
+            if res.grad_norm[-1] == 0 or (
+                res.grad_norm[-1] < x0.size * tol and iteration >= min_iter
+            ):
+                res.success = True
+                res.status = 0
+                break
 
-        # Memory gradient directions
-        new_dir = vect_call(precond, grad, x0.shape)
-        directions = np.c_[-new_dir, move]
+            if iteration == max_iter:
+                break
 
-        # Step by Majorize-Minimize
-        op_directions = [
-            np.c_[vect_call(objv.operator, new_dir, x0.shape), i_op_dir @ step]
-            for objv, i_op_dir in zip(objv_list, op_directions)
-        ]
-        step = -la.pinv(
-            sum(
-                objv.norm_mat_major(i_op_dir, res.x.reshape(x0.shape))
+            # Memory gradient directions
+            new_dir = vect_call(precond, grad, x0.shape)
+            directions = np.c_[-new_dir, move]
+
+            # Step by Majorize-Minimize
+            op_directions = [
+                np.c_[vect_call(objv.operator, new_dir, x0.shape), i_op_dir @ step]
                 for objv, i_op_dir in zip(objv_list, op_directions)
-            )
-        ) @ np.real(np.conj(directions.T) @ grad)
-        move = directions @ step
+            ]
+            step = -la.pinv(
+                sum(
+                    objv.norm_mat_major(i_op_dir, res.x)
+                    for objv, i_op_dir in zip(objv_list, op_directions)
+                )
+            ) @ np.real(np.conj(directions.T) @ grad)
+            move = directions @ step
 
-        # update
-        res.x += move
+            # update
+            point += move
 
-        res.diff.append(np.sum(move) ** 2)
-        res.time.append(time.time())
+            res.diff.append(np.sum(np.abs(move) ** 2))
 
-        if callback is not None:
-            callback(res)
-
-    if res.status == 0:
-        res.message = "Stopping conditions reached."
-    else:
-        res.success = False
-        res.status = 1
-        res.message = "Maximum number of iterations has been exceeded."
-        del res.time[-1]
-    res.x = np.reshape(res.x, x0.shape)
-    res.njev = iteration + 1
-    res.nit = iteration + 1
-    res.time = list(np.asarray(res.time) - res.time[0])
-
-    for objv, flag in zip(objv_list, previous_flag):
-        objv.calc_objv = flag
+    close_result(res)
 
     return res
 
@@ -337,78 +332,66 @@ def mmcg(  # pylint: disable=too-many-locals
     if precond is None:
         precond = lambda x: x
     res = OptimizeResult()
-    previous_flag = []
-    for objv in objv_list:
-        previous_flag.append(objv.calc_objv)
-        objv.calc_objv = calc_objv
 
-    res.x = x0.copy().reshape((-1, 1))
+    point = init_point(x0)
+    res.x = point.reshape(x0.shape)
 
-    # pylint: disable=invalid-unary-operand-type
-    residual = -vectgradient(objv_list, res.x, x0.shape)
-    res.jac = -residual.reshape(x0.shape)
-    res.fun = lastgv(objv_list)
-    sec = vect_call(precond, residual, x0.shape)
-    direction = sec
-    delta = np.real(np.conj(residual.T) @ direction)
+    # With these values, the first direction is the preconditioned gradient
+    sec = np.zeros_like(point)
+    direction = np.zeros_like(point)
+    delta = 1
 
-    res.time.append(time.time())
+    with set_calc_objv(objv_list, calc_objv):
+        for iteration in range(max_iter + 1):
+            # Gradient
+            # pylint: disable=invalid-unary-operand-type
+            residual = -vectgradient(objv_list, point, x0.shape)
+            res.grad_norm.append(la.norm(residual))
+            res.jac = -residual.reshape(x0.shape)
+            if calc_objv:
+                res.fun = lastgv(objv_list)
+            res.time.append(time.time())
 
-    for iteration in range(max_iter):
-        # Stop test
-        res.grad_norm.append(la.norm(residual))
-        if res.grad_norm[-1] < x0.size * tol and iteration >= min_iter:
-            res.success = True
-            res.status = 0
-            break
+            if iteration > 0 and callback is not None:
+                callback(res)
 
-        # update
-        op_direction = [
-            vect_call(objv.operator, direction, x0.shape) for objv in objv_list
-        ]
+            # Stop test
+            if res.grad_norm[-1] == 0 or (
+                res.grad_norm[-1] < x0.size * tol and iteration >= min_iter
+            ):
+                res.success = True
+                res.status = 0
+                break
 
-        step = np.real(np.conj(direction.T) @ residual)
-        step = step / sum(
-            objv.norm_mat_major(i_op_dir, res.x.reshape(x0.shape))
-            for objv, i_op_dir in zip(objv_list, op_direction)
-        )
+            if iteration == max_iter:
+                break
 
-        res.x += step * direction
+            # Conjugate direction. No reset is done, see Shewchuck.
+            delta_old = delta
+            delta_mid = np.real(np.conj(residual.T) @ sec)
+            sec = vect_call(precond, residual, x0.shape)
+            delta = np.real(np.conj(residual.T) @ sec)
+            if (delta - delta_mid) / delta_old >= 0:
+                direction = sec + (delta - delta_mid) / delta_old * direction
+            else:
+                direction = sec
 
-        res.diff.append(np.sum(step * direction) ** 2)
-        res.time.append(time.time())
+            # update
+            op_direction = [
+                vect_call(objv.operator, direction, x0.shape) for objv in objv_list
+            ]
 
-        # Gradient
-        residual = -vectgradient(objv_list, res.x, x0.shape)
-        res.jac = -residual.reshape(x0.shape)
-        res.fun = lastgv(objv_list)
+            step = np.real(np.conj(direction.T) @ residual)
+            step = step / sum(
+                objv.norm_mat_major(i_op_dir, res.x)
+                for objv, i_op_dir in zip(objv_list, op_direction)
+            )
 
-        # Conjugate direction. No reset is done, see Shewchuck.
-        delta_old = delta
-        delta_mid = np.real(np.conj(residual.T) @ sec)
-        sec = vect_call(precond, residual, x0.shape)
-        delta = np.real(np.conj(residual.T) @ sec)
-        if (delta - delta_mid) / delta_old >= 0:
-            direction = sec + (delta - delta_mid) / delta_old * direction
-        else:
-            direction = sec
+            point += step * direction
 
-        if callback is not None:
-            callback(res)
+            res.diff.append(np.sum(np.abs(step * direction) ** 2))
 
-    if res.status == 0:
-        res.message = "Stopping conditions reached."
-    else:
-        res.success = False
-        res.status = 1
-        res.message = "Maximum number of iterations has been exceeded."
-    res.x = np.reshape(res.x, x0.shape)
-    res.njev = iteration + 1
-    res.nit = iteration + 1
-    res.time = list(np.asarray(res.time) - res.time[0])
-
-    for objv, flag in zip(objv_list, previous_flag):
-        objv.calc_objv = flag
+    close_result(res)
 
     return res
 
@@ -465,9 +448,12 @@ def lcg(  # pylint: disable=too-many-locals
 
     if precond is None:
         precond = lambda x: x
+    if not all(isinstance(objv, QuadObjective) for objv in objv_list):
+        raise TypeError("lcg only supports QuadObjective objectives")
     res = OptimizeResult()
 
-    res.x = x0.copy().reshape((-1, 1))
+    point = init_point(x0)
+    res.x = point.reshape(x0.shape)
 
     second_member = np.reshape(sum(qobjv.VtB_data for qobjv in objv_list), (-1, 1))
 
@@ -489,59 +475,53 @@ def lcg(  # pylint: disable=too-many-locals
         return hdot(arr, -second_member.reshape(x0.shape) - residual, hdot_shape) / 2
 
     # Gradient at current x0
-    residual = second_member - hessian(res.x)
+    residual = second_member - hessian(point)
     direction = vect_call(precond, residual, x0.shape)
+    delta = np.sum(np.real(np.conj(residual) * direction))
 
-    res.grad_norm.append(np.sum(np.real(np.conj(residual) * direction)))
-    res.time.append(time.time())
-
-    for iteration in range(max_iter):
-        hessp = hessian(direction)
-        if calc_objv:
-            res.fun = value_residual(res.x, residual)
-
-        # s = rᵀr / dᵀAd
-        # Optimal step
-        step = res.grad_norm[-1] / np.sum(np.real(np.conj(direction) * hessp))
-
-        # Descent x^(i+1) = x^(i) + s*d
-        res.x += step * direction
-
-        # r^(i+1) = r^(i) - s * A·d
-        if iteration % 50 == 0:
-            residual = second_member - hessian(res.x)
-        else:
-            residual -= step * hessp
+    for iteration in range(max_iter + 1):
+        res.grad_norm.append(np.sqrt(delta))
         res.jac = -residual.reshape(x0.shape)
-
-        # Conjugate direction with preconditionner
-        secant = vect_call(precond, residual, x0.shape)
-        res.grad_norm.append(np.sum(np.real(np.conj(residual) * secant)))
-        direction = secant + (res.grad_norm[-1] / res.grad_norm[-2]) * direction
-
-        res.diff.append(np.sum(step * direction) ** 2)
+        if calc_objv:
+            res.fun = value_residual(point, residual)
         res.time.append(time.time())
 
+        if iteration > 0 and callback is not None:
+            callback(res)
+
         # Stopping condition
-        if np.sqrt(res.grad_norm[-1]) < x0.size * tol and iteration >= min_iter:
+        if delta == 0 or (res.grad_norm[-1] < x0.size * tol and iteration >= min_iter):
             res.success = True
             res.status = 0
             break
 
-        if callback is not None:
-            callback(res)
+        if iteration == max_iter:
+            break
 
-    if res.status == 0:
-        res.message = "Stopping conditions reached."
-    else:
-        res.success = False
-        res.status = 1
-        res.message = "Maximum number of iterations has been exceeded."
-    res.x = np.reshape(res.x, x0.shape)
-    res.njev = iteration + 1
-    res.nit = iteration + 1
-    res.grad_norm = list(np.sqrt(res.grad_norm))
-    res.time = list(np.asarray(res.time) - res.time[0])
+        hessp = hessian(direction)
+
+        # s = rᵀr / dᵀAd
+        # Optimal step
+        step = delta / np.sum(np.real(np.conj(direction) * hessp))
+
+        # Descent x^(i+1) = x^(i) + s*d
+        point += step * direction
+
+        res.diff.append(np.sum(np.abs(step * direction) ** 2))
+
+        # r^(i+1) = r^(i) - s * A·d
+        if iteration % 50 == 0:
+            residual = second_member - hessian(point)
+        else:
+            residual -= step * hessp
+
+        # Conjugate direction with preconditionner
+        secant = vect_call(precond, residual, x0.shape)
+        delta_old = delta
+        delta = np.sum(np.real(np.conj(residual) * secant))
+        direction = secant + (delta / delta_old) * direction
+
+    close_result(res)
 
     return res
 
@@ -612,16 +592,13 @@ def pcg(  # pylint: disable=too-many-locals
         precond = lambda x: x
     res = OptimizeResult()
 
-    res.x = x0.copy().reshape((-1, 1))
+    point = init_point(x0)
+    res.x = point.reshape(x0.shape)
 
     second_member = np.reshape(secondm, (-1, 1))
 
     def hessian(arr):
         return vect_call(normalp, arr, x0.shape)
-
-    # Gradient at current x0
-    residual = second_member - hessian(res.x)
-    direction = vect_call(precond, residual, x0.shape)
 
     def value_residual(arr, residual):
         arr = np.reshape(arr, x0.shape)
@@ -635,55 +612,53 @@ def pcg(  # pylint: disable=too-many-locals
             )
         return hdot(arr, -second_member.reshape(x0.shape) - residual, hdot_shape) / 2
 
-    res.grad_norm.append(np.sum(np.real(np.conj(residual) * direction)))
-    res.time.append(time.time())
+    # Gradient at current x0
+    residual = second_member - hessian(point)
+    direction = vect_call(precond, residual, x0.shape)
+    delta = np.sum(np.real(np.conj(residual) * direction))
 
-    for iteration in range(max_iter):
-        hessp = hessian(direction)
-        res.fun = value_residual(res.x, residual)
-
-        # s = rᵀr / dᵀAd
-        # Optimal step
-        step = res.grad_norm[-1] / np.sum(np.real(np.conj(direction) * hessp))
-
-        # Descent x^(i+1) = x^(i) + s*d
-        res.x += step * direction
-
-        # r^(i+1) = r^(i) - s * A·d
-        if iteration % 50 == 0:
-            residual = second_member - hessian(res.x)
-        else:
-            residual -= step * hessp
+    for iteration in range(max_iter + 1):
+        res.grad_norm.append(np.sqrt(delta))
         res.jac = -residual.reshape(x0.shape)
-
-        # Conjugate direction with preconditionner
-        secant = vect_call(precond, residual, x0.shape)
-        res.grad_norm.append(np.sum(np.real(np.conj(residual) * secant)))
-        direction = secant + (res.grad_norm[-1] / res.grad_norm[-2]) * direction
-
-        res.diff.append(np.sum(step * direction) ** 2)
+        res.fun = value_residual(point, residual)
         res.time.append(time.time())
 
+        if iteration > 0 and callback is not None:
+            callback(res)
+
         # Stopping condition
-        if np.sqrt(res.grad_norm[-1]) < x0.size * tol and iteration >= min_iter:
+        if delta == 0 or (res.grad_norm[-1] < x0.size * tol and iteration >= min_iter):
             res.success = True
             res.status = 0
             break
 
-        if callback is not None:
-            callback(res)
+        if iteration == max_iter:
+            break
 
-    if res.status == 0:
-        res.message = "Stopping conditions reached."
-    else:
-        res.success = False
-        res.status = 1
-        res.message = "Maximum number of iterations has been exceeded."
-    res.x = np.reshape(res.x, x0.shape)
-    res.njev = iteration + 1
-    res.nit = iteration + 1
-    res.grad_norm = list(np.sqrt(res.grad_norm))
-    res.time = list(np.asarray(res.time) - res.time[0])
+        hessp = hessian(direction)
+
+        # s = rᵀr / dᵀAd
+        # Optimal step
+        step = delta / np.sum(np.real(np.conj(direction) * hessp))
+
+        # Descent x^(i+1) = x^(i) + s*d
+        point += step * direction
+
+        res.diff.append(np.sum(np.abs(step * direction) ** 2))
+
+        # r^(i+1) = r^(i) - s * A·d
+        if iteration % 50 == 0:
+            residual = second_member - hessian(point)
+        else:
+            residual -= step * hessp
+
+        # Conjugate direction with preconditionner
+        secant = vect_call(precond, residual, x0.shape)
+        delta_old = delta
+        delta = np.sum(np.real(np.conj(residual) * secant))
+        direction = secant + (delta / delta_old) * direction
+
+    close_result(res)
 
     return res
 
@@ -713,6 +688,38 @@ def hdot(arr1: np.ndarray, arr2: np.ndarray, inshape: tuple[int, ...]) -> float:
 
 
 # Vectorized call
+def init_point(x0: array) -> array:  # pylint: disable=invalid-name
+    """Return `x0` as a new column vector, of floating type if it is not."""
+    dtype = x0.dtype if np.issubdtype(x0.dtype, np.inexact) else float
+    return np.array(x0, dtype=dtype, order="C").reshape((-1, 1))
+
+
+def close_result(res: OptimizeResult) -> None:
+    """Finalize `res` at the end of an optimization algorithm."""
+    if res.status == 0:
+        res.message = "Stopping conditions reached."
+    else:
+        res.success = False
+        res.status = 1
+        res.message = "Maximum number of iterations has been exceeded."
+    res.nit = len(res.diff)
+    res.njev = res.nit
+    res.time = list(np.asarray(res.time) - res.time[0])
+
+
+@contextmanager
+def set_calc_objv(objv_list: Sequence["BaseObjective"], calc_objv: bool):
+    """Set `calc_objv` of objectives and always restore it at the end."""
+    previous_flag = [objv.calc_objv for objv in objv_list]
+    for objv in objv_list:
+        objv.calc_objv = calc_objv
+    try:
+        yield
+    finally:
+        for objv, flag in zip(objv_list, previous_flag):
+            objv.calc_objv = flag
+
+
 def check_not_list(out: ArrOrSeq) -> array:
     """Return `out`, an operator output, or raise if it is a list of array"""
     if isinstance(out, list):
@@ -1495,7 +1502,7 @@ class Loss(abc.ABC):
 
     def gr_coeffs(self, point: array) -> array:
         """The Geman & Reynolds `φ'(·)/·` coefficients at given point."""
-        aux = self.inf * np.ones_like(point)
+        aux = self.inf * np.ones_like(point, dtype=np.result_type(point, float))
         idx = point != 0
         aux[idx] = self.gradient(point[idx]) / point[idx]
         return aux
