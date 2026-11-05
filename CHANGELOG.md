@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Test suite and GitHub Actions CI.
+
 ### Changed
 - `hyper` is read-only for all objectives.
 - `MixedObjective + objective` returns a new instance instead of updating the

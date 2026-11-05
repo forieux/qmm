@@ -40,7 +40,7 @@ twine = "^3.3.0"
 rstcheck = "^3.3.1"
 readme-renderer = "^29.0"
 mypy = "^0.812"
-pytest = "^6.2.3"
+pytest = ">=7"
 udft = "^3.2.1"
 scipy = ">=1.11"
 pylint = "^2.12.2"
@@ -62,6 +62,11 @@ disable = [
 [tool.pylint.design]
 max-args = 7
 max-attributes = 8
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+filterwarnings = ["error::DeprecationWarning"]
 
 [flake8]
 max-line-length = 88
